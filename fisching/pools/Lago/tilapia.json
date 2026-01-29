@@ -1,7 +1,10 @@
 {
   "name": "Tilápia",
   "rarity": "comum",
-  "weight_kg": 1.2,
+  "weight_kg_range": {
+    "min": 0.8,
+    "max": 2.0
+  },
   "base_value": 20,
   "resilience": 1,
   "description": "Peixe comum do lago, fácil de fisgar."

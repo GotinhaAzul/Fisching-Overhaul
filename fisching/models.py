@@ -8,7 +8,8 @@ from typing import Dict
 class Fish:
     name: str
     rarity: str
-    weight_kg: float
+    weight_kg_min: float
+    weight_kg_max: float
     base_value: int
     resilience: int
     description: str
