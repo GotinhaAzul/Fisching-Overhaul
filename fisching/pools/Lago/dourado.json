@@ -1,0 +1,11 @@
+{
+  "name": "Dourado",
+  "rarity": "raro",
+  "weight_kg_range": {
+    "min": 3.0,
+    "max": 6.5
+  },
+  "base_value": 120,
+  "resilience": 3,
+  "description": "Predador forte do lago, exige concentração."
+}

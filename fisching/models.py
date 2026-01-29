@@ -8,6 +8,19 @@ from typing import Dict
 class Fish:
     name: str
     rarity: str
+    weight_kg_min: float
+    weight_kg_max: float
+    base_value: int
+    resilience: int
+    description: str
+
+
+@dataclass(frozen=True)
+class Pool:
+    name: str
+    description: str
+    fish: Dict[str, Fish]
+    rarity_chances: Dict[str, float]
 
 
 @dataclass
