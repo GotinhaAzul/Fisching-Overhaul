@@ -4,9 +4,9 @@ from typing import Callable
 
 from fisching.fishing import FishingSystem
 from fisching.inventory import Inventory
-from fisching.models import Player, Pool
+from fisching.models import CaughtFish, Player, Pool
 from fisching.pools import load_pools
-from fisching.utils import format_sequence, normalize_sequence
+from fisching.utils import calculate_fish_value, format_sequence, normalize_sequence
 
 
 class Game:
@@ -25,7 +25,8 @@ class Game:
             print("\nO que você quer fazer?")
             print("1) Pescar")
             print("2) Ver inventário")
-            print("3) Sair")
+            print("3) Mercado")
+            print("4) Sair")
             choice = self.input_func("> ").strip()
 
             if choice == "1":
@@ -35,6 +36,8 @@ class Game:
             elif choice == "2":
                 self._show_inventory(player, inventory)
             elif choice == "3":
+                self._visit_market(player, inventory)
+            elif choice == "4":
                 print("Até a próxima pesca!")
                 break
             else:
@@ -72,11 +75,16 @@ class Game:
         result = self.fishing_system.resolve_attempt(sequence, provided, fish)
 
         if result.success and result.fish:
-            inventory.add(result.fish.name)
-            player.add_item(result.fish.name)
+            weight = self.fishing_system.roll_weight(result.fish)
+            catch = CaughtFish(
+                name=result.fish.name,
+                weight_kg=weight,
+                base_value=result.fish.base_value,
+            )
+            inventory.add(catch)
             print(
                 f"Sucesso! Você pescou {result.fish.name} "
-                f"(raridade: {result.fish.rarity})."
+                f"(raridade: {result.fish.rarity}, {weight:.2f} kg)."
             )
         else:
             print("O peixe escapou! Tente novamente.")
@@ -85,3 +93,63 @@ class Game:
         print(f"\nInventário de {player.name}:")
         for line in inventory.to_lines():
             print(line)
+        print(f"Saldo atual: {player.balance:.2f} moedas")
+
+    def _visit_market(self, player: Player, inventory: Inventory) -> None:
+        while True:
+            print("\nMercado")
+            print("1) Vender peixe individual")
+            print("2) Vender inventário todo")
+            print("0) Voltar")
+            choice = self.input_func("> ").strip()
+
+            if choice == "0":
+                return
+            if choice == "1":
+                self._sell_individual(player, inventory)
+            elif choice == "2":
+                self._sell_all(player, inventory)
+            else:
+                print("Opção inválida. Tente novamente.")
+
+    def _sell_individual(self, player: Player, inventory: Inventory) -> None:
+        catches = inventory.list()
+        if not catches:
+            print("Você não tem peixes para vender.")
+            return
+
+        print("\nEscolha um peixe para vender:")
+        for line in inventory.to_lines():
+            print(line)
+        choice = self.input_func("> ").strip()
+        if not choice.isdigit():
+            print("Opção inválida. Tente novamente.")
+            return
+
+        index = int(choice) - 1
+        if index < 0 or index >= len(catches):
+            print("Opção inválida. Tente novamente.")
+            return
+
+        catch = inventory.remove(index)
+        value = calculate_fish_value(catch.base_value, catch.weight_kg)
+        player.add_money(value)
+        print(
+            f"Você vendeu {catch.name} ({catch.weight_kg:.2f} kg) "
+            f"por {value:.2f} moedas."
+        )
+
+    def _sell_all(self, player: Player, inventory: Inventory) -> None:
+        catches = inventory.list()
+        if not catches:
+            print("Você não tem peixes para vender.")
+            return
+
+        total_value = inventory.total_value()
+        total_count = len(catches)
+        inventory.clear()
+        player.add_money(total_value)
+        print(
+            f"Você vendeu {total_count} peixe(s) "
+            f"por {total_value:.2f} moedas."
+        )

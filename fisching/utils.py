@@ -10,3 +10,7 @@ def normalize_sequence(user_input: str) -> List[str]:
 
 def format_sequence(sequence: Iterable[str]) -> str:
     return " ".join(sequence)
+
+
+def calculate_fish_value(base_value: int, weight_kg: float) -> float:
+    return base_value * (1 + weight_kg / 100)

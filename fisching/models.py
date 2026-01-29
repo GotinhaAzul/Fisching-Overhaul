@@ -16,6 +16,13 @@ class Fish:
 
 
 @dataclass(frozen=True)
+class CaughtFish:
+    name: str
+    weight_kg: float
+    base_value: int
+
+
+@dataclass(frozen=True)
 class Pool:
     name: str
     description: str
@@ -26,7 +33,11 @@ class Pool:
 @dataclass
 class Player:
     name: str
-    inventory: Dict[str, int] = field(default_factory=dict)
+    inventory: list[CaughtFish] = field(default_factory=list)
+    balance: float = 0.0
 
-    def add_item(self, item_name: str, amount: int = 1) -> None:
-        self.inventory[item_name] = self.inventory.get(item_name, 0) + amount
+    def add_catch(self, catch: CaughtFish) -> None:
+        self.inventory.append(catch)
+
+    def add_money(self, amount: float) -> None:
+        self.balance += amount

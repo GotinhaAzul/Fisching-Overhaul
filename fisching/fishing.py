@@ -44,6 +44,9 @@ class FishingSystem:
     def generate_sequence(self, length: int) -> List[str]:
         return [random.choice(SEQUENCE_KEYS) for _ in range(length)]
 
+    def roll_weight(self, fish: Fish) -> float:
+        return round(random.uniform(fish.weight_kg_min, fish.weight_kg_max), 2)
+
     def resolve_attempt(self, sequence: Sequence[str], provided: Iterable[str], fish: Fish) -> CatchResult:
         normalized_input = [value.strip().upper() for value in provided if value.strip()]
         success = normalized_input == list(sequence)
