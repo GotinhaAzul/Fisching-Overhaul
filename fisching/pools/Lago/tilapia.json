@@ -1,0 +1,8 @@
+{
+  "name": "Tilápia",
+  "rarity": "comum",
+  "weight_kg": 1.2,
+  "base_value": 20,
+  "resilience": 1,
+  "description": "Peixe comum do lago, fácil de fisgar."
+}
