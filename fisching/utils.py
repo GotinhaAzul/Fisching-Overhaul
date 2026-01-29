@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Iterable, List
 
 
@@ -14,3 +15,8 @@ def format_sequence(sequence: Iterable[str]) -> str:
 
 def calculate_fish_value(base_value: int, weight_kg: float) -> float:
     return base_value * (1 + weight_kg / 100)
+
+
+def clear_screen() -> None:
+    command = "cls" if os.name == "nt" else "clear"
+    os.system(command)

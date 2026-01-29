@@ -6,7 +6,12 @@ from fisching.fishing import FishingSystem
 from fisching.inventory import Inventory
 from fisching.models import CaughtFish, Player, Pool
 from fisching.pools import load_pools
-from fisching.utils import calculate_fish_value, format_sequence, normalize_sequence
+from fisching.utils import (
+    calculate_fish_value,
+    clear_screen,
+    format_sequence,
+    normalize_sequence,
+)
 
 
 class Game:
@@ -17,11 +22,11 @@ class Game:
 
     def start(self) -> None:
         print("Bem-vindo ao Fisching RPG!\n")
-        name = self.input_func("Qual é o seu nome? ").strip() or "Pescador"
-        player = Player(name=name)
+        player = Player(name="Pescador")
         inventory = Inventory(player.inventory)
 
         while True:
+            clear_screen()
             print("\nO que você quer fazer?")
             print("1) Pescar")
             print("2) Ver inventário")
@@ -50,6 +55,7 @@ class Game:
 
         pools = list(self.pools.values())
         while True:
+            clear_screen()
             print("\nEscolha uma pool para pescar:")
             for index, pool in enumerate(pools, start=1):
                 print(f"{index}) {pool.name} - {pool.description}")
@@ -97,6 +103,7 @@ class Game:
 
     def _visit_market(self, player: Player, inventory: Inventory) -> None:
         while True:
+            clear_screen()
             print("\nMercado")
             print("1) Vender peixe individual")
             print("2) Vender inventário todo")
@@ -118,6 +125,7 @@ class Game:
             print("Você não tem peixes para vender.")
             return
 
+        clear_screen()
         print("\nEscolha um peixe para vender:")
         for line in inventory.to_lines():
             print(line)
