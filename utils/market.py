@@ -1,9 +1,9 @@
 import os
 from typing import List
 
-from dialogue import get_market_line
-from inventory import InventoryEntry, calculate_entry_value
-from rods import Rod
+from utils.dialogue import get_market_line
+from utils.inventory import InventoryEntry, calculate_entry_value
+from utils.rods import Rod
 
 
 def clear_screen():

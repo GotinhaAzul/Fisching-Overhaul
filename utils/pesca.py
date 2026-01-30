@@ -1,27 +1,45 @@
+import importlib
+import importlib.util
 import json
-import random
-import time
-import threading
-from dataclasses import dataclass
 import math
+import os
+import random
+import sys
+import threading
+import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from colorama import init as colorama_init
 from pynput import keyboard
 
-from bestiary import show_bestiary
-from inventory import InventoryEntry, render_inventory
-from dialogue import get_menu_line
-from market import show_market
-from rods import Rod, load_rods
-from ui import clear_screen
+from utils.bestiary import show_bestiary
+from utils.dialogue import get_menu_line
+from utils.inventory import InventoryEntry, render_inventory
+from utils.market import show_market
+from utils.rods import Rod, load_rods
+from utils.ui import clear_screen
 
 # -----------------------------
 # Config / Modelos
 # -----------------------------
 
 VALID_KEYS = ["w", "a", "s", "d"]
+
+
+def flush_input_buffer() -> None:
+    if os.name == "nt":
+        if importlib.util.find_spec("msvcrt"):
+            msvcrt = importlib.import_module("msvcrt")
+            while msvcrt.kbhit():
+                msvcrt.getch()
+        return
+
+    if importlib.util.find_spec("termios"):
+        termios = importlib.import_module("termios")
+        if sys.stdin.isatty():
+            termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
 
 
 @dataclass(frozen=True)
@@ -456,81 +474,92 @@ def run_fishing_round(
     inventory: List[InventoryEntry],
     equipped_rod: Rod,
 ):
-    clear_screen()
-    print("🎣 === Pesca (WASD em tempo real) ===")
-    print(f"Pool selecionada: {selected_pool.name}")
-    print(f"Vara equipada: {equipped_rod.name}")
-    print()
+    while True:
+        clear_screen()
+        print("🎣 === Pesca (WASD em tempo real) ===")
+        print(f"Pool selecionada: {selected_pool.name}")
+        print(f"Vara equipada: {equipped_rod.name}")
+        print()
 
-    ks = KeyStream()
-    ks.start()
+        ks = KeyStream()
+        ks.start()
 
-    eligible_fish = [
-        fish for fish in selected_pool.fish_profiles if fish.kg_min <= equipped_rod.kg_max
-    ]
-    if not eligible_fish:
-        ks.stop()
-        print("Nenhum peixe desta pool pode ser fisgado com a vara equipada.")
-        input("\nEnter para voltar ao menu.")
-        return
+        eligible_fish = [
+            fish for fish in selected_pool.fish_profiles if fish.kg_min <= equipped_rod.kg_max
+        ]
+        if not eligible_fish:
+            ks.stop()
+            print("Nenhum peixe desta pool pode ser fisgado com a vara equipada.")
+            flush_input_buffer()
+            input("\nEnter para voltar ao menu.")
+            return
 
-    fish = selected_pool.choose_fish(eligible_fish)
-    attempt = fish.generate_attempt()
-    attempt = FishingAttempt(
-        sequence=attempt.sequence,
-        time_limit_s=max(0.5, attempt.time_limit_s + equipped_rod.control),
-    )
-    game = FishingMiniGame(attempt)
-    game.begin()
+        fish = selected_pool.choose_fish(eligible_fish)
+        attempt = fish.generate_attempt()
+        attempt = FishingAttempt(
+            sequence=attempt.sequence,
+            time_limit_s=max(0.5, attempt.time_limit_s + equipped_rod.control),
+        )
+        game = FishingMiniGame(attempt)
+        game.begin()
 
-    print("\n🐟 O peixe mordeu! Complete a sequência:")
+        print("\n🐟 O peixe mordeu! Complete a sequência:")
 
-    result: Optional[FishingResult] = None
+        result: Optional[FishingResult] = None
 
-    while result is None:
-        if ks.stop_requested():
-            result = FishingResult(
-                False,
-                "Saiu da pesca (ESC)",
-                game.typed[:],
-                time.perf_counter() - game.start_time,
-            )
-            break
-
-        for ch in ks.pop_all():
-            result = game.handle_key(ch)
-            if result is not None:
+        while result is None:
+            if ks.stop_requested():
+                result = FishingResult(
+                    False,
+                    "Saiu da pesca (ESC)",
+                    game.typed[:],
+                    time.perf_counter() - game.start_time,
+                )
                 break
 
-        if result is None:
-            result = game.check_timeout()
+            for ch in ks.pop_all():
+                result = game.handle_key(ch)
+                if result is not None:
+                    break
 
-        render(attempt, game.typed, game.time_left())
-        time.sleep(0.016)
+            if result is None:
+                result = game.check_timeout()
 
-    print()
-    ks.stop()
+            render(attempt, game.typed, game.time_left())
+            time.sleep(0.016)
 
-    if result.success:
-        caught_kg = random.uniform(fish.kg_min, fish.kg_max)
-        if caught_kg > equipped_rod.kg_max:
-            caught_kg = equipped_rod.kg_max
-        inventory.append(
-            InventoryEntry(
-                name=fish.name,
-                rarity=fish.rarity,
-                kg=caught_kg,
-                base_value=fish.base_value,
+        print()
+        ks.stop()
+
+        if result.success:
+            caught_kg = random.uniform(fish.kg_min, fish.kg_max)
+            if caught_kg > equipped_rod.kg_max:
+                caught_kg = equipped_rod.kg_max
+            inventory.append(
+                InventoryEntry(
+                    name=fish.name,
+                    rarity=fish.rarity,
+                    kg=caught_kg,
+                    base_value=fish.base_value,
+                )
             )
-        )
-        print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
-    else:
-        print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
-        print(f"Sequência era: {' '.join(attempt.sequence)}")
-        if result.typed:
-            print(f"Você digitou:  {' '.join(result.typed)}")
+            print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
+        else:
+            print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
+            print(f"Sequência era: {' '.join(attempt.sequence)}")
+            if result.typed:
+                print(f"Você digitou:  {' '.join(result.typed)}")
 
-    input("\nEnter para voltar ao menu.")
+        flush_input_buffer()
+        while True:
+            print("\n1. Pescar novamente")
+            print("0. Voltar ao menu")
+            choice = input("Escolha uma opção: ").strip()
+            if choice == "1":
+                break
+            if choice == "0" or choice == "":
+                return
+            print("Opção inválida.")
 
 
 
