@@ -1,7 +1,9 @@
+import json
 import random
 import time
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, List, Optional
 
 from pynput import keyboard
@@ -58,6 +60,73 @@ class FishProfile:
         seq = [random.choice(self.allowed_keys) for _ in range(length)]
         limit = random.uniform(*self.time_limit_range_s)
         return FishingAttempt(sequence=seq, time_limit_s=limit)
+
+
+@dataclass
+class FishingPool:
+    name: str
+    fish_profiles: List[FishProfile]
+    folder: Path
+
+
+def load_pools(base_dir: Path) -> List[FishingPool]:
+    if not base_dir.exists():
+        raise FileNotFoundError(f"Diretório de pools não encontrado: {base_dir}")
+
+    pools: List[FishingPool] = []
+    for pool_dir in sorted(p for p in base_dir.iterdir() if p.is_dir()):
+        config_path = pool_dir / "pool.json"
+        if not config_path.exists():
+            continue
+
+        with config_path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+
+        fish_profiles = [
+            FishProfile(
+                fish["name"],
+                sequence_len_range=tuple(fish.get("sequence_len_range", (4, 8))),
+                time_limit_range_s=tuple(fish.get("time_limit_range_s", (2.5, 5.0))),
+                allowed_keys=fish.get("allowed_keys"),
+            )
+            for fish in data.get("fish", [])
+            if fish.get("name")
+        ]
+
+        if not fish_profiles:
+            continue
+
+        pools.append(
+            FishingPool(
+                name=data.get("name", pool_dir.name),
+                fish_profiles=fish_profiles,
+                folder=pool_dir,
+            )
+        )
+
+    if not pools:
+        raise RuntimeError("Nenhuma pool encontrada. Verifique os arquivos em /pools.")
+
+    return pools
+
+
+def select_pool(pools: List[FishingPool]) -> FishingPool:
+    print("Escolha uma pool para pescar:")
+    for idx, pool in enumerate(pools, start=1):
+        fish_names = ", ".join(fish.name for fish in pool.fish_profiles)
+        print(f"{idx}. {pool.name} ({fish_names})")
+
+    while True:
+        choice = input("Digite o número da pool: ").strip()
+        if not choice.isdigit():
+            print("Entrada inválida. Digite apenas o número da pool.")
+            continue
+
+        idx = int(choice)
+        if 1 <= idx <= len(pools):
+            return pools[idx - 1]
+
+        print("Número fora do intervalo. Tente novamente.")
 
 
 # -----------------------------
@@ -204,16 +273,16 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
 def main():
     random.seed()
 
-    fishes = [
-        FishProfile("Tilápia", sequence_len_range=(4, 6), time_limit_range_s=(2.5, 4.0)),
-        FishProfile("Dourado", sequence_len_range=(6, 9), time_limit_range_s=(3.0, 5.0)),
-        FishProfile("Tucunaré", sequence_len_range=(5, 8), time_limit_range_s=(2.8, 4.5)),
-    ]
+    base_dir = Path(__file__).resolve().parent.parent / "pools"
+    pools = load_pools(base_dir)
+    selected_pool = select_pool(pools)
+    fishes = selected_pool.fish_profiles
 
     ks = KeyStream()
     ks.start()
 
     print("=== Pesca (WASD em tempo real) ===")
+    print(f"Pool selecionada: {selected_pool.name}")
     print("Dica: mantenha o foco no terminal. Pressione ESC para sair.\n")
 
     while True:

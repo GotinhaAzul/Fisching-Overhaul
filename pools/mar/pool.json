@@ -1,0 +1,15 @@
+{
+  "name": "Mar Aberto",
+  "fish": [
+    {
+      "name": "Tucunaré",
+      "sequence_len_range": [5, 8],
+      "time_limit_range_s": [2.8, 4.5]
+    },
+    {
+      "name": "Robalo",
+      "sequence_len_range": [6, 8],
+      "time_limit_range_s": [3.2, 4.9]
+    }
+  ]
+}

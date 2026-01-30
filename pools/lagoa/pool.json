@@ -1,0 +1,15 @@
+{
+  "name": "Lagoa Tranquila",
+  "fish": [
+    {
+      "name": "Tilápia",
+      "sequence_len_range": [4, 6],
+      "time_limit_range_s": [2.5, 4.0]
+    },
+    {
+      "name": "Carpa",
+      "sequence_len_range": [5, 7],
+      "time_limit_range_s": [2.8, 4.3]
+    }
+  ]
+}
