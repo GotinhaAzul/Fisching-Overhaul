@@ -35,8 +35,9 @@ def format_inventory_entry(index: int, entry: InventoryEntry) -> str:
     )
 
 
-def render_inventory(inventory: List[InventoryEntry]):
-    print("\nInventário:")
+def render_inventory(inventory: List[InventoryEntry], show_title: bool = True):
+    if show_title:
+        print("\nInventário:")
     if not inventory:
         print("- vazio -")
         return
