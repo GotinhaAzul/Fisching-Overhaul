@@ -4,7 +4,7 @@
   "description": "Um peixe resistente e comum em lagoas tranquilas.",
   "kg_min": 0.4,
   "kg_max": 2.0,
-  "base_value": 12,
-  "sequence_len": 4,
+  "base_value": 5,
+  "sequence_len": 3,
   "reaction_time_s": 2.5
 }
