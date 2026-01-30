@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+from dialogue import get_market_line
 from inventory import InventoryEntry, calculate_entry_value
 from rods import Rod
 
@@ -29,7 +30,8 @@ def show_market(
 ) -> float:
     while True:
         clear_screen()
-        print("=== Mercado ===")
+        print("🛒 === Mercado ===")
+        print(get_market_line())
         print(f"Dinheiro: {format_currency(balance)}")
         print("1. Vender peixe individual")
         print("2. Vender inventário inteiro")
