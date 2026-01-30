@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Dict, List, Set, TYPE_CHECKING
 
-from inventory import InventoryEntry
-from rods import Rod
-from ui import clear_screen
+from utils.inventory import InventoryEntry
+from utils.rods import Rod
+from utils.ui import clear_screen
 
 if TYPE_CHECKING:
-    from pesca import FishProfile, FishingPool
+    from utils.pesca import FishProfile, FishingPool
 
 
 def collect_bestiary_fish(pools: List["FishingPool"]) -> List["FishProfile"]:
