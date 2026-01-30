@@ -3,8 +3,9 @@ import random
 import time
 import threading
 from dataclasses import dataclass
+import math
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from pynput import keyboard
 
@@ -39,14 +40,26 @@ class FishProfile:
     def __init__(
         self,
         name: str,
+        rarity: str,
+        description: str,
+        kg_min: float,
+        kg_max: float,
+        base_value: float,
+        sequence_len: Optional[int] = None,
+        reaction_time_s: float = 2.5,
         sequence_len_range=(4, 8),
-        time_limit_range_s=(2.5, 5.0),
         allowed_keys=None,
         generator: Optional[Callable[[], FishingAttempt]] = None,
     ):
         self.name = name
+        self.rarity = rarity
+        self.description = description
+        self.kg_min = kg_min
+        self.kg_max = kg_max
+        self.base_value = base_value
+        self.sequence_len = sequence_len
+        self.reaction_time_s = reaction_time_s
         self.sequence_len_range = sequence_len_range
-        self.time_limit_range_s = time_limit_range_s
         self.allowed_keys = allowed_keys or VALID_KEYS
 
         # Se quiser, pode plugar um gerador customizado por peixe.
@@ -56,10 +69,12 @@ class FishProfile:
         if self._custom_generator:
             return self._custom_generator()
 
-        length = random.randint(*self.sequence_len_range)
-        seq = [random.choice(self.allowed_keys) for _ in range(length)]
-        limit = random.uniform(*self.time_limit_range_s)
-        return FishingAttempt(sequence=seq, time_limit_s=limit)
+        if self.sequence_len:
+            seq = [random.choice(self.allowed_keys) for _ in range(self.sequence_len)]
+        else:
+            length = random.randint(*self.sequence_len_range)
+            seq = [random.choice(self.allowed_keys) for _ in range(length)]
+        return FishingAttempt(sequence=seq, time_limit_s=self.reaction_time_s)
 
 
 @dataclass
@@ -67,6 +82,60 @@ class FishingPool:
     name: str
     fish_profiles: List[FishProfile]
     folder: Path
+    description: str
+    rarity_weights: Dict[str, int]
+
+    def choose_fish(self) -> FishProfile:
+        fish_by_rarity: Dict[str, List[FishProfile]] = {}
+        for fish in self.fish_profiles:
+            fish_by_rarity.setdefault(fish.rarity, []).append(fish)
+
+        available_rarities = list(fish_by_rarity.keys())
+        if not available_rarities:
+            raise RuntimeError("Pool sem peixes disponíveis.")
+
+        weights = [self.rarity_weights.get(rarity, 0) for rarity in available_rarities]
+        if sum(weights) <= 0:
+            weights = [1 for _ in available_rarities]
+
+        selected_rarity = random.choices(available_rarities, weights=weights, k=1)[0]
+        return random.choice(fish_by_rarity[selected_rarity])
+
+
+def normalize_rarity_weights(
+    configured_weights: Dict[str, float],
+    available_rarities: List[str],
+) -> Dict[str, int]:
+    filtered = {
+        rarity: float(weight)
+        for rarity, weight in configured_weights.items()
+        if rarity in available_rarities and weight > 0
+    }
+
+    if not filtered:
+        if not available_rarities:
+            return {}
+        even_weight = 100 // len(available_rarities)
+        weights = {rarity: even_weight for rarity in available_rarities}
+        remainder = 100 - sum(weights.values())
+        for rarity in available_rarities[:remainder]:
+            weights[rarity] += 1
+        return weights
+
+    total = sum(filtered.values())
+    scaled = {rarity: (weight / total) * 100 for rarity, weight in filtered.items()}
+    floors = {rarity: math.floor(value) for rarity, value in scaled.items()}
+    remainder = 100 - sum(floors.values())
+
+    fractions = sorted(
+        ((rarity, scaled[rarity] - floors[rarity]) for rarity in floors),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    for rarity, _ in fractions[:remainder]:
+        floors[rarity] += 1
+
+    return floors
 
 
 def load_pools(base_dir: Path) -> List[FishingPool]:
@@ -82,25 +151,54 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
         with config_path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
 
-        fish_profiles = [
-            FishProfile(
-                fish["name"],
-                sequence_len_range=tuple(fish.get("sequence_len_range", (4, 8))),
-                time_limit_range_s=tuple(fish.get("time_limit_range_s", (2.5, 5.0))),
-                allowed_keys=fish.get("allowed_keys"),
+        fish_dir = pool_dir / "fish"
+        if not fish_dir.exists():
+            continue
+
+        fish_profiles: List[FishProfile] = []
+        for fish_path in sorted(fish_dir.glob("*.json")):
+            with fish_path.open("r", encoding="utf-8") as handle:
+                fish_data = json.load(handle)
+
+            name = fish_data.get("name")
+            if not name:
+                continue
+
+            sequence_len = fish_data.get("sequence_len")
+            if sequence_len is not None:
+                sequence_len = int(sequence_len)
+
+            fish_profiles.append(
+                FishProfile(
+                    name=name,
+                    rarity=fish_data.get("rarity", "Desconhecida"),
+                    description=fish_data.get("description", ""),
+                    kg_min=float(fish_data.get("kg_min", 0.0)),
+                    kg_max=float(fish_data.get("kg_max", 0.0)),
+                    base_value=float(fish_data.get("base_value", 0.0)),
+                    sequence_len=sequence_len,
+                    reaction_time_s=float(fish_data.get("reaction_time_s", 2.5)),
+                    sequence_len_range=tuple(fish_data.get("sequence_len_range", (4, 8))),
+                    allowed_keys=fish_data.get("allowed_keys"),
+                )
             )
-            for fish in data.get("fish", [])
-            if fish.get("name")
-        ]
 
         if not fish_profiles:
             continue
+
+        available_rarities = sorted({fish.rarity for fish in fish_profiles})
+        configured_weights = data.get("rarity_chances", {})
+        if not isinstance(configured_weights, dict):
+            configured_weights = {}
+        rarity_weights = normalize_rarity_weights(configured_weights, available_rarities)
 
         pools.append(
             FishingPool(
                 name=data.get("name", pool_dir.name),
                 fish_profiles=fish_profiles,
                 folder=pool_dir,
+                description=data.get("description", ""),
+                rarity_weights=rarity_weights,
             )
         )
 
@@ -290,7 +388,7 @@ def main():
             print("\nSaindo...")
             break
 
-        fish = random.choice(fishes)
+        fish = selected_pool.choose_fish()
         attempt = fish.generate_attempt()
         game = FishingMiniGame(attempt)
         game.begin()
