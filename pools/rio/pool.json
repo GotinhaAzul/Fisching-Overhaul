@@ -1,15 +1,9 @@
 {
   "name": "Rio Correnteza",
-  "fish": [
-    {
-      "name": "Dourado",
-      "sequence_len_range": [6, 9],
-      "time_limit_range_s": [3.0, 5.0]
-    },
-    {
-      "name": "Pacu",
-      "sequence_len_range": [5, 8],
-      "time_limit_range_s": [2.9, 4.6]
-    }
-  ]
+  "description": "Correntezas rápidas com peixes fortes.",
+  "rarity_chances": {
+    "Comum": 50,
+    "Incomum": 30,
+    "Raro": 20
+  }
 }

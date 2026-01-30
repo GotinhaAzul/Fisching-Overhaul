@@ -1,0 +1,10 @@
+{
+  "name": "Robalo",
+  "rarity": "Raro",
+  "description": "Espécie valorizada que vive em águas salgadas.",
+  "kg_min": 2.0,
+  "kg_max": 8.0,
+  "base_value": 55,
+  "sequence_len": 6,
+  "reaction_time_s": 2.5
+}
