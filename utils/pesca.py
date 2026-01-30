@@ -13,6 +13,7 @@ from pynput import keyboard
 
 from inventory import InventoryEntry, render_inventory
 from market import show_market
+from rods import Rod, load_rods
 
 # -----------------------------
 # Config / Modelos
@@ -90,9 +91,9 @@ class FishingPool:
     description: str
     rarity_weights: Dict[str, int]
 
-    def choose_fish(self) -> FishProfile:
+    def choose_fish(self, eligible_fish: List[FishProfile]) -> FishProfile:
         fish_by_rarity: Dict[str, List[FishProfile]] = {}
-        for fish in self.fish_profiles:
+        for fish in eligible_fish:
             fish_by_rarity.setdefault(fish.rarity, []).append(fish)
 
         available_rarities = list(fish_by_rarity.keys())
@@ -394,23 +395,98 @@ def show_main_menu(selected_pool: FishingPool) -> str:
     return input("Escolha uma opção: ").strip()
 
 
-def show_inventory(inventory: List[InventoryEntry]):
-    clear_screen()
-    render_inventory(inventory)
-    input("\nEnter para voltar ao menu.")
+def format_rod_stats(rod: Rod) -> str:
+    return (
+        f"Sorte: {rod.luck:.0%} | KGMax: {rod.kg_max:g} | "
+        f"Controle: {rod.control:+.1f}s"
+    )
 
 
-def run_fishing_round(selected_pool: FishingPool, inventory: List[InventoryEntry]):
+def show_inventory(
+    inventory: List[InventoryEntry],
+    owned_rods: List[Rod],
+    equipped_rod: Rod,
+) -> Rod:
+    while True:
+        clear_screen()
+        print("=== Inventário ===")
+        print("\nPeixes:")
+        render_inventory(inventory, show_title=False)
+        print("\nVara equipada:")
+        print(f"- {equipped_rod.name} ({format_rod_stats(equipped_rod)})")
+        print("\n1. Equipar vara")
+        print("0. Voltar")
+
+        choice = input("Escolha uma opção: ").strip()
+        if choice == "0":
+            return equipped_rod
+
+        if choice == "1":
+            clear_screen()
+            print("Escolha a vara para equipar:")
+            for idx, rod in enumerate(owned_rods, start=1):
+                selected_marker = " (equipada)" if rod.name == equipped_rod.name else ""
+                print(f"{idx}. {rod.name} - {format_rod_stats(rod)}{selected_marker}")
+                print(f"   {rod.description}")
+
+            selection = input("Digite o número da vara: ").strip()
+            if not selection.isdigit():
+                print("Entrada inválida.")
+                input("\nEnter para voltar.")
+                continue
+
+            idx = int(selection)
+            if not (1 <= idx <= len(owned_rods)):
+                print("Número fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            equipped_rod = owned_rods[idx - 1]
+            print(f"Vara equipada: {equipped_rod.name}.")
+            input("\nEnter para voltar.")
+            continue
+
+        print("Opção inválida.")
+        input("\nEnter para voltar.")
+
+
+def run_fishing_round(
+    selected_pool: FishingPool,
+    inventory: List[InventoryEntry],
+    equipped_rod: Rod,
+):
     clear_screen()
     print("=== Pesca (WASD em tempo real) ===")
     print(f"Pool selecionada: {selected_pool.name}")
+    print(f"Vara equipada: {equipped_rod.name}")
     print("Dica: mantenha o foco no terminal. Pressione ESC para sair.\n")
 
     ks = KeyStream()
     ks.start()
 
-    fish = selected_pool.choose_fish()
+    eligible_fish = [
+        fish for fish in selected_pool.fish_profiles if fish.kg_min <= equipped_rod.kg_max
+    ]
+    if not eligible_fish:
+        ks.stop()
+        print("Nenhum peixe desta pool pode ser fisgado com a vara equipada.")
+        input("\nEnter para voltar ao menu.")
+        return
+
+    base_chance = 0.6
+    bite_chance = max(0.05, min(0.95, base_chance + equipped_rod.luck))
+    if random.random() > bite_chance:
+        ks.stop()
+        print("Nenhum peixe mordeu a isca desta vez.")
+        input("\nEnter para voltar ao menu.")
+        return
+
+    fish = selected_pool.choose_fish(eligible_fish)
     attempt = fish.generate_attempt()
+    attempt = FishingAttempt(
+        sequence=attempt.sequence,
+        time_limit_s=max(0.5, attempt.time_limit_s + equipped_rod.control),
+    )
     game = FishingMiniGame(attempt)
     game.begin()
 
@@ -444,6 +520,8 @@ def run_fishing_round(selected_pool: FishingPool, inventory: List[InventoryEntry
 
     if result.success:
         caught_kg = random.uniform(fish.kg_min, fish.kg_max)
+        if caught_kg > equipped_rod.kg_max:
+            caught_kg = equipped_rod.kg_max
         inventory.append(
             InventoryEntry(
                 name=fish.name,
@@ -471,6 +549,11 @@ def main():
 
     base_dir = Path(__file__).resolve().parent.parent / "pools"
     pools = load_pools(base_dir)
+    rods_dir = Path(__file__).resolve().parent.parent / "rods"
+    available_rods = load_rods(rods_dir)
+    starter_rod = min(available_rods, key=lambda rod: rod.price)
+    owned_rods = [starter_rod]
+    equipped_rod = starter_rod
     selected_pool = select_pool(pools)
     inventory: List[InventoryEntry] = []
     balance = 0.0
@@ -478,14 +561,14 @@ def main():
     while True:
         choice = show_main_menu(selected_pool)
         if choice == "1":
-            run_fishing_round(selected_pool, inventory)
+            run_fishing_round(selected_pool, inventory, equipped_rod)
         elif choice == "2":
             clear_screen()
             selected_pool = select_pool(pools)
         elif choice == "3":
-            show_inventory(inventory)
+            equipped_rod = show_inventory(inventory, owned_rods, equipped_rod)
         elif choice == "4":
-            balance = show_market(inventory, balance)
+            balance = show_market(inventory, balance, available_rods, owned_rods)
         elif choice == "0":
             clear_screen()
             print("Saindo...")

@@ -2,6 +2,7 @@ import os
 from typing import List
 
 from inventory import InventoryEntry, calculate_entry_value
+from rods import Rod
 
 
 def clear_screen():
@@ -12,13 +13,27 @@ def format_currency(value: float) -> str:
     return f"R$ {value:0.2f}"
 
 
-def show_market(inventory: List[InventoryEntry], balance: float) -> float:
+def format_rod_entry(index: int, rod: Rod) -> str:
+    return (
+        f"{index}. {rod.name} "
+        f"(Sorte: {rod.luck:.0%} | KGMax: {rod.kg_max:g} | "
+        f"Controle: {rod.control:+.1f}s) - {format_currency(rod.price)}"
+    )
+
+
+def show_market(
+    inventory: List[InventoryEntry],
+    balance: float,
+    available_rods: List[Rod],
+    owned_rods: List[Rod],
+) -> float:
     while True:
         clear_screen()
         print("=== Mercado ===")
         print(f"Dinheiro: {format_currency(balance)}")
         print("1. Vender peixe individual")
         print("2. Vender inventário inteiro")
+        print("3. Comprar vara")
         print("0. Voltar")
 
         choice = input("Escolha uma opção: ").strip()
@@ -73,6 +88,45 @@ def show_market(inventory: List[InventoryEntry], balance: float) -> float:
             inventory.clear()
             balance += total
             print(f"Inventário vendido por {format_currency(total)}.")
+            input("\nEnter para voltar.")
+            continue
+
+        if choice == "3":
+            clear_screen()
+            rods_for_sale = [
+                rod for rod in available_rods if rod.name not in {r.name for r in owned_rods}
+            ]
+            if not rods_for_sale:
+                print("Nenhuma vara disponível para compra.")
+                input("\nEnter para voltar.")
+                continue
+
+            print("Varas disponíveis:")
+            for idx, rod in enumerate(rods_for_sale, start=1):
+                print(format_rod_entry(idx, rod))
+                print(f"   {rod.description}")
+
+            selection = input("Digite o número da vara: ").strip()
+            if not selection.isdigit():
+                print("Entrada inválida.")
+                input("\nEnter para voltar.")
+                continue
+
+            idx = int(selection)
+            if not (1 <= idx <= len(rods_for_sale)):
+                print("Número fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            rod = rods_for_sale[idx - 1]
+            if balance < rod.price:
+                print("Saldo insuficiente.")
+                input("\nEnter para voltar.")
+                continue
+
+            balance -= rod.price
+            owned_rods.append(rod)
+            print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
             input("\nEnter para voltar.")
             continue
 

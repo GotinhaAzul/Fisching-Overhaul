@@ -1,0 +1,8 @@
+{
+  "name": "Vara de Fibra",
+  "luck": 0.12,
+  "kg_max": 8.0,
+  "control": 1.0,
+  "description": "Equilíbrio entre resistência e controle para rios e lagoas.",
+  "price": 180
+}
