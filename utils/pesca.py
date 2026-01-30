@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import time
 import threading
@@ -266,6 +267,11 @@ class KeyStream:
         self._listener = keyboard.Listener(on_press=on_press)
         self._listener.start()
 
+    def stop(self):
+        if self._listener:
+            self._listener.stop()
+            self._listener = None
+
     def stop_requested(self) -> bool:
         return self._stop
 
@@ -371,6 +377,89 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
         end=""
     )
 
+def clear_screen():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def show_main_menu(selected_pool: FishingPool) -> str:
+    clear_screen()
+    print("=== Menu Principal ===")
+    print(f"Pool atual: {selected_pool.name}")
+    print("1. Pescar")
+    print("2. Pools")
+    print("3. Inventário")
+    print("0. Sair")
+    return input("Escolha uma opção: ").strip()
+
+
+def show_inventory(inventory: List[InventoryEntry]):
+    clear_screen()
+    render_inventory(inventory)
+    input("\nEnter para voltar ao menu.")
+
+
+def run_fishing_round(selected_pool: FishingPool, inventory: List[InventoryEntry]):
+    clear_screen()
+    print("=== Pesca (WASD em tempo real) ===")
+    print(f"Pool selecionada: {selected_pool.name}")
+    print("Dica: mantenha o foco no terminal. Pressione ESC para sair.\n")
+
+    ks = KeyStream()
+    ks.start()
+
+    fish = selected_pool.choose_fish()
+    attempt = fish.generate_attempt()
+    game = FishingMiniGame(attempt)
+    game.begin()
+
+    print(f"\nUm {fish.name} mordeu a isca! Complete a sequência:")
+
+    result: Optional[FishingResult] = None
+
+    while result is None:
+        if ks.stop_requested():
+            result = FishingResult(
+                False,
+                "Saiu da pesca (ESC)",
+                game.typed[:],
+                time.perf_counter() - game.start_time,
+            )
+            break
+
+        for ch in ks.pop_all():
+            result = game.handle_key(ch)
+            if result is not None:
+                break
+
+        if result is None:
+            result = game.check_timeout()
+
+        render(attempt, game.typed, game.time_left())
+        time.sleep(0.016)
+
+    print()
+    ks.stop()
+
+    if result.success:
+        caught_kg = random.uniform(fish.kg_min, fish.kg_max)
+        inventory.append(
+            InventoryEntry(
+                name=fish.name,
+                rarity=fish.rarity,
+                kg=caught_kg,
+            )
+        )
+        print(f"✅ {result.reason}  ({result.elapsed_s:0.2f}s)")
+        print(f"Peso: {caught_kg:0.2f}kg")
+        render_inventory(inventory)
+    else:
+        print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
+        print(f"Sequência era: {' '.join(attempt.sequence)}")
+        if result.typed:
+            print(f"Você digitou:  {' '.join(result.typed)}")
+
+    input("\nEnter para voltar ao menu.")
+
 
 def main():
     colorama_init(autoreset=True)
@@ -379,86 +468,24 @@ def main():
     base_dir = Path(__file__).resolve().parent.parent / "pools"
     pools = load_pools(base_dir)
     selected_pool = select_pool(pools)
-    fishes = selected_pool.fish_profiles
     inventory: List[InventoryEntry] = []
 
-    ks = KeyStream()
-    ks.start()
-
-    print("=== Pesca (WASD em tempo real) ===")
-    print(f"Pool selecionada: {selected_pool.name}")
-    print("Dica: mantenha o foco no terminal. Pressione ESC para sair.\n")
-
     while True:
-        if ks.stop_requested():
-            print("\nSaindo...")
+        choice = show_main_menu(selected_pool)
+        if choice == "1":
+            run_fishing_round(selected_pool, inventory)
+        elif choice == "2":
+            clear_screen()
+            selected_pool = select_pool(pools)
+        elif choice == "3":
+            show_inventory(inventory)
+        elif choice == "0":
+            clear_screen()
+            print("Saindo...")
             break
-
-        fish = selected_pool.choose_fish()
-        attempt = fish.generate_attempt()
-        game = FishingMiniGame(attempt)
-        game.begin()
-
-        print(f"\nUm {fish.name} mordeu a isca! Complete a sequência:")
-
-        result: Optional[FishingResult] = None
-
-        # loop do mini-game
-        while result is None:
-            if ks.stop_requested():
-                result = FishingResult(False, "Saiu do jogo (ESC)", game.typed[:], time.perf_counter() - game.start_time)
-                break
-
-            # processa teclas capturadas desde a última iteração
-            for ch in ks.pop_all():
-                result = game.handle_key(ch)
-                if result is not None:
-                    break
-
-            # verifica timeout
-            if result is None:
-                result = game.check_timeout()
-
-            render(attempt, game.typed, game.time_left())
-            time.sleep(0.016)  # ~60 FPS
-
-        # finaliza a linha do render
-        print()
-
-        if result.success:
-            caught_kg = random.uniform(fish.kg_min, fish.kg_max)
-            inventory.append(
-                InventoryEntry(
-                    name=fish.name,
-                    rarity=fish.rarity,
-                    kg=caught_kg,
-                )
-            )
-            print(f"✅ {result.reason}  ({result.elapsed_s:0.2f}s)")
-            print(f"Peso: {caught_kg:0.2f}kg")
-            render_inventory(inventory)
         else:
-            print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
-            print(f"Sequência era: {' '.join(attempt.sequence)}")
-            if result.typed:
-                print(f"Você digitou:  {' '.join(result.typed)}")
-
-        print("\nEnter para tentar de novo, ou ESC para sair.")
-        # Aqui a única pausa é para dar "respiro" no loop; como você pediu
-        # sem Enter para o QTE, o Enter é só para iniciar a próxima rodada.
-        # Se preferir, posso fazer auto-retry com delay.
-        while True:
-            if ks.stop_requested():
-                print("\nSaindo...")
-                return
-            # Se apertar Enter, começa outra rodada
-            for ch in ks.pop_all():
-                if ch == "\r" or ch == "\n":
-                    break
-            else:
-                time.sleep(0.05)
-                continue
-            break
+            print("Opção inválida.")
+            time.sleep(1)
 
 
 if __name__ == "__main__":
