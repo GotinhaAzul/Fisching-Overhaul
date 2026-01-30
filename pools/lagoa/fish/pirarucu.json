@@ -1,0 +1,10 @@
+{
+  "name": "Pirarucu",
+  "rarity": "Lendario",
+  "description": "Gigante de água doce que raramente aparece em lagoas.",
+  "kg_min": 6.0,
+  "kg_max": 18.0,
+  "base_value": 110,
+  "sequence_len": 7,
+  "reaction_time_s": 1.9
+}

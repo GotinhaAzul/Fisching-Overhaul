@@ -1,0 +1,10 @@
+{
+  "name": "Traíra",
+  "rarity": "Incomum",
+  "description": "Predadora de água doce comum em rios tranquilos.",
+  "kg_min": 1.0,
+  "kg_max": 4.5,
+  "base_value": 18,
+  "sequence_len": 5,
+  "reaction_time_s": 2.3
+}

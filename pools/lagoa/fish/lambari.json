@@ -1,0 +1,10 @@
+{
+  "name": "Lambari",
+  "rarity": "Comum",
+  "description": "Peixe pequeno e ágil, típico de lagoas rasas.",
+  "kg_min": 0.1,
+  "kg_max": 0.5,
+  "base_value": 3,
+  "sequence_len": 2,
+  "reaction_time_s": 3.0
+}

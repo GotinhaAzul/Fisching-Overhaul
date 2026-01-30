@@ -1,0 +1,10 @@
+{
+  "name": "Marlim Azul",
+  "rarity": "Lendario",
+  "description": "Espécie lendária do mar aberto, muito difícil de capturar.",
+  "kg_min": 10.0,
+  "kg_max": 30.0,
+  "base_value": 150,
+  "sequence_len": 8,
+  "reaction_time_s": 1.8
+}

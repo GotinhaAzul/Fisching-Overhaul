@@ -1,0 +1,10 @@
+{
+  "name": "Piracanjuba",
+  "rarity": "Lendario",
+  "description": "Espécie lendária de rio, famosa por sua força.",
+  "kg_min": 3.0,
+  "kg_max": 10.0,
+  "base_value": 120,
+  "sequence_len": 7,
+  "reaction_time_s": 1.8
+}

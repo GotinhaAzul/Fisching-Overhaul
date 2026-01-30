@@ -1,0 +1,10 @@
+{
+  "name": "Pintado",
+  "rarity": "Epico",
+  "description": "Peixe grande e cobiçado, raro de aparecer em lagoas.",
+  "kg_min": 2.5,
+  "kg_max": 7.0,
+  "base_value": 60,
+  "sequence_len": 6,
+  "reaction_time_s": 2.1
+}

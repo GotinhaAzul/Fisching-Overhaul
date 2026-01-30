@@ -2,8 +2,10 @@
   "name": "Mar Aberto",
   "description": "Águas abertas com peixes mais ágeis.",
   "rarity_chances": {
-    "Incomum": 55,
-    "Raro": 45,
-    "Comum": 10
+    "Comum": 40,
+    "Incomum": 30,
+    "Raro": 18,
+    "Epico": 9,
+    "Lendario": 3
   }
 }
