@@ -9,7 +9,7 @@ from fisching.models import Fish, Pool
 
 def load_pools(base_path: Path | None = None) -> Dict[str, Pool]:
     if base_path is None:
-        base_path = Path(__file__).resolve().parent / "pools"
+        base_path = Path(__file__).resolve().parents[1] / "pools"
 
     pools: Dict[str, Pool] = {}
     if not base_path.exists():
