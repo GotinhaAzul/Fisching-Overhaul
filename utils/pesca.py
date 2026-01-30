@@ -38,7 +38,8 @@ def flush_input_buffer() -> None:
 
     if importlib.util.find_spec("termios"):
         termios = importlib.import_module("termios")
-        termios.tcflush(sys.stdin, termios.TCIFLUSH)
+        if sys.stdin.isatty():
+            termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
 
 
 @dataclass(frozen=True)
