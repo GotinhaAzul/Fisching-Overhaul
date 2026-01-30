@@ -218,8 +218,7 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
 def select_pool(pools: List[FishingPool]) -> FishingPool:
     print("Escolha uma pool para pescar:")
     for idx, pool in enumerate(pools, start=1):
-        fish_names = ", ".join(fish.name for fish in pool.fish_profiles)
-        print(f"{idx}. {pool.name} ({fish_names})")
+        print(f"{idx}. {pool.name}")
 
     while True:
         choice = input("Digite o número da pool: ").strip()
@@ -459,7 +458,7 @@ def run_fishing_round(
     print("=== Pesca (WASD em tempo real) ===")
     print(f"Pool selecionada: {selected_pool.name}")
     print(f"Vara equipada: {equipped_rod.name}")
-    print("Dica: mantenha o foco no terminal. Pressione ESC para sair.\n")
+    print()
 
     ks = KeyStream()
     ks.start()
@@ -530,9 +529,7 @@ def run_fishing_round(
                 base_value=fish.base_value,
             )
         )
-        print(f"✅ {result.reason}  ({result.elapsed_s:0.2f}s)")
-        print(f"Peso: {caught_kg:0.2f}kg")
-        render_inventory(inventory)
+        print("✅ Pesca concluída com sucesso!")
     else:
         print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
         print(f"Sequência era: {' '.join(attempt.sequence)}")
@@ -554,7 +551,10 @@ def main():
     starter_rod = min(available_rods, key=lambda rod: rod.price)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
-    selected_pool = select_pool(pools)
+    selected_pool = next(
+        (pool for pool in pools if pool.folder.name.lower() == "lagoa"),
+        pools[0],
+    )
     unlocked_pools = {selected_pool.name}
     inventory: List[InventoryEntry] = []
     balance = 0.0
