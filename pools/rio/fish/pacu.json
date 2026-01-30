@@ -4,7 +4,7 @@
   "description": "Peixe de rio conhecido por sua força.",
   "kg_min": 1.2,
   "kg_max": 5.0,
-  "base_value": 30,
+  "base_value": 6,
   "sequence_len": 5,
   "reaction_time_s": 2.5
 }
