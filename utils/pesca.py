@@ -7,24 +7,16 @@ import math
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from colorama import Fore, Style, init as colorama_init
+from colorama import init as colorama_init
 from pynput import keyboard
 
+from inventory import InventoryEntry, render_inventory
 
 # -----------------------------
 # Config / Modelos
 # -----------------------------
 
 VALID_KEYS = ["w", "a", "s", "d"]
-RARITY_COLORS = {
-    "Comum": Fore.LIGHTGREEN_EX,
-    "Incomum": Fore.GREEN,
-    "Raro": Fore.LIGHTBLUE_EX,
-    "Epico": Fore.MAGENTA,
-    "Lendario": Fore.YELLOW,
-    "Secreto": Fore.LIGHTBLACK_EX,
-    "Apex": Fore.LIGHTRED_EX,
-}
 
 
 @dataclass(frozen=True)
@@ -41,12 +33,6 @@ class FishingResult:
     typed: List[str]
     elapsed_s: float
 
-
-@dataclass
-class InventoryEntry:
-    name: str
-    rarity: str
-    kg: float
 
 
 class FishProfile:
@@ -384,23 +370,6 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
         f"Tempo: [{bar}] {time_left:0.2f}s   (ESC sai)",
         end=""
     )
-
-
-def format_inventory_entry(index: int, entry: InventoryEntry) -> str:
-    color = RARITY_COLORS.get(entry.rarity, Fore.WHITE)
-    return (
-        f"{index}. {color}[{entry.rarity}] {entry.name} "
-        f"({entry.kg:0.2f}kg){Style.RESET_ALL}"
-    )
-
-
-def render_inventory(inventory: List[InventoryEntry]):
-    print("\nInventário:")
-    if not inventory:
-        print("- vazio -")
-        return
-    for idx, entry in enumerate(inventory, start=1):
-        print(format_inventory_entry(idx, entry))
 
 
 def main():
