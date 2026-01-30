@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
+from colorama import Fore, Style, init as colorama_init
 from pynput import keyboard
 
 
@@ -15,6 +16,15 @@ from pynput import keyboard
 # -----------------------------
 
 VALID_KEYS = ["w", "a", "s", "d"]
+RARITY_COLORS = {
+    "Comum": Fore.LIGHTGREEN_EX,
+    "Incomum": Fore.GREEN,
+    "Raro": Fore.LIGHTBLUE_EX,
+    "Epico": Fore.MAGENTA,
+    "Lendario": Fore.YELLOW,
+    "Secreto": Fore.LIGHTBLACK_EX,
+    "Apex": Fore.LIGHTRED_EX,
+}
 
 
 @dataclass(frozen=True)
@@ -30,6 +40,13 @@ class FishingResult:
     reason: str
     typed: List[str]
     elapsed_s: float
+
+
+@dataclass
+class InventoryEntry:
+    name: str
+    rarity: str
+    kg: float
 
 
 class FishProfile:
@@ -368,13 +385,33 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
         end=""
     )
 
+
+def format_inventory_entry(index: int, entry: InventoryEntry) -> str:
+    color = RARITY_COLORS.get(entry.rarity, Fore.WHITE)
+    return (
+        f"{index}. {color}[{entry.rarity}] {entry.name} "
+        f"({entry.kg:0.2f}kg){Style.RESET_ALL}"
+    )
+
+
+def render_inventory(inventory: List[InventoryEntry]):
+    print("\nInventário:")
+    if not inventory:
+        print("- vazio -")
+        return
+    for idx, entry in enumerate(inventory, start=1):
+        print(format_inventory_entry(idx, entry))
+
+
 def main():
+    colorama_init(autoreset=True)
     random.seed()
 
     base_dir = Path(__file__).resolve().parent.parent / "pools"
     pools = load_pools(base_dir)
     selected_pool = select_pool(pools)
     fishes = selected_pool.fish_profiles
+    inventory: List[InventoryEntry] = []
 
     ks = KeyStream()
     ks.start()
@@ -420,7 +457,17 @@ def main():
         print()
 
         if result.success:
+            caught_kg = random.uniform(fish.kg_min, fish.kg_max)
+            inventory.append(
+                InventoryEntry(
+                    name=fish.name,
+                    rarity=fish.rarity,
+                    kg=caught_kg,
+                )
+            )
             print(f"✅ {result.reason}  ({result.elapsed_s:0.2f}s)")
+            print(f"Peso: {caught_kg:0.2f}kg")
+            render_inventory(inventory)
         else:
             print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
             print(f"Sequência era: {' '.join(attempt.sequence)}")
