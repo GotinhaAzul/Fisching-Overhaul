@@ -20,6 +20,11 @@ class InventoryEntry:
     name: str
     rarity: str
     kg: float
+    base_value: float
+
+
+def calculate_entry_value(entry: InventoryEntry) -> float:
+    return entry.base_value * (entry.kg / 100 + 1)
 
 
 def format_inventory_entry(index: int, entry: InventoryEntry) -> str:
