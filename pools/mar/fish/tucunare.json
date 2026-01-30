@@ -4,7 +4,7 @@
   "description": "Peixe esportivo que exige reflexos rápidos.",
   "kg_min": 1.5,
   "kg_max": 6.0,
-  "base_value": 40,
+  "base_value": 35,
   "sequence_len": 6,
   "reaction_time_s": 2.5
 }
