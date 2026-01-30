@@ -1,0 +1,10 @@
+{
+  "name": "Jaú",
+  "rarity": "Raro",
+  "description": "Bagre de grande porte encontrado em rios profundos.",
+  "kg_min": 4.0,
+  "kg_max": 14.0,
+  "base_value": 45,
+  "sequence_len": 6,
+  "reaction_time_s": 2.1
+}

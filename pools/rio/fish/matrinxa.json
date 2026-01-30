@@ -1,0 +1,10 @@
+{
+  "name": "Matrinxã",
+  "rarity": "Incomum",
+  "description": "Peixe ativo de rio com força surpreendente.",
+  "kg_min": 0.9,
+  "kg_max": 3.0,
+  "base_value": 14,
+  "sequence_len": 4,
+  "reaction_time_s": 2.4
+}

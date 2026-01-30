@@ -1,0 +1,10 @@
+{
+  "name": "Garoupa",
+  "rarity": "Raro",
+  "description": "Peixe de carne firme, encontrado em áreas rochosas.",
+  "kg_min": 3.0,
+  "kg_max": 9.0,
+  "base_value": 70,
+  "sequence_len": 6,
+  "reaction_time_s": 2.2
+}

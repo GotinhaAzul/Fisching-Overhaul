@@ -2,8 +2,10 @@
   "name": "Rio Correnteza",
   "description": "Correntezas rápidas com peixes fortes.",
   "rarity_chances": {
-    "Comum": 50,
-    "Incomum": 30,
-    "Raro": 20
+    "Comum": 55,
+    "Incomum": 25,
+    "Raro": 12,
+    "Epico": 6,
+    "Lendario": 2
   }
 }
