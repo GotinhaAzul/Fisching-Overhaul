@@ -12,6 +12,7 @@ from colorama import init as colorama_init
 from pynput import keyboard
 
 from inventory import InventoryEntry, render_inventory
+from market import show_market
 
 # -----------------------------
 # Config / Modelos
@@ -388,6 +389,7 @@ def show_main_menu(selected_pool: FishingPool) -> str:
     print("1. Pescar")
     print("2. Pools")
     print("3. Inventário")
+    print("4. Mercado")
     print("0. Sair")
     return input("Escolha uma opção: ").strip()
 
@@ -447,6 +449,7 @@ def run_fishing_round(selected_pool: FishingPool, inventory: List[InventoryEntry
                 name=fish.name,
                 rarity=fish.rarity,
                 kg=caught_kg,
+                base_value=fish.base_value,
             )
         )
         print(f"✅ {result.reason}  ({result.elapsed_s:0.2f}s)")
@@ -461,6 +464,7 @@ def run_fishing_round(selected_pool: FishingPool, inventory: List[InventoryEntry
     input("\nEnter para voltar ao menu.")
 
 
+
 def main():
     colorama_init(autoreset=True)
     random.seed()
@@ -469,6 +473,7 @@ def main():
     pools = load_pools(base_dir)
     selected_pool = select_pool(pools)
     inventory: List[InventoryEntry] = []
+    balance = 0.0
 
     while True:
         choice = show_main_menu(selected_pool)
@@ -479,6 +484,8 @@ def main():
             selected_pool = select_pool(pools)
         elif choice == "3":
             show_inventory(inventory)
+        elif choice == "4":
+            balance = show_market(inventory, balance)
         elif choice == "0":
             clear_screen()
             print("Saindo...")
