@@ -29,22 +29,46 @@ def show_fish_bestiary(
     fish_profiles: List["FishProfile"],
     unlocked_fish: Set[str],
 ):
+    ordered_fish = sorted(
+        fish_profiles,
+        key=lambda fish: (fish.name not in unlocked_fish, fish.name),
+    )
+    page = 0
+    page_size = 10
     while True:
         clear_screen()
         print("=== Bestiário: Peixes pescados ===")
-        if not fish_profiles:
+        if not ordered_fish:
             print("Nenhum peixe cadastrado.")
             input("\nEnter para voltar.")
             return
 
-        for idx, fish in enumerate(fish_profiles, start=1):
+        total_pages = max(1, (len(ordered_fish) + page_size - 1) // page_size)
+        page = max(0, min(page, total_pages - 1))
+        start = page * page_size
+        end = start + page_size
+        page_items = ordered_fish[start:end]
+
+        print(f"Página {page + 1}/{total_pages}\n")
+
+        for idx, fish in enumerate(page_items, start=1):
             label = fish.name if fish.name in unlocked_fish else "???"
             print(f"{idx}. {label}")
 
+        if total_pages > 1:
+            print("\nN. Próxima página | P. Página anterior")
         print("0. Voltar")
         choice = input("Escolha um peixe: ").strip()
         if choice == "0":
             return
+
+        lowered = choice.lower()
+        if lowered == "n" and total_pages > 1:
+            page += 1
+            continue
+        if lowered == "p" and total_pages > 1:
+            page -= 1
+            continue
 
         if not choice.isdigit():
             print("Entrada inválida.")
@@ -52,12 +76,12 @@ def show_fish_bestiary(
             continue
 
         idx = int(choice)
-        if not (1 <= idx <= len(fish_profiles)):
+        if not (1 <= idx <= len(page_items)):
             print("Número fora do intervalo.")
             input("\nEnter para voltar.")
             continue
 
-        fish = fish_profiles[idx - 1]
+        fish = page_items[idx - 1]
         if fish.name not in unlocked_fish:
             show_locked_entry()
             continue
@@ -71,6 +95,8 @@ def show_fish_bestiary(
 
 
 def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
+    page = 0
+    page_size = 10
     while True:
         clear_screen()
         print("=== Bestiário: Varas adquiridas ===")
@@ -79,14 +105,32 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
             input("\nEnter para voltar.")
             return
 
-        for idx, rod in enumerate(rods, start=1):
+        total_pages = max(1, (len(rods) + page_size - 1) // page_size)
+        page = max(0, min(page, total_pages - 1))
+        start = page * page_size
+        end = start + page_size
+        page_items = rods[start:end]
+
+        print(f"Página {page + 1}/{total_pages}\n")
+
+        for idx, rod in enumerate(page_items, start=1):
             label = rod.name if rod.name in unlocked_rods else "???"
             print(f"{idx}. {label}")
 
+        if total_pages > 1:
+            print("\nN. Próxima página | P. Página anterior")
         print("0. Voltar")
         choice = input("Escolha uma vara: ").strip()
         if choice == "0":
             return
+
+        lowered = choice.lower()
+        if lowered == "n" and total_pages > 1:
+            page += 1
+            continue
+        if lowered == "p" and total_pages > 1:
+            page -= 1
+            continue
 
         if not choice.isdigit():
             print("Entrada inválida.")
@@ -94,12 +138,12 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
             continue
 
         idx = int(choice)
-        if not (1 <= idx <= len(rods)):
+        if not (1 <= idx <= len(page_items)):
             print("Número fora do intervalo.")
             input("\nEnter para voltar.")
             continue
 
-        rod = rods[idx - 1]
+        rod = page_items[idx - 1]
         if rod.name not in unlocked_rods:
             show_locked_entry()
             continue
@@ -111,6 +155,8 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
 
 
 def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
+    page = 0
+    page_size = 10
     while True:
         clear_screen()
         print("=== Bestiário: Pools desbloqueadas ===")
@@ -119,14 +165,32 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
             input("\nEnter para voltar.")
             return
 
-        for idx, pool in enumerate(pools, start=1):
+        total_pages = max(1, (len(pools) + page_size - 1) // page_size)
+        page = max(0, min(page, total_pages - 1))
+        start = page * page_size
+        end = start + page_size
+        page_items = pools[start:end]
+
+        print(f"Página {page + 1}/{total_pages}\n")
+
+        for idx, pool in enumerate(page_items, start=1):
             label = pool.name if pool.name in unlocked_pools else "???"
             print(f"{idx}. {label}")
 
+        if total_pages > 1:
+            print("\nN. Próxima página | P. Página anterior")
         print("0. Voltar")
         choice = input("Escolha uma pool: ").strip()
         if choice == "0":
             return
+
+        lowered = choice.lower()
+        if lowered == "n" and total_pages > 1:
+            page += 1
+            continue
+        if lowered == "p" and total_pages > 1:
+            page -= 1
+            continue
 
         if not choice.isdigit():
             print("Entrada inválida.")
@@ -134,12 +198,12 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
             continue
 
         idx = int(choice)
-        if not (1 <= idx <= len(pools)):
+        if not (1 <= idx <= len(page_items)):
             print("Número fora do intervalo.")
             input("\nEnter para voltar.")
             continue
 
-        pool = pools[idx - 1]
+        pool = page_items[idx - 1]
         if pool.name not in unlocked_pools:
             show_locked_entry()
             continue

@@ -12,6 +12,7 @@ from pynput import keyboard
 
 from bestiary import show_bestiary
 from inventory import InventoryEntry, render_inventory
+from dialogue import get_menu_line
 from market import show_market
 from rods import Rod, load_rods
 from ui import clear_screen
@@ -381,7 +382,8 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
 
 def show_main_menu(selected_pool: FishingPool) -> str:
     clear_screen()
-    print("=== Menu Principal ===")
+    print("🎣 === Menu Principal ===")
+    print(get_menu_line())
     print(f"Pool atual: {selected_pool.name}")
     print("1. Pescar")
     print("2. Pools")
@@ -455,7 +457,7 @@ def run_fishing_round(
     equipped_rod: Rod,
 ):
     clear_screen()
-    print("=== Pesca (WASD em tempo real) ===")
+    print("🎣 === Pesca (WASD em tempo real) ===")
     print(f"Pool selecionada: {selected_pool.name}")
     print(f"Vara equipada: {equipped_rod.name}")
     print()
@@ -472,14 +474,6 @@ def run_fishing_round(
         input("\nEnter para voltar ao menu.")
         return
 
-    base_chance = 0.6
-    bite_chance = max(0.05, min(0.95, base_chance + equipped_rod.luck))
-    if random.random() > bite_chance:
-        ks.stop()
-        print("Nenhum peixe mordeu a isca desta vez.")
-        input("\nEnter para voltar ao menu.")
-        return
-
     fish = selected_pool.choose_fish(eligible_fish)
     attempt = fish.generate_attempt()
     attempt = FishingAttempt(
@@ -489,7 +483,7 @@ def run_fishing_round(
     game = FishingMiniGame(attempt)
     game.begin()
 
-    print(f"\nUm {fish.name} mordeu a isca! Complete a sequência:")
+    print("\n🐟 O peixe mordeu! Complete a sequência:")
 
     result: Optional[FishingResult] = None
 
@@ -529,7 +523,7 @@ def run_fishing_round(
                 base_value=fish.base_value,
             )
         )
-        print("✅ Pesca concluída com sucesso!")
+        print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
     else:
         print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
         print(f"Sequência era: {' '.join(attempt.sequence)}")
