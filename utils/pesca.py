@@ -1,5 +1,4 @@
 import json
-import os
 import random
 import time
 import threading
@@ -11,9 +10,11 @@ from typing import Callable, Dict, List, Optional
 from colorama import init as colorama_init
 from pynput import keyboard
 
+from bestiary import show_bestiary
 from inventory import InventoryEntry, render_inventory
 from market import show_market
 from rods import Rod, load_rods
+from ui import clear_screen
 
 # -----------------------------
 # Config / Modelos
@@ -379,10 +380,6 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
         end=""
     )
 
-def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
-
-
 def show_main_menu(selected_pool: FishingPool) -> str:
     clear_screen()
     print("=== Menu Principal ===")
@@ -391,6 +388,7 @@ def show_main_menu(selected_pool: FishingPool) -> str:
     print("2. Pools")
     print("3. Inventário")
     print("4. Mercado")
+    print("5. Bestiário")
     print("0. Sair")
     return input("Escolha uma opção: ").strip()
 
@@ -400,6 +398,8 @@ def format_rod_stats(rod: Rod) -> str:
         f"Sorte: {rod.luck:.0%} | KGMax: {rod.kg_max:g} | "
         f"Controle: {rod.control:+.1f}s"
     )
+
+
 
 
 def show_inventory(
@@ -555,6 +555,7 @@ def main():
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
     selected_pool = select_pool(pools)
+    unlocked_pools = {selected_pool.name}
     inventory: List[InventoryEntry] = []
     balance = 0.0
 
@@ -565,10 +566,19 @@ def main():
         elif choice == "2":
             clear_screen()
             selected_pool = select_pool(pools)
+            unlocked_pools.add(selected_pool.name)
         elif choice == "3":
             equipped_rod = show_inventory(inventory, owned_rods, equipped_rod)
         elif choice == "4":
             balance = show_market(inventory, balance, available_rods, owned_rods)
+        elif choice == "5":
+            show_bestiary(
+                pools,
+                available_rods,
+                inventory,
+                owned_rods,
+                unlocked_pools,
+            )
         elif choice == "0":
             clear_screen()
             print("Saindo...")
