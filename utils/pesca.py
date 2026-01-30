@@ -7,8 +7,10 @@ import math
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
+from colorama import init as colorama_init
 from pynput import keyboard
 
+from inventory import InventoryEntry, render_inventory
 
 # -----------------------------
 # Config / Modelos
@@ -30,6 +32,7 @@ class FishingResult:
     reason: str
     typed: List[str]
     elapsed_s: float
+
 
 
 class FishProfile:
@@ -368,13 +371,16 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
         end=""
     )
 
+
 def main():
+    colorama_init(autoreset=True)
     random.seed()
 
     base_dir = Path(__file__).resolve().parent.parent / "pools"
     pools = load_pools(base_dir)
     selected_pool = select_pool(pools)
     fishes = selected_pool.fish_profiles
+    inventory: List[InventoryEntry] = []
 
     ks = KeyStream()
     ks.start()
@@ -420,7 +426,17 @@ def main():
         print()
 
         if result.success:
+            caught_kg = random.uniform(fish.kg_min, fish.kg_max)
+            inventory.append(
+                InventoryEntry(
+                    name=fish.name,
+                    rarity=fish.rarity,
+                    kg=caught_kg,
+                )
+            )
             print(f"✅ {result.reason}  ({result.elapsed_s:0.2f}s)")
+            print(f"Peso: {caught_kg:0.2f}kg")
+            render_inventory(inventory)
         else:
             print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
             print(f"Sequência era: {' '.join(attempt.sequence)}")
