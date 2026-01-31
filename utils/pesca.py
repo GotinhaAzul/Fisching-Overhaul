@@ -61,6 +61,7 @@ class FishingAttempt:
     """Descreve uma tentativa de pesca (o 'quick time event')."""
     sequence: List[str]
     time_limit_s: float  # tempo TOTAL para completar a sequência
+    allowed_keys: List[str]
 
 
 @dataclass
@@ -114,7 +115,11 @@ class FishProfile:
         else:
             length = random.randint(*self.sequence_len_range)
             seq = [random.choice(self.allowed_keys) for _ in range(length)]
-        return FishingAttempt(sequence=seq, time_limit_s=self.reaction_time_s)
+        return FishingAttempt(
+            sequence=seq,
+            time_limit_s=self.reaction_time_s,
+            allowed_keys=list(self.allowed_keys),
+        )
 
 
 @dataclass
@@ -352,8 +357,8 @@ class FishingMiniGame:
         Processa uma tecla. Retorna FishingResult se terminou (sucesso/erro),
         ou None se ainda está em andamento.
         """
-        # só considera WASD (ou futuro: allowed set)
-        if key not in VALID_KEYS:
+        # só considera teclas permitidas
+        if key not in self.attempt.allowed_keys:
             return None
 
         # timeout
@@ -517,6 +522,7 @@ def run_fishing_round(
         attempt = FishingAttempt(
             sequence=attempt.sequence,
             time_limit_s=max(0.5, attempt.time_limit_s + equipped_rod.control),
+            allowed_keys=attempt.allowed_keys,
         )
         game = FishingMiniGame(attempt)
         game.begin()
