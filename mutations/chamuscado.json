@@ -1,7 +1,7 @@
 {
   "name": "Chamuscado",
-  "description": "Marcas de fogo deixam o peixe mais raro e valioso.",
-  "xp_multiplier": 1.4,
+  "description": "Algo parece ter queimado este pobre peixe.",
+  "xp_multiplier": 1.2,
   "gold_multiplier": 1.6,
   "chance_percent": 0.09
 }
