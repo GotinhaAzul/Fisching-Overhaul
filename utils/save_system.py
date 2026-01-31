@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 1
+SAVE_VERSION = 2
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -38,6 +38,8 @@ def save_game(
     equipped_rod: Rod,
     selected_pool: "FishingPool",
     unlocked_pools: Sequence[str],
+    level: int,
+    xp: int,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -47,6 +49,8 @@ def save_game(
         "equipped_rod": equipped_rod.name,
         "selected_pool": selected_pool.name,
         "unlocked_pools": list(unlocked_pools),
+        "level": level,
+        "xp": xp,
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
@@ -166,3 +170,19 @@ def restore_balance(raw_balance: object, fallback: float) -> float:
         return float(raw_balance)
     except (TypeError, ValueError):
         return fallback
+
+
+def restore_level(raw_level: object, fallback: int) -> int:
+    try:
+        level = int(raw_level)
+    except (TypeError, ValueError):
+        return fallback
+    return max(1, level)
+
+
+def restore_xp(raw_xp: object, fallback: int) -> int:
+    try:
+        xp = int(raw_xp)
+    except (TypeError, ValueError):
+        return fallback
+    return max(0, xp)
