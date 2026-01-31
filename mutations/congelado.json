@@ -1,0 +1,7 @@
+{
+  "name": "Congelado",
+  "description": "O frio do fundo do oceano pareceu extremo demais para esse peixe.",
+  "xp_multiplier": 0.9,
+  "gold_multiplier": 2.0,
+  "chance_percent": 0.1
+}

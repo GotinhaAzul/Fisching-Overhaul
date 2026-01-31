@@ -1,0 +1,7 @@
+{
+  "name": "Elétrico",
+  "description": "Ai! Cuidado ao tocar nesse peixe.",
+  "xp_multiplier": 1.4,
+  "gold_multiplier": 1.9,
+  "chance_percent": 0.07
+}
