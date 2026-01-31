@@ -48,9 +48,10 @@ def show_market(
             print("Escolha o peixe para vender:")
             for idx, entry in enumerate(inventory, start=1):
                 value = calculate_entry_value(entry)
+                mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
                 print(
                     f"{idx}. {entry.name} "
-                    f"({entry.kg:0.2f}kg) - {format_currency(value)}"
+                    f"({entry.kg:0.2f}kg){mutation_label} - {format_currency(value)}"
                 )
 
             selection = input("Digite o número do peixe: ").strip()
@@ -68,8 +69,9 @@ def show_market(
             entry = inventory.pop(idx - 1)
             value = calculate_entry_value(entry)
             balance += value
+            mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
             print(
-                f"Vendeu {entry.name} ({entry.kg:0.2f}kg) "
+                f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
                 f"por {format_currency(value)}."
             )
             input("\nEnter para voltar.")
