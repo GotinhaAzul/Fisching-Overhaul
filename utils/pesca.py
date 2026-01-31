@@ -17,7 +17,7 @@ from pynput import keyboard
 from utils.bestiary import show_bestiary
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
-from utils.levels import apply_xp_gain, xp_for_rarity, xp_required_for_level
+from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.market import show_market
 from utils.mutations import Mutation, choose_mutation, load_mutations
 from utils.rods import Rod, load_rods
@@ -132,7 +132,7 @@ class FishingPool:
     description: str
     rarity_weights: Dict[str, int]
 
-    def choose_fish(self, eligible_fish: List[FishProfile]) -> FishProfile:
+    def choose_fish(self, eligible_fish: List[FishProfile], rod_luck: float) -> FishProfile:
         fish_by_rarity: Dict[str, List[FishProfile]] = {}
         for fish in eligible_fish:
             fish_by_rarity.setdefault(fish.rarity, []).append(fish)
@@ -141,12 +141,55 @@ class FishingPool:
         if not available_rarities:
             raise RuntimeError("Pool sem peixes disponíveis.")
 
-        weights = [self.rarity_weights.get(rarity, 0) for rarity in available_rarities]
+        weights_by_rarity = _apply_luck_to_weights(
+            {
+                rarity: self.rarity_weights.get(rarity, 0)
+                for rarity in available_rarities
+            },
+            rod_luck,
+        )
+        weights = [weights_by_rarity.get(rarity, 0) for rarity in available_rarities]
         if sum(weights) <= 0:
             weights = [1 for _ in available_rarities]
 
         selected_rarity = random.choices(available_rarities, weights=weights, k=1)[0]
         return random.choice(fish_by_rarity[selected_rarity])
+
+
+def _apply_luck_to_weights(
+    weights: Dict[str, float],
+    rod_luck: float,
+) -> Dict[str, float]:
+    if not weights:
+        return {}
+
+    luck = max(0.0, min(1.0, float(rod_luck)))
+    if luck <= 0:
+        return weights
+
+    rarities = list(weights.keys())
+    ordered = sorted(
+        rarities,
+        key=lambda rarity: RARITY_XP.get(rarity, 0),
+    )
+    max_rank = max(0, len(ordered) - 1)
+    if max_rank == 0:
+        return weights
+
+    ranks = {rarity: index for index, rarity in enumerate(ordered)}
+    total = sum(float(value) for value in weights.values())
+    adjusted: Dict[str, float] = {}
+    for rarity in rarities:
+        rank = ranks.get(rarity, 0)
+        multiplier = 1 + (luck * (rank / max_rank))
+        adjusted[rarity] = float(weights[rarity]) * multiplier
+
+    adjusted_total = sum(adjusted.values())
+    if adjusted_total <= 0:
+        return weights
+
+    scale = total / adjusted_total if total > 0 else 1.0
+    return {rarity: value * scale for rarity, value in adjusted.items()}
 
 
 def normalize_rarity_weights(
@@ -521,7 +564,7 @@ def run_fishing_round(
             input("\nEnter para voltar ao menu.")
             return level, xp
 
-        fish = selected_pool.choose_fish(eligible_fish)
+        fish = selected_pool.choose_fish(eligible_fish, equipped_rod.luck)
         attempt = fish.generate_attempt()
         attempt = FishingAttempt(
             sequence=attempt.sequence,
