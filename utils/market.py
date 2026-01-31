@@ -1,13 +1,9 @@
-import os
 from typing import List
 
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.rods import Rod
-
-
-def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
+from utils.ui import clear_screen
 
 
 def format_currency(value: float) -> str:
