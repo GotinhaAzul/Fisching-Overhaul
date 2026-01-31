@@ -19,6 +19,7 @@ from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.market import show_market
+from utils.mutations import Mutation, choose_mutation, load_mutations
 from utils.rods import Rod, load_rods
 from utils.save_system import (
     get_default_save_path,
@@ -496,6 +497,7 @@ def run_fishing_round(
     inventory: List[InventoryEntry],
     discovered_fish: set[str],
     equipped_rod: Rod,
+    mutations: List[Mutation],
     level: int,
     xp: int,
 ):
@@ -561,18 +563,32 @@ def run_fishing_round(
             caught_kg = random.uniform(fish.kg_min, fish.kg_max)
             if caught_kg > equipped_rod.kg_max:
                 caught_kg = equipped_rod.kg_max
+            mutation = choose_mutation(mutations)
+            mutation_name = mutation.name if mutation else None
+            mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
+            mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
             inventory.append(
                 InventoryEntry(
                     name=fish.name,
                     rarity=fish.rarity,
                     kg=caught_kg,
                     base_value=fish.base_value,
+                    mutation_name=mutation_name,
+                    mutation_xp_multiplier=mutation_xp_multiplier,
+                    mutation_gold_multiplier=mutation_gold_multiplier,
                 )
             )
             discovered_fish.add(fish.name)
-            gained_xp = xp_for_rarity(fish.rarity)
+            base_xp = xp_for_rarity(fish.rarity)
+            gained_xp = max(1, int(round(base_xp * mutation_xp_multiplier)))
             level, xp, level_ups = apply_xp_gain(level, xp, gained_xp)
             print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
+            if mutation:
+                print(
+                    "🧬 Mutação: "
+                    f"{mutation.name} (x{mutation_xp_multiplier:0.2f} XP | "
+                    f"x{mutation_gold_multiplier:0.2f} Gold)"
+                )
             print(f"✨ Ganhou {gained_xp} XP.")
             if level_ups:
                 print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
@@ -605,6 +621,8 @@ def main():
     pools = load_pools(base_dir)
     rods_dir = Path(__file__).resolve().parent.parent / "rods"
     available_rods = load_rods(rods_dir)
+    mutations_dir = Path(__file__).resolve().parent.parent / "mutations"
+    available_mutations = load_mutations(mutations_dir)
     starter_rod = min(available_rods, key=lambda rod: rod.price)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
@@ -653,6 +671,7 @@ def main():
                 inventory,
                 discovered_fish,
                 equipped_rod,
+                available_mutations,
                 level,
                 xp,
             )

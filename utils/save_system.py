@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 2
+SAVE_VERSION = 3
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -24,6 +24,9 @@ def serialize_inventory(inventory: Sequence[InventoryEntry]) -> List[Dict[str, o
             "rarity": entry.rarity,
             "kg": entry.kg,
             "base_value": entry.base_value,
+            "mutation_name": entry.mutation_name,
+            "mutation_xp_multiplier": entry.mutation_xp_multiplier,
+            "mutation_gold_multiplier": entry.mutation_gold_multiplier,
         }
         for entry in inventory
     ]
@@ -91,12 +94,24 @@ def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
             base_value = float(item.get("base_value", 0.0))
         except (TypeError, ValueError):
             continue
+        mutation_name = item.get("mutation_name")
+        if mutation_name is not None and not isinstance(mutation_name, str):
+            mutation_name = None
+        try:
+            mutation_xp_multiplier = float(item.get("mutation_xp_multiplier", 1.0))
+            mutation_gold_multiplier = float(item.get("mutation_gold_multiplier", 1.0))
+        except (TypeError, ValueError):
+            mutation_xp_multiplier = 1.0
+            mutation_gold_multiplier = 1.0
         restored.append(
             InventoryEntry(
                 name=name,
                 rarity=rarity,
                 kg=kg,
                 base_value=base_value,
+                mutation_name=mutation_name or None,
+                mutation_xp_multiplier=mutation_xp_multiplier,
+                mutation_gold_multiplier=mutation_gold_multiplier,
             )
         )
     return restored
