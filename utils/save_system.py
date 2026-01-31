@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, TYPE_CHECKING
+from typing import Dict, List, Optional, Sequence, Set, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.rods import Rod
@@ -40,6 +40,7 @@ def save_game(
     unlocked_pools: Sequence[str],
     level: int,
     xp: int,
+    discovered_fish: Sequence[str],
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -51,6 +52,7 @@ def save_game(
         "unlocked_pools": list(unlocked_pools),
         "level": level,
         "xp": xp,
+        "discovered_fish": list(discovered_fish),
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
@@ -163,6 +165,20 @@ def restore_equipped_rod(
             if rod.name == raw_equipped:
                 return rod
     return starter_rod
+
+
+def restore_discovered_fish(
+    raw_fish: object,
+    inventory: Sequence[InventoryEntry],
+) -> Set[str]:
+    restored: Set[str] = {entry.name for entry in inventory}
+    if not isinstance(raw_fish, list):
+        return restored
+
+    for name in raw_fish:
+        if isinstance(name, str) and name:
+            restored.add(name)
+    return restored
 
 
 def restore_balance(raw_balance: object, fallback: float) -> float:
