@@ -24,6 +24,7 @@ from utils.save_system import (
     get_default_save_path,
     load_game,
     restore_balance,
+    restore_discovered_fish,
     restore_equipped_rod,
     restore_inventory,
     restore_level,
@@ -493,6 +494,7 @@ def show_inventory(
 def run_fishing_round(
     selected_pool: FishingPool,
     inventory: List[InventoryEntry],
+    discovered_fish: set[str],
     equipped_rod: Rod,
     level: int,
     xp: int,
@@ -567,6 +569,7 @@ def run_fishing_round(
                     base_value=fish.base_value,
                 )
             )
+            discovered_fish.add(fish.name)
             gained_xp = xp_for_rarity(fish.rarity)
             level, xp, level_ups = apply_xp_gain(level, xp, gained_xp)
             print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
@@ -611,6 +614,7 @@ def main():
     )
     unlocked_pools = {selected_pool.name}
     inventory: List[InventoryEntry] = []
+    discovered_fish: set[str] = set()
     balance = 0.0
     level = 1
     xp = 0
@@ -621,6 +625,10 @@ def main():
         clear_screen()
         print("Um save foi encontrado. Carregando automaticamente...")
         inventory = restore_inventory(save_data.get("inventory"))
+        discovered_fish = restore_discovered_fish(
+            save_data.get("discovered_fish"),
+            inventory,
+        )
         balance = restore_balance(save_data.get("balance"), balance)
         owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
         selected_pool = restore_selected_pool(save_data.get("selected_pool"), pools, selected_pool)
@@ -640,7 +648,14 @@ def main():
     while True:
         choice = show_main_menu(selected_pool, level, xp)
         if choice == "1":
-            level, xp = run_fishing_round(selected_pool, inventory, equipped_rod, level, xp)
+            level, xp = run_fishing_round(
+                selected_pool,
+                inventory,
+                discovered_fish,
+                equipped_rod,
+                level,
+                xp,
+            )
         elif choice == "2":
             clear_screen()
             selected_pool = select_pool(pools)
@@ -653,9 +668,9 @@ def main():
             show_bestiary(
                 pools,
                 available_rods,
-                inventory,
                 owned_rods,
                 unlocked_pools,
+                discovered_fish,
             )
         elif choice == "6":
             save_game(
@@ -668,6 +683,7 @@ def main():
                 unlocked_pools=sorted(unlocked_pools),
                 level=level,
                 xp=xp,
+                discovered_fish=sorted(discovered_fish),
             )
             print(f"Jogo salvo em {save_path.name}.")
             time.sleep(1)
@@ -685,6 +701,7 @@ def main():
                     unlocked_pools=sorted(unlocked_pools),
                     level=level,
                     xp=xp,
+                    discovered_fish=sorted(discovered_fish),
                 )
                 print(f"Jogo salvo em {save_path.name}.")
             print("Saindo...")

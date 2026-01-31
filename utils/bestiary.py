@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Dict, List, Set, TYPE_CHECKING
 
-from utils.inventory import InventoryEntry
 from utils.rods import Rod
 from utils.ui import clear_screen
 
@@ -229,9 +228,9 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
 def show_bestiary(
     pools: List["FishingPool"],
     available_rods: List[Rod],
-    inventory: List[InventoryEntry],
     owned_rods: List[Rod],
     unlocked_pools: Set[str],
+    discovered_fish: Set[str],
 ):
     fish_profiles = collect_bestiary_fish(pools)
     sorted_rods = sorted(available_rods, key=lambda rod: rod.name)
@@ -249,11 +248,10 @@ def show_bestiary(
         if choice == "0":
             return
 
-        unlocked_fish = {entry.name for entry in inventory}
         unlocked_rods = {rod.name for rod in owned_rods}
 
         if choice == "1":
-            show_fish_bestiary(fish_profiles, unlocked_fish)
+            show_fish_bestiary(fish_profiles, discovered_fish)
             continue
 
         if choice == "2":
