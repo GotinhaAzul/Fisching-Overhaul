@@ -38,6 +38,10 @@ def show_fish_bestiary(
     while True:
         clear_screen()
         print("=== Bestiário: Peixes pescados ===")
+        total_fish = len(fish_profiles)
+        unlocked_count = sum(1 for fish in fish_profiles if fish.name in unlocked_fish)
+        completion = (unlocked_count / total_fish * 100) if total_fish else 0
+        print(f"Compleção: {unlocked_count}/{total_fish} ({completion:.0f}%)")
         if not ordered_fish:
             print("Nenhum peixe cadastrado.")
             input("\nEnter para voltar.")
@@ -100,6 +104,10 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
     while True:
         clear_screen()
         print("=== Bestiário: Varas adquiridas ===")
+        total_rods = len(rods)
+        unlocked_count = sum(1 for rod in rods if rod.name in unlocked_rods)
+        completion = (unlocked_count / total_rods * 100) if total_rods else 0
+        print(f"Compleção: {unlocked_count}/{total_rods} ({completion:.0f}%)")
         if not rods:
             print("Nenhuma vara cadastrada.")
             input("\nEnter para voltar.")
@@ -160,6 +168,10 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
     while True:
         clear_screen()
         print("=== Bestiário: Pools desbloqueadas ===")
+        total_pools = len(pools)
+        unlocked_count = sum(1 for pool in pools if pool.name in unlocked_pools)
+        completion = (unlocked_count / total_pools * 100) if total_pools else 0
+        print(f"Compleção: {unlocked_count}/{total_pools} ({completion:.0f}%)")
         if not pools:
             print("Nenhuma pool cadastrada.")
             input("\nEnter para voltar.")
