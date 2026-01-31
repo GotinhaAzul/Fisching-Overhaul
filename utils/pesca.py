@@ -19,6 +19,17 @@ from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.market import show_market
 from utils.rods import Rod, load_rods
+from utils.save_system import (
+    get_default_save_path,
+    load_game,
+    restore_balance,
+    restore_equipped_rod,
+    restore_inventory,
+    restore_owned_rods,
+    restore_selected_pool,
+    restore_unlocked_pools,
+    save_game,
+)
 from utils.ui import clear_screen
 
 # -----------------------------
@@ -408,6 +419,8 @@ def show_main_menu(selected_pool: FishingPool) -> str:
     print("3. Inventário")
     print("4. Mercado")
     print("5. Bestiário")
+    print("6. Salvar jogo")
+    print("7. Carregar jogo")
     print("0. Sair")
     return input("Escolha uma opção: ").strip()
 
@@ -582,6 +595,30 @@ def main():
     inventory: List[InventoryEntry] = []
     balance = 0.0
 
+    save_path = get_default_save_path()
+    save_data = load_game(save_path)
+    if save_data:
+        clear_screen()
+        print("Um save foi encontrado.")
+        choice = input("Deseja carregar? (s/n): ").strip().lower()
+        if choice == "s":
+            inventory = restore_inventory(save_data.get("inventory"))
+            balance = restore_balance(save_data.get("balance"), balance)
+            owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
+            selected_pool = restore_selected_pool(save_data.get("selected_pool"), pools, selected_pool)
+            unlocked_pools = set(
+                restore_unlocked_pools(save_data.get("unlocked_pools"), pools, selected_pool)
+            )
+            equipped_rod = restore_equipped_rod(
+                save_data.get("equipped_rod"),
+                owned_rods,
+                starter_rod,
+            )
+            print("Save carregado com sucesso!")
+        else:
+            print("Iniciando sem carregar o save.")
+        time.sleep(1)
+
     while True:
         choice = show_main_menu(selected_pool)
         if choice == "1":
@@ -602,8 +639,52 @@ def main():
                 owned_rods,
                 unlocked_pools,
             )
+        elif choice == "6":
+            save_game(
+                save_path,
+                balance=balance,
+                inventory=inventory,
+                owned_rods=owned_rods,
+                equipped_rod=equipped_rod,
+                selected_pool=selected_pool,
+                unlocked_pools=sorted(unlocked_pools),
+            )
+            print(f"Jogo salvo em {save_path.name}.")
+            time.sleep(1)
+        elif choice == "7":
+            save_data = load_game(save_path)
+            if not save_data:
+                print("Nenhum save encontrado.")
+                time.sleep(1)
+                continue
+            inventory = restore_inventory(save_data.get("inventory"))
+            balance = restore_balance(save_data.get("balance"), balance)
+            owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
+            selected_pool = restore_selected_pool(save_data.get("selected_pool"), pools, selected_pool)
+            unlocked_pools = set(
+                restore_unlocked_pools(save_data.get("unlocked_pools"), pools, selected_pool)
+            )
+            equipped_rod = restore_equipped_rod(
+                save_data.get("equipped_rod"),
+                owned_rods,
+                starter_rod,
+            )
+            print("Save carregado com sucesso!")
+            time.sleep(1)
         elif choice == "0":
             clear_screen()
+            choice = input("Deseja salvar antes de sair? (s/n): ").strip().lower()
+            if choice == "s":
+                save_game(
+                    save_path,
+                    balance=balance,
+                    inventory=inventory,
+                    owned_rods=owned_rods,
+                    equipped_rod=equipped_rod,
+                    selected_pool=selected_pool,
+                    unlocked_pools=sorted(unlocked_pools),
+                )
+                print(f"Jogo salvo em {save_path.name}.")
             print("Saindo...")
             break
         else:
