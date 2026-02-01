@@ -1,8 +1,8 @@
 {
   "name": "Vara Brilhante",
-  "luck": 0.22,
+  "luck": 0.10,
   "kg_max": 7.5,
-  "control": 0.75,
-  "description": "Foco em mutações luminosas com ótimo controle e sorte.",
+  "control": 0.35,
+  "description": "O brilho nesta vara diz atrair luzes profundas.",
   "price": 850
 }
