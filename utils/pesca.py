@@ -19,7 +19,7 @@ from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.market import show_market
-from utils.mutations import Mutation, choose_mutation, load_mutations
+from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod, load_mutations
 from utils.rods import Rod, load_rods
 from utils.save_system import (
     get_default_save_path,
@@ -606,7 +606,8 @@ def run_fishing_round(
             caught_kg = random.uniform(fish.kg_min, fish.kg_max)
             if caught_kg > equipped_rod.kg_max:
                 caught_kg = equipped_rod.kg_max
-            mutation = choose_mutation(mutations)
+            eligible_mutations = filter_mutations_for_rod(mutations, equipped_rod.name)
+            mutation = choose_mutation(eligible_mutations)
             mutation_name = mutation.name if mutation else None
             mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
             mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
