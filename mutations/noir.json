@@ -1,7 +1,8 @@
 {
   "name": "Noir",
-  "description": "Uma mutaçao natural rara para peixes, bonita de se ver.",
+  "description": "Uma mutaçao natural para peixes, bonita de se ver.",
   "xp_multiplier": 1.1,
   "gold_multiplier": 1.5,
   "chance_percent": 0.09
+
 }
