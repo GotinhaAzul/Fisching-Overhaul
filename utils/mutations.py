@@ -47,10 +47,12 @@ def load_mutations(base_dir: Path) -> List[Mutation]:
         raw_required_rods = data.get("required_rods")
         if isinstance(raw_required_rods, list):
             required_rods = tuple(
-                rod_name for rod_name in raw_required_rods if isinstance(rod_name, str)
+                rod_name.strip()
+                for rod_name in raw_required_rods
+                if isinstance(rod_name, str) and rod_name.strip()
             )
-        elif isinstance(raw_required_rods, str):
-            required_rods = (raw_required_rods,)
+        elif isinstance(raw_required_rods, str) and raw_required_rods.strip():
+            required_rods = (raw_required_rods.strip(),)
         else:
             required_rods = ()
 
@@ -75,10 +77,13 @@ def filter_mutations_for_rod(
     mutations: Sequence[Mutation],
     rod_name: str,
 ) -> List[Mutation]:
+    normalized_rod_name = rod_name.casefold()
     return [
         mutation
         for mutation in mutations
-        if not mutation.required_rods or rod_name in mutation.required_rods
+        if not mutation.required_rods
+        or normalized_rod_name
+        in {required_rod.casefold() for required_rod in mutation.required_rods}
     ]
 
 
