@@ -2,7 +2,7 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -12,6 +12,7 @@ class Mutation:
     xp_multiplier: float
     gold_multiplier: float
     chance: float
+    required_rods: Tuple[str, ...]
 
 
 def _normalize_chance(raw_chance: object, raw_percent: object) -> float:
@@ -43,6 +44,16 @@ def load_mutations(base_dir: Path) -> List[Mutation]:
 
         chance = _normalize_chance(data.get("chance"), data.get("chance_percent"))
 
+        raw_required_rods = data.get("required_rods")
+        if isinstance(raw_required_rods, list):
+            required_rods = tuple(
+                rod_name for rod_name in raw_required_rods if isinstance(rod_name, str)
+            )
+        elif isinstance(raw_required_rods, str):
+            required_rods = (raw_required_rods,)
+        else:
+            required_rods = ()
+
         mutations.append(
             Mutation(
                 name=name,
@@ -50,6 +61,7 @@ def load_mutations(base_dir: Path) -> List[Mutation]:
                 xp_multiplier=float(data.get("xp_multiplier", 1.0)),
                 gold_multiplier=float(data.get("gold_multiplier", 1.0)),
                 chance=chance,
+                required_rods=required_rods,
             )
         )
 
@@ -57,6 +69,17 @@ def load_mutations(base_dir: Path) -> List[Mutation]:
         raise RuntimeError("Nenhuma mutação encontrada. Verifique os arquivos em /mutations.")
 
     return mutations
+
+
+def filter_mutations_for_rod(
+    mutations: Sequence[Mutation],
+    rod_name: str,
+) -> List[Mutation]:
+    return [
+        mutation
+        for mutation in mutations
+        if not mutation.required_rods or rod_name in mutation.required_rods
+    ]
 
 
 def choose_mutation(mutations: List[Mutation]) -> Optional[Mutation]:
