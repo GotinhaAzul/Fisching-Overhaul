@@ -1,8 +1,8 @@
 {
   "name": "Brilhante",
-  "description": "Peixe com escamas que refletem luz intensa.",
+  "description": "Peixe com escamas que emitem luz propia.",
   "xp_multiplier": 1.2,
   "gold_multiplier": 1.8,
-  "chance_percent": 0.12,
+  "chance_percent": 12.5,
   "required_rods": ["Vara Brilhante"]
 }
