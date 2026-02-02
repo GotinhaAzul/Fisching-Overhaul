@@ -73,6 +73,47 @@ def load_mutations(base_dir: Path) -> List[Mutation]:
     return mutations
 
 
+def load_mutations_optional(base_dir: Path) -> List[Mutation]:
+    if not base_dir.exists():
+        return []
+
+    mutations: List[Mutation] = []
+    for mutation_path in sorted(base_dir.glob("*.json")):
+        with mutation_path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+
+        name = data.get("name")
+        if not name:
+            continue
+
+        chance = _normalize_chance(data.get("chance"), data.get("chance_percent"))
+
+        raw_required_rods = data.get("required_rods")
+        if isinstance(raw_required_rods, list):
+            required_rods = tuple(
+                rod_name.strip()
+                for rod_name in raw_required_rods
+                if isinstance(rod_name, str) and rod_name.strip()
+            )
+        elif isinstance(raw_required_rods, str) and raw_required_rods.strip():
+            required_rods = (raw_required_rods.strip(),)
+        else:
+            required_rods = ()
+
+        mutations.append(
+            Mutation(
+                name=name,
+                description=data.get("description", ""),
+                xp_multiplier=float(data.get("xp_multiplier", 1.0)),
+                gold_multiplier=float(data.get("gold_multiplier", 1.0)),
+                chance=chance,
+                required_rods=required_rods,
+            )
+        )
+
+    return mutations
+
+
 def filter_mutations_for_rod(
     mutations: Sequence[Mutation],
     rod_name: str,

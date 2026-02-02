@@ -1,0 +1,10 @@
+{
+  "name": "Sereia Coral",
+  "rarity": "Evento",
+  "description": "Cardume raro que traz recompensas valiosas.",
+  "kg_min": 1.5,
+  "kg_max": 5.0,
+  "base_value": 90,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}
