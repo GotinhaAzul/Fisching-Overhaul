@@ -19,7 +19,14 @@ from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.market import show_market
-from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod, load_mutations
+from utils.mutations import (
+    Mutation,
+    choose_mutation,
+    filter_mutations_for_rod,
+    load_mutations,
+    load_mutations_optional,
+)
+from utils.events import ActiveEvent, EventDefinition, EventManager
 from utils.rods import Rod, load_rods
 from utils.save_system import (
     get_default_save_path,
@@ -132,7 +139,12 @@ class FishingPool:
     description: str
     rarity_weights: Dict[str, int]
 
-    def choose_fish(self, eligible_fish: List[FishProfile], rod_luck: float) -> FishProfile:
+    def choose_fish(
+        self,
+        eligible_fish: List[FishProfile],
+        rod_luck: float,
+        rarity_weights_override: Optional[Dict[str, int]] = None,
+    ) -> FishProfile:
         fish_by_rarity: Dict[str, List[FishProfile]] = {}
         for fish in eligible_fish:
             fish_by_rarity.setdefault(fish.rarity, []).append(fish)
@@ -141,9 +153,10 @@ class FishingPool:
         if not available_rarities:
             raise RuntimeError("Pool sem peixes disponíveis.")
 
+        base_weights = rarity_weights_override or self.rarity_weights
         weights_by_rarity = _apply_luck_to_weights(
             {
-                rarity: self.rarity_weights.get(rarity, 0)
+                rarity: base_weights.get(rarity, 0)
                 for rarity in available_rarities
             },
             rod_luck,
@@ -228,6 +241,100 @@ def normalize_rarity_weights(
     return floors
 
 
+def combine_rarity_weights(
+    base_weights: Dict[str, float],
+    extra_weights: Dict[str, float],
+    available_rarities: List[str],
+) -> Dict[str, int]:
+    combined = {
+        rarity: float(base_weights.get(rarity, 0)) + float(extra_weights.get(rarity, 0))
+        for rarity in available_rarities
+    }
+    return normalize_rarity_weights(combined, available_rarities)
+
+
+def load_fish_profiles_from_dir(fish_dir: Path) -> List[FishProfile]:
+    if not fish_dir.exists():
+        return []
+
+    fish_profiles: List[FishProfile] = []
+    for fish_path in sorted(fish_dir.glob("*.json")):
+        with fish_path.open("r", encoding="utf-8") as handle:
+            fish_data = json.load(handle)
+
+        name = fish_data.get("name")
+        if not name:
+            continue
+
+        sequence_len = fish_data.get("sequence_len")
+        if sequence_len is not None:
+            sequence_len = int(sequence_len)
+
+        fish_profiles.append(
+            FishProfile(
+                name=name,
+                rarity=fish_data.get("rarity", "Desconhecida"),
+                description=fish_data.get("description", ""),
+                kg_min=float(fish_data.get("kg_min", 0.0)),
+                kg_max=float(fish_data.get("kg_max", 0.0)),
+                base_value=float(fish_data.get("base_value", 0.0)),
+                sequence_len=sequence_len,
+                reaction_time_s=float(fish_data.get("reaction_time_s", 2.5)),
+                sequence_len_range=tuple(fish_data.get("sequence_len_range", (4, 8))),
+                allowed_keys=fish_data.get("allowed_keys"),
+            )
+        )
+
+    return fish_profiles
+
+
+def load_events(base_dir: Path) -> List[EventDefinition]:
+    if not base_dir.exists():
+        return []
+
+    events: List[EventDefinition] = []
+    for event_dir in sorted(p for p in base_dir.iterdir() if p.is_dir()):
+        config_path = event_dir / "event.json"
+        if not config_path.exists():
+            continue
+
+        with config_path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+
+        name = data.get("name")
+        if not name:
+            continue
+
+        chance_percent = float(data.get("chance_percent", 0.0))
+        interval_minutes = float(data.get("interval_minutes", 0.0))
+        duration_minutes = float(data.get("duration_minutes", 0.0))
+        luck_multiplier = float(data.get("luck_multiplier", 1.0))
+        xp_multiplier = float(data.get("xp_multiplier", 1.0))
+        rarity_weights = data.get("rarity_chances", {})
+        if not isinstance(rarity_weights, dict):
+            rarity_weights = {}
+
+        fish_profiles = load_fish_profiles_from_dir(event_dir / "fish")
+        mutations = load_mutations_optional(event_dir / "mutations")
+
+        events.append(
+            EventDefinition(
+                name=name,
+                description=data.get("description", ""),
+                chance=max(0.0, chance_percent / 100),
+                interval_s=max(0.0, interval_minutes * 60),
+                duration_s=max(0.0, duration_minutes * 60),
+                luck_multiplier=max(0.0, luck_multiplier),
+                xp_multiplier=max(0.0, xp_multiplier),
+                fish_profiles=fish_profiles,
+                rarity_weights=rarity_weights,
+                mutations=mutations,
+            )
+        )
+
+    return events
+
+
 def load_pools(base_dir: Path) -> List[FishingPool]:
     if not base_dir.exists():
         raise FileNotFoundError(f"Diretório de pools não encontrado: {base_dir}")
@@ -241,37 +348,7 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
         with config_path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
 
-        fish_dir = pool_dir / "fish"
-        if not fish_dir.exists():
-            continue
-
-        fish_profiles: List[FishProfile] = []
-        for fish_path in sorted(fish_dir.glob("*.json")):
-            with fish_path.open("r", encoding="utf-8") as handle:
-                fish_data = json.load(handle)
-
-            name = fish_data.get("name")
-            if not name:
-                continue
-
-            sequence_len = fish_data.get("sequence_len")
-            if sequence_len is not None:
-                sequence_len = int(sequence_len)
-
-            fish_profiles.append(
-                FishProfile(
-                    name=name,
-                    rarity=fish_data.get("rarity", "Desconhecida"),
-                    description=fish_data.get("description", ""),
-                    kg_min=float(fish_data.get("kg_min", 0.0)),
-                    kg_max=float(fish_data.get("kg_max", 0.0)),
-                    base_value=float(fish_data.get("base_value", 0.0)),
-                    sequence_len=sequence_len,
-                    reaction_time_s=float(fish_data.get("reaction_time_s", 2.5)),
-                    sequence_len_range=tuple(fish_data.get("sequence_len_range", (4, 8))),
-                    allowed_keys=fish_data.get("allowed_keys"),
-                )
-            )
+        fish_profiles = load_fish_profiles_from_dir(pool_dir / "fish")
 
         if not fish_profiles:
             continue
@@ -462,12 +539,31 @@ def render(attempt: FishingAttempt, typed: List[str], time_left: float):
         end=""
     )
 
-def show_main_menu(selected_pool: FishingPool, level: int, xp: int) -> str:
+def show_main_menu(
+    selected_pool: FishingPool,
+    level: int,
+    xp: int,
+    active_event: Optional[ActiveEvent],
+) -> str:
     clear_screen()
     print("🎣 === Menu Principal ===")
     print(get_menu_line())
     print(f"Pool atual: {selected_pool.name}")
     print(f"Nível: {level} | XP: {xp}/{xp_required_for_level(level)}")
+    if active_event:
+        time_left = math.ceil(active_event.time_left() / 60)
+        event = active_event.definition
+        print(
+            f"🌟 Evento ativo: {event.name} "
+            f"({time_left} min restantes)"
+        )
+        if event.description:
+            print(f"   {event.description}")
+        print(
+            "   "
+            f"Sorte x{event.luck_multiplier:0.2f} | "
+            f"XP x{event.xp_multiplier:0.2f}"
+        )
     print("1. Pescar")
     print("2. Pools")
     print("3. Inventário")
@@ -543,8 +639,11 @@ def run_fishing_round(
     mutations: List[Mutation],
     level: int,
     xp: int,
+    event_manager: Optional[EventManager],
 ):
     while True:
+        if event_manager:
+            event_manager.suppress_notifications(True)
         clear_screen()
         print("🎣 === Pesca (WASD em tempo real) ===")
         print(f"Pool selecionada: {selected_pool.name}")
@@ -554,17 +653,41 @@ def run_fishing_round(
         ks = KeyStream()
         ks.start()
 
+        active_event = event_manager.get_active_event() if event_manager else None
+        event_def = active_event.definition if active_event else None
+        event_fish = event_def.fish_profiles if event_def else []
+        combined_fish = list(selected_pool.fish_profiles) + list(event_fish)
         eligible_fish = [
-            fish for fish in selected_pool.fish_profiles if fish.kg_min <= equipped_rod.kg_max
+            fish for fish in combined_fish if fish.kg_min <= equipped_rod.kg_max
         ]
         if not eligible_fish:
             ks.stop()
             print("Nenhum peixe desta pool pode ser fisgado com a vara equipada.")
             flush_input_buffer()
+            if event_manager:
+                event_manager.suppress_notifications(False)
+                for note in event_manager.pop_notifications():
+                    print(f"\n🔔 {note}")
             input("\nEnter para voltar ao menu.")
             return level, xp
 
-        fish = selected_pool.choose_fish(eligible_fish, equipped_rod.luck)
+        if event_def:
+            combined_rarities = sorted({fish.rarity for fish in eligible_fish})
+            combined_weights = combine_rarity_weights(
+                selected_pool.rarity_weights,
+                event_def.rarity_weights,
+                combined_rarities,
+            )
+        else:
+            combined_weights = selected_pool.rarity_weights
+
+        rod_luck = equipped_rod.luck * (event_def.luck_multiplier if event_def else 1.0)
+        rod_luck = max(0.0, min(1.0, rod_luck))
+        fish = selected_pool.choose_fish(
+            eligible_fish,
+            rod_luck,
+            rarity_weights_override=combined_weights,
+        )
         attempt = fish.generate_attempt()
         attempt = FishingAttempt(
             sequence=attempt.sequence,
@@ -606,7 +729,11 @@ def run_fishing_round(
             caught_kg = random.uniform(fish.kg_min, fish.kg_max)
             if caught_kg > equipped_rod.kg_max:
                 caught_kg = equipped_rod.kg_max
-            eligible_mutations = filter_mutations_for_rod(mutations, equipped_rod.name)
+            event_mutations = event_def.mutations if event_def else []
+            eligible_mutations = filter_mutations_for_rod(
+                list(mutations) + list(event_mutations),
+                equipped_rod.name,
+            )
             mutation = choose_mutation(eligible_mutations)
             mutation_name = mutation.name if mutation else None
             mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
@@ -624,7 +751,11 @@ def run_fishing_round(
             )
             discovered_fish.add(fish.name)
             base_xp = xp_for_rarity(fish.rarity)
-            gained_xp = max(1, int(round(base_xp * mutation_xp_multiplier)))
+            event_xp_multiplier = event_def.xp_multiplier if event_def else 1.0
+            gained_xp = max(
+                1,
+                int(round(base_xp * mutation_xp_multiplier * event_xp_multiplier)),
+            )
             level, xp, level_ups = apply_xp_gain(level, xp, gained_xp)
             print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
             if mutation:
@@ -642,12 +773,19 @@ def run_fishing_round(
             if result.typed:
                 print(f"Você digitou:  {' '.join(result.typed)}")
 
+        if event_manager:
+            event_manager.suppress_notifications(False)
+            for note in event_manager.pop_notifications():
+                print(f"\n🔔 {note}")
+
         flush_input_buffer()
         while True:
             print("\n1. Pescar novamente")
             print("0. Voltar ao menu")
             choice = input("Escolha uma opção: ").strip()
             if choice == "1":
+                if event_manager:
+                    event_manager.suppress_notifications(True)
                 break
             if choice == "0" or choice == "":
                 return level, xp
@@ -663,6 +801,10 @@ def main():
 
     base_dir = Path(__file__).resolve().parent.parent / "pools"
     pools = load_pools(base_dir)
+    events_dir = Path(__file__).resolve().parent.parent / "events"
+    events = load_events(events_dir)
+    event_manager = EventManager(events)
+    event_manager.start()
     rods_dir = Path(__file__).resolve().parent.parent / "rods"
     available_rods = load_rods(rods_dir)
     mutations_dir = Path(__file__).resolve().parent.parent / "mutations"
@@ -707,53 +849,38 @@ def main():
         print("Save carregado com sucesso!")
         time.sleep(1)
 
-    while True:
-        choice = show_main_menu(selected_pool, level, xp)
-        if choice == "1":
-            level, xp = run_fishing_round(
-                selected_pool,
-                inventory,
-                discovered_fish,
-                equipped_rod,
-                available_mutations,
-                level,
-                xp,
-            )
-        elif choice == "2":
-            clear_screen()
-            selected_pool = select_pool(pools)
-            unlocked_pools.add(selected_pool.name)
-        elif choice == "3":
-            equipped_rod = show_inventory(inventory, owned_rods, equipped_rod)
-        elif choice == "4":
-            balance = show_market(inventory, balance, available_rods, owned_rods)
-        elif choice == "5":
-            show_bestiary(
-                pools,
-                available_rods,
-                owned_rods,
-                unlocked_pools,
-                discovered_fish,
-            )
-        elif choice == "6":
-            save_game(
-                save_path,
-                balance=balance,
-                inventory=inventory,
-                owned_rods=owned_rods,
-                equipped_rod=equipped_rod,
-                selected_pool=selected_pool,
-                unlocked_pools=sorted(unlocked_pools),
-                level=level,
-                xp=xp,
-                discovered_fish=sorted(discovered_fish),
-            )
-            print(f"Jogo salvo em {save_path.name}.")
-            time.sleep(1)
-        elif choice == "0":
-            clear_screen()
-            choice = input("Deseja salvar antes de sair? (s/n): ").strip().lower()
-            if choice == "s":
+    try:
+        while True:
+            active_event = event_manager.get_active_event()
+            choice = show_main_menu(selected_pool, level, xp, active_event)
+            if choice == "1":
+                level, xp = run_fishing_round(
+                    selected_pool,
+                    inventory,
+                    discovered_fish,
+                    equipped_rod,
+                    available_mutations,
+                    level,
+                    xp,
+                    event_manager,
+                )
+            elif choice == "2":
+                clear_screen()
+                selected_pool = select_pool(pools)
+                unlocked_pools.add(selected_pool.name)
+            elif choice == "3":
+                equipped_rod = show_inventory(inventory, owned_rods, equipped_rod)
+            elif choice == "4":
+                balance = show_market(inventory, balance, available_rods, owned_rods)
+            elif choice == "5":
+                show_bestiary(
+                    pools,
+                    available_rods,
+                    owned_rods,
+                    unlocked_pools,
+                    discovered_fish,
+                )
+            elif choice == "6":
                 save_game(
                     save_path,
                     balance=balance,
@@ -767,11 +894,31 @@ def main():
                     discovered_fish=sorted(discovered_fish),
                 )
                 print(f"Jogo salvo em {save_path.name}.")
-            print("Saindo...")
-            break
-        else:
-            print("Opção inválida.")
-            time.sleep(1)
+                time.sleep(1)
+            elif choice == "0":
+                clear_screen()
+                choice = input("Deseja salvar antes de sair? (s/n): ").strip().lower()
+                if choice == "s":
+                    save_game(
+                        save_path,
+                        balance=balance,
+                        inventory=inventory,
+                        owned_rods=owned_rods,
+                        equipped_rod=equipped_rod,
+                        selected_pool=selected_pool,
+                        unlocked_pools=sorted(unlocked_pools),
+                        level=level,
+                        xp=xp,
+                        discovered_fish=sorted(discovered_fish),
+                    )
+                    print(f"Jogo salvo em {save_path.name}.")
+                print("Saindo...")
+                break
+            else:
+                print("Opção inválida.")
+                time.sleep(1)
+    finally:
+        event_manager.stop()
 
 
 if __name__ == "__main__":
