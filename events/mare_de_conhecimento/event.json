@@ -1,0 +1,10 @@
+{
+  "name": "Maré de Conhecimento",
+  "description": "Os peixes trazem histórias antigas. Toda captura concede mais experiência.",
+  "chance_percent": 15,
+  "interval_minutes": 7,
+  "duration_minutes": 5,
+  "luck_multiplier": 1.0,
+  "xp_multiplier": 1.8,
+  "rarity_chances": {}
+}

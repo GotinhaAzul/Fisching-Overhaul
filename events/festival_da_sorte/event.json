@@ -1,0 +1,14 @@
+{
+  "name": "Festival da Sorte",
+  "description": "Uma energia positiva toma conta do lago, aumentando a sorte nas capturas.",
+  "chance_percent": 18,
+  "interval_minutes": 6,
+  "duration_minutes": 4,
+  "luck_multiplier": 1.6,
+  "xp_multiplier": 1.0,
+  "rarity_chances": {
+    "Raro": 6,
+    "Epico": 4,
+    "Lendario": 2
+  }
+}
