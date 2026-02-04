@@ -468,11 +468,13 @@ class FishingMiniGame:
     Controla uma tentativa (um peixe).
     Mantém estado mínimo e retorna um FishingResult no final.
     """
-    def __init__(self, attempt: FishingAttempt):
+    def __init__(self, attempt: FishingAttempt, *, can_slash: bool = False, slash_chance: float = 0.0):
         self.attempt = attempt
         self.typed: List[str] = []
         self.index = 0
         self.start_time = 0.0
+        self.can_slash = can_slash
+        self.slash_chance = max(0.0, min(1.0, float(slash_chance)))
 
     def expected_key(self) -> Optional[str]:
         if self.index >= len(self.attempt.sequence):
@@ -502,6 +504,14 @@ class FishingMiniGame:
         elapsed = time.perf_counter() - self.start_time
         if elapsed > self.attempt.time_limit_s:
             return FishingResult(False, "Tempo esgotado", self.typed[:], elapsed)
+
+        if self.can_slash and self.slash_chance > 0 and self.index < len(self.attempt.sequence):
+            if random.random() <= self.slash_chance:
+                remove_index = random.randrange(self.index, len(self.attempt.sequence))
+                self.attempt.sequence.pop(remove_index)
+                if self.is_done():
+                    elapsed = time.perf_counter() - self.start_time
+                    return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
 
         expected = self.expected_key()
         if expected is None:
@@ -711,7 +721,11 @@ def run_fishing_round(
             time_limit_s=max(0.5, attempt.time_limit_s + equipped_rod.control),
             allowed_keys=attempt.allowed_keys,
         )
-        game = FishingMiniGame(attempt)
+        game = FishingMiniGame(
+            attempt,
+            can_slash=equipped_rod.can_slash,
+            slash_chance=equipped_rod.slash_chance,
+        )
         game.begin()
 
         print("\n🐟 O peixe mordeu! Complete a sequência:")
