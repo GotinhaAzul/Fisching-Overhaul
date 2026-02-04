@@ -1,6 +1,7 @@
 {
   "name": "Rio Correnteza",
   "description": "Correntezas rápidas com peixes fortes.",
+  "unlocked_default": true,
   "rarity_chances": {
     "Comum": 55,
     "Incomum": 25,
