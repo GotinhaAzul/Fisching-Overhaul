@@ -19,6 +19,16 @@ from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.market import show_market
+from utils.missions import (
+    MissionProgress,
+    load_missions,
+    restore_mission_progress,
+    restore_mission_state,
+    serialize_mission_progress,
+    serialize_mission_state,
+    show_missions_menu,
+    update_mission_completions,
+)
 from utils.mutations import (
     Mutation,
     choose_mutation,
@@ -375,10 +385,13 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
     return pools
 
 
-def select_pool(pools: List[FishingPool]) -> FishingPool:
+def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPool:
+    available_pools = [pool for pool in pools if pool.name in unlocked_pools]
     print("Escolha uma pool para pescar:")
-    for idx, pool in enumerate(pools, start=1):
+    for idx, pool in enumerate(available_pools, start=1):
         print(f"{idx}. {pool.name}")
+    if not available_pools:
+        raise RuntimeError("Nenhuma pool desbloqueada.")
 
     while True:
         choice = input("Digite o número da pool: ").strip()
@@ -387,8 +400,8 @@ def select_pool(pools: List[FishingPool]) -> FishingPool:
             continue
 
         idx = int(choice)
-        if 1 <= idx <= len(pools):
-            return pools[idx - 1]
+        if 1 <= idx <= len(available_pools):
+            return available_pools[idx - 1]
 
         print("Número fora do intervalo. Tente novamente.")
 
@@ -569,7 +582,8 @@ def show_main_menu(
     print("3. Inventário")
     print("4. Mercado")
     print("5. Bestiário")
-    print("6. Salvar jogo")
+    print("6. Missões")
+    print("7. Salvar jogo")
     print("0. Sair")
     return input("Escolha uma opção: ").strip()
 
@@ -640,6 +654,7 @@ def run_fishing_round(
     level: int,
     xp: int,
     event_manager: Optional[EventManager],
+    on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation]], None]] = None,
 ):
     while True:
         if event_manager:
@@ -749,6 +764,8 @@ def run_fishing_round(
                     mutation_gold_multiplier=mutation_gold_multiplier,
                 )
             )
+            if on_fish_caught:
+                on_fish_caught(fish, mutation)
             discovered_fish.add(fish.name)
             base_xp = xp_for_rarity(fish.rarity)
             event_xp_multiplier = event_def.xp_multiplier if event_def else 1.0
@@ -812,11 +829,16 @@ def main():
     starter_rod = min(available_rods, key=lambda rod: rod.price)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
+    unlocked_rods = {starter_rod.name}
     selected_pool = next(
         (pool for pool in pools if pool.folder.name.lower() == "lagoa"),
         pools[0],
     )
     unlocked_pools = {selected_pool.name}
+    missions_dir = Path(__file__).resolve().parent.parent / "missions"
+    missions = load_missions(missions_dir)
+    mission_state = restore_mission_state(None, missions)
+    mission_progress = MissionProgress()
     inventory: List[InventoryEntry] = []
     discovered_fish: set[str] = set()
     balance = 0.0
@@ -835,6 +857,14 @@ def main():
         )
         balance = restore_balance(save_data.get("balance"), balance)
         owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
+        unlocked_rods_raw = save_data.get("unlocked_rods")
+        if isinstance(unlocked_rods_raw, list):
+            available_rod_names = {rod.name for rod in available_rods}
+            unlocked_rods = {
+                name for name in unlocked_rods_raw if isinstance(name, str) and name in available_rod_names
+            }
+        else:
+            unlocked_rods = {rod.name for rod in owned_rods}
         selected_pool = restore_selected_pool(save_data.get("selected_pool"), pools, selected_pool)
         unlocked_pools = set(
             restore_unlocked_pools(save_data.get("unlocked_pools"), pools, selected_pool)
@@ -846,11 +876,27 @@ def main():
         )
         level = restore_level(save_data.get("level"), level)
         xp = restore_xp(save_data.get("xp"), xp)
+        mission_state = restore_mission_state(save_data.get("mission_state"), missions)
+        mission_progress = restore_mission_progress(save_data.get("mission_progress"))
         print("Save carregado com sucesso!")
         time.sleep(1)
 
+    fish_by_name = {
+        fish.name: fish
+        for pool in pools
+        for fish in pool.fish_profiles
+    }
+    update_mission_completions(
+        missions,
+        mission_state,
+        mission_progress,
+        level=level,
+        pools=pools,
+        discovered_fish=discovered_fish,
+    )
     try:
         while True:
+            loop_start = time.monotonic()
             active_event = event_manager.get_active_event()
             choice = show_main_menu(selected_pool, level, xp, active_event)
             if choice == "1":
@@ -863,15 +909,30 @@ def main():
                     level,
                     xp,
                     event_manager,
+                    on_fish_caught=lambda fish, mutation: mission_progress.record_fish_caught(
+                        fish.name,
+                        mutation.name if mutation else None,
+                    ),
                 )
             elif choice == "2":
                 clear_screen()
-                selected_pool = select_pool(pools)
-                unlocked_pools.add(selected_pool.name)
+                selected_pool = select_pool(pools, unlocked_pools)
             elif choice == "3":
                 equipped_rod = show_inventory(inventory, owned_rods, equipped_rod)
             elif choice == "4":
-                balance = show_market(inventory, balance, available_rods, owned_rods)
+                balance = show_market(
+                    inventory,
+                    balance,
+                    available_rods,
+                    owned_rods,
+                    unlocked_rods=unlocked_rods,
+                    on_money_earned=mission_progress.record_money_earned,
+                    on_money_spent=mission_progress.record_money_spent,
+                    on_fish_delivered=lambda entry: mission_progress.record_fish_delivered(
+                        entry.name,
+                        entry.mutation_name,
+                    ),
+                )
             elif choice == "5":
                 show_bestiary(
                     pools,
@@ -881,6 +942,22 @@ def main():
                     discovered_fish,
                 )
             elif choice == "6":
+                level, xp, balance = show_missions_menu(
+                    missions,
+                    mission_state,
+                    mission_progress,
+                    level=level,
+                    xp=xp,
+                    balance=balance,
+                    inventory=inventory,
+                    pools=pools,
+                    discovered_fish=discovered_fish,
+                    unlocked_pools=unlocked_pools,
+                    unlocked_rods=unlocked_rods,
+                    available_rods=available_rods,
+                    fish_by_name=fish_by_name,
+                )
+            elif choice == "7":
                 save_game(
                     save_path,
                     balance=balance,
@@ -889,9 +966,12 @@ def main():
                     equipped_rod=equipped_rod,
                     selected_pool=selected_pool,
                     unlocked_pools=sorted(unlocked_pools),
+                    unlocked_rods=sorted(unlocked_rods),
                     level=level,
                     xp=xp,
                     discovered_fish=sorted(discovered_fish),
+                    mission_state=serialize_mission_state(mission_state),
+                    mission_progress=serialize_mission_progress(mission_progress),
                 )
                 print(f"Jogo salvo em {save_path.name}.")
                 time.sleep(1)
@@ -907,16 +987,37 @@ def main():
                         equipped_rod=equipped_rod,
                         selected_pool=selected_pool,
                         unlocked_pools=sorted(unlocked_pools),
+                        unlocked_rods=sorted(unlocked_rods),
                         level=level,
                         xp=xp,
                         discovered_fish=sorted(discovered_fish),
+                        mission_state=serialize_mission_state(mission_state),
+                        mission_progress=serialize_mission_progress(mission_progress),
                     )
                     print(f"Jogo salvo em {save_path.name}.")
+                mission_progress.add_play_time(time.monotonic() - loop_start)
+                update_mission_completions(
+                    missions,
+                    mission_state,
+                    mission_progress,
+                    level=level,
+                    pools=pools,
+                    discovered_fish=discovered_fish,
+                )
                 print("Saindo...")
                 break
             else:
                 print("Opção inválida.")
                 time.sleep(1)
+            mission_progress.add_play_time(time.monotonic() - loop_start)
+            update_mission_completions(
+                missions,
+                mission_state,
+                mission_progress,
+                level=level,
+                pools=pools,
+                discovered_fish=discovered_fish,
+            )
     finally:
         event_manager.stop()
 
