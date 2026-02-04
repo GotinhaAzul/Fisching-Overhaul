@@ -4,5 +4,6 @@
   "kg_max": 20.0,
   "control": 1.0,
   "description": "Uma vara feita para aguentar peixes grandes.",
-  "price": 520
+  "price": 520,
+  "unlocked_default": true
 }
