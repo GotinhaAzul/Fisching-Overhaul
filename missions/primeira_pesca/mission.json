@@ -1,0 +1,26 @@
+{
+  "id": "primeira_pesca",
+  "name": "Primeira Pesca",
+  "description": "Pegue alguns peixes para começar sua jornada.",
+  "starts_unlocked": true,
+  "requirements": [
+    {
+      "type": "catch_fish",
+      "count": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "money",
+      "amount": 50
+    },
+    {
+      "type": "xp",
+      "amount": 20
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["vendedor_iniciante", "olho_no_bestiario"]
+    }
+  ]
+}

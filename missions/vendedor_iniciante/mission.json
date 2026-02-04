@@ -1,0 +1,21 @@
+{
+  "id": "vendedor_iniciante",
+  "name": "Vendedor Iniciante",
+  "description": "Venda alguns peixes no mercado.",
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 3
+    }
+  ],
+  "rewards": [
+    {
+      "type": "money",
+      "amount": 80
+    },
+    {
+      "type": "unlock_rods",
+      "rod_names": ["Vara de Fibra"]
+    }
+  ]
+}

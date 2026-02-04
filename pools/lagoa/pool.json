@@ -1,6 +1,7 @@
 {
   "name": "Lagoa Tranquila",
   "description": "Uma lagoa calma com peixes de água doce.",
+  "unlocked_default": true,
   "rarity_chances": {
     "Comum": 60,
     "Incomum": 25,
