@@ -1,0 +1,14 @@
+{
+  "name": "Tempestade Arcana",
+  "description": "Relâmpagos místicos atingem a água, despertando mutações exclusivas.",
+  "chance_percent": 12,
+  "interval_minutes": 8,
+  "duration_minutes": 4,
+  "luck_multiplier": 1.1,
+  "xp_multiplier": 1.2,
+  "rarity_chances": {
+    "Incomum": 4,
+    "Raro": 4,
+    "Epico": 3
+  }
+}

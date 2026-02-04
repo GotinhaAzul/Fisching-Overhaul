@@ -1,0 +1,10 @@
+{
+  "name": "Enguia Fantasma",
+  "rarity": "Epico",
+  "description": "Uma enguia translúcida que desaparece entre as sombras.",
+  "kg_min": 1.2,
+  "kg_max": 3.8,
+  "base_value": 65,
+  "sequence_len": 5,
+  "reaction_time_s": 2.2
+}

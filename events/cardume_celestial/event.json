@@ -1,0 +1,14 @@
+{
+  "name": "Cardume Celestial",
+  "description": "Peixes raros surgem no horizonte e invadem qualquer pool ativa.",
+  "chance_percent": 10,
+  "interval_minutes": 10,
+  "duration_minutes": 6,
+  "luck_multiplier": 1.0,
+  "xp_multiplier": 1.0,
+  "rarity_chances": {
+    "Raro": 6,
+    "Epico": 6,
+    "Lendario": 4
+  }
+}
