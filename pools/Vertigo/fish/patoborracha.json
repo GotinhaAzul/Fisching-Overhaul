@@ -1,0 +1,10 @@
+{
+  "name": "Pato-Borracha",
+  "rarity": "Lendario",
+  "description": "Um...pato de borracha?.",
+  "kg_min": 2.5,
+  "kg_max": 3.0,
+  "base_value": 100,
+  "sequence_len": 5,
+  "reaction_time_s": 1.8
+}

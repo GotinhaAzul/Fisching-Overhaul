@@ -1,0 +1,10 @@
+{
+  "name": "Artefato-Espiral",
+  "rarity": "Lendario",
+  "description": "Um artefato com um espiral vivo, estranhamente pesado.",
+  "kg_min": 15.0,
+  "kg_max": 30.5,
+  "base_value": 150,
+  "sequence_len": 8,
+  "reaction_time_s": 3.5
+}

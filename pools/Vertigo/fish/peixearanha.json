@@ -1,0 +1,10 @@
+{
+  "name": "Peixe-Aranha",
+  "rarity": "Raro",
+  "description": "Nao se parece com uma aranha...",
+  "kg_min": 5.0,
+  "kg_max": 7.0,
+  "base_value": 65,
+  "sequence_len": 7,
+  "reaction_time_s": 2.0
+}

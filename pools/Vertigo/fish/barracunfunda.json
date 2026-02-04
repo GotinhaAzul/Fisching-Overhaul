@@ -1,0 +1,10 @@
+{
+  "name": "Barracunfunda",
+  "rarity": "Incomum",
+  "description": "Especialista em ataques surpresa, se camufla com tom escuro.",
+  "kg_min": 9.0,
+  "kg_max": 10.0,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 1.5
+}

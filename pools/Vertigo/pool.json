@@ -1,0 +1,12 @@
+{
+  "name": "Vertigo",
+  "description": "Apenas olhar para baixo te deixa com nauseas.",
+ "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 42,
+    "Incomum": 40,
+    "Raro": 14,
+    "Epico": 9,
+    "Lendario": 2
+  }
+}
