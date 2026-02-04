@@ -1,0 +1,22 @@
+{
+  "id": "olho_no_bestiario",
+  "name": "Olho no Bestiário",
+  "description": "Descubra uma parte do bestiário da região.",
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Lagoa Tranquila",
+      "percent": 60
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Rio Correnteza"]
+    },
+    {
+      "type": "xp",
+      "amount": 35
+    }
+  ]
+}

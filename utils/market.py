@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
@@ -23,6 +23,11 @@ def show_market(
     balance: float,
     available_rods: List[Rod],
     owned_rods: List[Rod],
+    *,
+    unlocked_rods: Optional[set[str]] = None,
+    on_money_earned=None,
+    on_money_spent=None,
+    on_fish_delivered=None,
 ) -> float:
     while True:
         clear_screen()
@@ -69,6 +74,10 @@ def show_market(
             entry = inventory.pop(idx - 1)
             value = calculate_entry_value(entry)
             balance += value
+            if on_money_earned:
+                on_money_earned(value)
+            if on_fish_delivered:
+                on_fish_delivered(entry)
             mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
             print(
                 f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
@@ -85,8 +94,13 @@ def show_market(
                 continue
 
             total = sum(calculate_entry_value(entry) for entry in inventory)
+            if on_fish_delivered:
+                for entry in inventory:
+                    on_fish_delivered(entry)
             inventory.clear()
             balance += total
+            if on_money_earned:
+                on_money_earned(total)
             print(f"Inventário vendido por {format_currency(total)}.")
             input("\nEnter para voltar.")
             continue
@@ -94,7 +108,10 @@ def show_market(
         if choice == "3":
             clear_screen()
             rods_for_sale = [
-                rod for rod in available_rods if rod.name not in {r.name for r in owned_rods}
+                rod
+                for rod in available_rods
+                if rod.name not in {r.name for r in owned_rods}
+                and (unlocked_rods is None or rod.name in unlocked_rods)
             ]
             if not rods_for_sale:
                 print("Nenhuma vara disponível para compra.")
@@ -125,6 +142,8 @@ def show_market(
                 continue
 
             balance -= rod.price
+            if on_money_spent:
+                on_money_spent(rod.price)
             owned_rods.append(rod)
             print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
             input("\nEnter para voltar.")

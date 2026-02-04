@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 3
+SAVE_VERSION = 4
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -41,9 +41,12 @@ def save_game(
     equipped_rod: Rod,
     selected_pool: "FishingPool",
     unlocked_pools: Sequence[str],
+    unlocked_rods: Sequence[str],
     level: int,
     xp: int,
     discovered_fish: Sequence[str],
+    mission_state: Dict[str, object],
+    mission_progress: Dict[str, object],
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -53,9 +56,12 @@ def save_game(
         "equipped_rod": equipped_rod.name,
         "selected_pool": selected_pool.name,
         "unlocked_pools": list(unlocked_pools),
+        "unlocked_rods": list(unlocked_rods),
         "level": level,
         "xp": xp,
         "discovered_fish": list(discovered_fish),
+        "mission_state": mission_state,
+        "mission_progress": mission_progress,
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
