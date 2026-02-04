@@ -12,6 +12,7 @@ class Rod:
     control: float
     description: str
     price: float
+    unlocked_default: bool = False
 
 
 def load_rods(base_dir: Path) -> List[Rod]:
@@ -35,6 +36,7 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 control=float(data.get("control", 0.0)),
                 description=data.get("description", ""),
                 price=float(data.get("price", 0.0)),
+                unlocked_default=bool(data.get("unlocked_default", False)),
             )
         )
 

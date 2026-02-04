@@ -148,6 +148,7 @@ class FishingPool:
     folder: Path
     description: str
     rarity_weights: Dict[str, int]
+    unlocked_default: bool = False
 
     def choose_fish(
         self,
@@ -376,6 +377,7 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
                 folder=pool_dir,
                 description=data.get("description", ""),
                 rarity_weights=rarity_weights,
+                unlocked_default=bool(data.get("unlocked_default", False)),
             )
         )
 
@@ -829,12 +831,16 @@ def main():
     starter_rod = min(available_rods, key=lambda rod: rod.price)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
-    unlocked_rods = {starter_rod.name}
+    unlocked_rods = {
+        rod.name for rod in available_rods if rod.unlocked_default
+    } | {starter_rod.name}
     selected_pool = next(
         (pool for pool in pools if pool.folder.name.lower() == "lagoa"),
         pools[0],
     )
-    unlocked_pools = {selected_pool.name}
+    unlocked_pools = {
+        pool.name for pool in pools if pool.unlocked_default
+    } | {selected_pool.name}
     missions_dir = Path(__file__).resolve().parent.parent / "missions"
     missions = load_missions(missions_dir)
     mission_state = restore_mission_state(None, missions)
@@ -858,17 +864,20 @@ def main():
         balance = restore_balance(save_data.get("balance"), balance)
         owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
         unlocked_rods_raw = save_data.get("unlocked_rods")
+        default_unlocked_rods = {rod.name for rod in available_rods if rod.unlocked_default}
         if isinstance(unlocked_rods_raw, list):
             available_rod_names = {rod.name for rod in available_rods}
             unlocked_rods = {
                 name for name in unlocked_rods_raw if isinstance(name, str) and name in available_rod_names
             }
+            unlocked_rods.update(default_unlocked_rods)
         else:
-            unlocked_rods = {rod.name for rod in owned_rods}
+            unlocked_rods = {rod.name for rod in owned_rods} | default_unlocked_rods
         selected_pool = restore_selected_pool(save_data.get("selected_pool"), pools, selected_pool)
         unlocked_pools = set(
             restore_unlocked_pools(save_data.get("unlocked_pools"), pools, selected_pool)
         )
+        unlocked_pools.update({pool.name for pool in pools if pool.unlocked_default})
         equipped_rod = restore_equipped_rod(
             save_data.get("equipped_rod"),
             owned_rods,
