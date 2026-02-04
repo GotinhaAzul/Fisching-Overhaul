@@ -1,6 +1,7 @@
 {
   "name": "Mar Aberto",
   "description": "Águas abertas com peixes mais ágeis.",
+  "unlocked_default": true,
   "rarity_chances": {
     "Comum": 40,
     "Incomum": 30,
