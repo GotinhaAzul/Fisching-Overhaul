@@ -4,5 +4,6 @@
   "kg_max": 7.5,
   "control": 0.35,
   "description": "O brilho nesta vara diz atrair luzes profundas.",
-  "price": 850
+  "price": 850,
+  "unlocked_default": true
 }
