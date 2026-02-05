@@ -106,12 +106,15 @@ def restore_mission_state(raw_state: object, missions: Sequence[MissionDefinitio
                 for mission_id in raw_list:
                     if isinstance(mission_id, str) and mission_id in mission_ids:
                         target.add(mission_id)
-    if not state.unlocked:
-        state.unlocked = {
-            mission.mission_id
-            for mission in missions
-            if mission.starts_unlocked
-        }
+    default_unlocked = {
+        mission.mission_id
+        for mission in missions
+        if mission.starts_unlocked
+    }
+    if state.unlocked:
+        state.unlocked.update(default_unlocked)
+    else:
+        state.unlocked = default_unlocked
     return state
 
 
@@ -206,6 +209,8 @@ def update_mission_completions(
 ) -> Set[str]:
     newly_completed: Set[str] = set()
     for mission in missions:
+        if mission.mission_id not in state.unlocked:
+            continue
         if mission.mission_id in state.completed:
             continue
         if is_mission_complete(
