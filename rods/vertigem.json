@@ -3,7 +3,7 @@
   "luck": 0.10,
   "kg_max": 25.0,
   "control": 0.5,
-  "description": "A tontura daquele lugar ainda te assombra quando segura esta vara.",
+  "description": "A tontura daquele lugar te assombra quando segura esta vara.",
   "price": 411,
   "can_slash": true,
   "slash_chance": 0.2
