@@ -6,15 +6,14 @@
   "requirements": [
     {
       "type": "deliver_fish",
-      "count": "2",
-      "fish_name?": "Polvo Luminoso"
+      "count": 2,
+      "fish_name": "Polvo Luminoso"
     }
-
   ],
   "rewards": [
     {
       "type": "unlock_rods",
-      "rod_names": "Vertigem"
+      "rod_names": ["Vertigem"]
     }
   ]
 }

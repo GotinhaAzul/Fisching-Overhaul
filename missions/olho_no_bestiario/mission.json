@@ -17,7 +17,7 @@
     {
       "type": "xp",
       "amount": 35
-    }
+    },
     {
       "type": "unlock_missions",
       "mission_ids": ["vertigo_unlock"]

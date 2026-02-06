@@ -8,12 +8,11 @@
       "type": "bestiary_pool_percent",
       "pool_name": "Mar Aberto",
       "percent": 80
-    }
+    },
     {
       "type": "level",
       "level": 15
-    },
-
+    }
   ],
   "rewards": [
     {
@@ -22,7 +21,7 @@
     },
     {
       "type": "unlock_missions",
-      "mission_ids": "vertigem_unlock"
+      "mission_ids": ["vertigem_unlock"]
     }
   ]
 }
