@@ -1,7 +1,7 @@
 {
   "id": "olho_no_bestiario",
   "name": "Olho no Bestiário",
-  "description": "Descubra uma parte do bestiário da região.",
+  "description": "Descubra uma parte do bestiário da Lagoa.",
   "requirements": [
     {
       "type": "bestiary_pool_percent",
