@@ -1,0 +1,28 @@
+{
+  "id": "vertigo_unlock",
+  "name": "Redemoinho misterioso.",
+  "description": "Tema a espiral, seus segredos sao reservados para poucos que conseguem se arriscar.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Mar Aberto",
+      "percent": 80
+    }
+    {
+      "type": "level",
+      "level": 15
+    },
+
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Vertigo"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": "vertigem_unlock"
+    }
+  ]
+}

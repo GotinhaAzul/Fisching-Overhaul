@@ -1,0 +1,20 @@
+{
+  "id": "vertigem_unlock",
+  "name": "A vara espiral.",
+  "description": "No centro da queda, algo se destaca.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": "2",
+      "fish_name?": "Polvo Luminoso"
+    }
+
+  ],
+  "rewards": [
+    {
+      "type": "unlock_rods",
+      "rod_names": "Vertigem"
+    }
+  ]
+}
