@@ -272,11 +272,23 @@ def show_missions_menu(
         print(f"Concluídas: {len(state.completed)} | Disponíveis: {len(state.unlocked)}")
         print()
 
-        ordered = sorted(mission_by_id.values(), key=lambda mission: mission.name)
+        ordered = sorted(
+            (
+                mission
+                for mission in mission_by_id.values()
+                if mission.mission_id in state.unlocked
+            ),
+            key=lambda mission: mission.name,
+        )
+
+        if not ordered:
+            print("Nenhuma missão desbloqueada ainda.")
+            input("\nEnter para voltar.")
+            return level, xp, balance
+
         for idx, mission in enumerate(ordered, start=1):
             status = _format_mission_status(mission, state)
-            label = mission.name if mission.mission_id in state.unlocked else "???"
-            print(f"{idx}. {label} {status}")
+            print(f"{idx}. {mission.name} {status}")
 
         print("0. Voltar")
         choice = input("Escolha uma missão: ").strip()
@@ -294,12 +306,6 @@ def show_missions_menu(
             continue
 
         mission = ordered[idx - 1]
-        if mission.mission_id not in state.unlocked:
-            clear_screen()
-            print("???")
-            print("\nEssa missão ainda está bloqueada.")
-            input("\nEnter para voltar.")
-            continue
 
         clear_screen()
         print(f"=== {mission.name} ===")
@@ -320,11 +326,17 @@ def show_missions_menu(
             print(f"- {label} ({current}/{target}) {status}")
 
         print("\nRecompensas:")
-        if mission.rewards:
-            for reward in mission.rewards:
+        visible_rewards = [
+            reward
+            for reward in mission.rewards
+            if reward.get("type") in {"money", "xp", "fish"}
+        ]
+        if visible_rewards:
+            for reward in visible_rewards:
                 print(f"- {_format_reward(reward)}")
         else:
-            print("- Sem recompensas")
+            print("- Recompensas ocultas")
+
 
         if mission.mission_id in state.completed and mission.mission_id not in state.claimed:
             print("\n1. Resgatar recompensa")
