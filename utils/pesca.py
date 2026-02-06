@@ -505,9 +505,10 @@ class FishingMiniGame:
         if elapsed > self.attempt.time_limit_s:
             return FishingResult(False, "Tempo esgotado", self.typed[:], elapsed)
 
-        if self.can_slash and self.slash_chance > 0 and self.index < len(self.attempt.sequence):
+        min_slash_index = self.index + 2
+        if self.can_slash and self.slash_chance > 0 and min_slash_index < len(self.attempt.sequence):
             if random.random() <= self.slash_chance:
-                remove_index = random.randrange(self.index, len(self.attempt.sequence))
+                remove_index = random.randrange(min_slash_index, len(self.attempt.sequence))
                 self.attempt.sequence.pop(remove_index)
                 if self.is_done():
                     elapsed = time.perf_counter() - self.start_time

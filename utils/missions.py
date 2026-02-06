@@ -320,11 +320,17 @@ def show_missions_menu(
             print(f"- {label} ({current}/{target}) {status}")
 
         print("\nRecompensas:")
-        if mission.rewards:
-            for reward in mission.rewards:
+        visible_rewards = [
+            reward
+            for reward in mission.rewards
+            if reward.get("type") in {"money", "xp", "fish"}
+        ]
+        if visible_rewards:
+            for reward in visible_rewards:
                 print(f"- {_format_reward(reward)}")
         else:
-            print("- Sem recompensas")
+            print("- Recompensas ocultas")
+
 
         if mission.mission_id in state.completed and mission.mission_id not in state.claimed:
             print("\n1. Resgatar recompensa")
