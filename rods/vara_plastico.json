@@ -1,0 +1,9 @@
+{
+  "name": "Vara de Plastico",
+  "luck": 0.03,
+  "kg_max": 2.0,
+  "control": 0.4,
+  "description": "Uma vara fraca, sua estrutura feita inteiramente com o lixo encontrado no chao.",
+  "price": 500,
+  "unlocked_default": true
+}
