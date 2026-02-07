@@ -187,7 +187,7 @@ def _apply_luck_to_weights(
     if not weights:
         return {}
 
-    luck = max(0.0, min(1.0, float(rod_luck)))
+    luck = max(0.0, float(rod_luck))
     if luck <= 0:
         return weights
 
@@ -205,7 +205,9 @@ def _apply_luck_to_weights(
     adjusted: Dict[str, float] = {}
     for rarity in rarities:
         rank = ranks.get(rarity, 0)
-        multiplier = 1 + (luck * (rank / max_rank))
+        rank_ratio = rank / max_rank
+        luck_boost = luck * (1 + luck)
+        multiplier = 1 + (luck_boost * rank_ratio)
         adjusted[rarity] = float(weights[rarity]) * multiplier
 
     adjusted_total = sum(adjusted.values())
@@ -710,7 +712,7 @@ def run_fishing_round(
             combined_weights = selected_pool.rarity_weights
 
         rod_luck = equipped_rod.luck * (event_def.luck_multiplier if event_def else 1.0)
-        rod_luck = max(0.0, min(1.0, rod_luck))
+        rod_luck = max(0.0, rod_luck)
         fish = selected_pool.choose_fish(
             eligible_fish,
             rod_luck,
