@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, List, Set, TYPE_CHECKING
 
 from utils.rods import Rod
-from utils.ui import clear_screen
+from utils.ui import clear_screen, print_spaced_lines
 
 if TYPE_CHECKING:
     from utils.pesca import FishProfile, FishingPool
@@ -238,11 +238,13 @@ def show_bestiary(
 
     while True:
         clear_screen()
-        print("=== Bestiário ===")
-        print("1. Peixes pescados")
-        print("2. Varas adquiridas")
-        print("3. Pools desbloqueadas")
-        print("0. Voltar")
+        print_spaced_lines([
+            "=== Bestiário ===",
+            "1. Peixes pescados",
+            "2. Varas adquiridas",
+            "3. Pools desbloqueadas",
+            "0. Voltar",
+        ])
 
         choice = input("Escolha uma opção: ").strip()
         if choice == "0":

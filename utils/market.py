@@ -3,7 +3,7 @@ from typing import List, Optional
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.rods import Rod
-from utils.ui import clear_screen
+from utils.ui import clear_screen, print_spaced_lines
 
 
 def format_currency(value: float) -> str:
@@ -31,13 +31,15 @@ def show_market(
 ) -> float:
     while True:
         clear_screen()
-        print("🛒 === Mercado ===")
-        print(get_market_line())
-        print(f"Dinheiro: {format_currency(balance)}")
-        print("1. Vender peixe individual")
-        print("2. Vender inventário inteiro")
-        print("3. Comprar vara")
-        print("0. Voltar")
+        print_spaced_lines([
+            "🛒 === Mercado ===",
+            get_market_line(),
+            f"Dinheiro: {format_currency(balance)}",
+            "1. Vender peixe individual",
+            "2. Vender inventário inteiro",
+            "3. Comprar vara",
+            "0. Voltar",
+        ])
 
         choice = input("Escolha uma opção: ").strip()
         if choice == "0":
@@ -50,7 +52,7 @@ def show_market(
                 input("\nEnter para voltar.")
                 continue
 
-            print("Escolha o peixe para vender:")
+            print_spaced_lines(["Escolha o peixe para vender:"])
             for idx, entry in enumerate(inventory, start=1):
                 value = calculate_entry_value(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
@@ -118,7 +120,7 @@ def show_market(
                 input("\nEnter para voltar.")
                 continue
 
-            print("Varas disponíveis:")
+            print_spaced_lines(["Varas disponíveis:"])
             for idx, rod in enumerate(rods_for_sale, start=1):
                 print(format_rod_entry(idx, rod))
                 print(f"   {rod.description}")

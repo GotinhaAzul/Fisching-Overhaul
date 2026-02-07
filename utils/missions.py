@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.levels import apply_xp_gain
-from utils.ui import clear_screen
+from utils.ui import clear_screen, print_spaced_lines
 
 if TYPE_CHECKING:
     from utils.pesca import FishProfile, FishingPool
@@ -268,9 +268,10 @@ def show_missions_menu(
     mission_by_id = {mission.mission_id: mission for mission in missions}
     while True:
         clear_screen()
-        print("📜 === Missões ===")
-        print(f"Concluídas: {len(state.completed)} | Disponíveis: {len(state.unlocked)}")
-        print()
+        print_spaced_lines([
+            "📜 === Missões ===",
+            f"Concluídas: {len(state.completed)} | Disponíveis: {len(state.unlocked)}",
+        ])
 
         ordered = sorted(
             (
