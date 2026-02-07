@@ -5,5 +5,5 @@
   "control": 0.35,
   "description": "O brilho nesta vara diz atrair luzes profundas.",
   "price": 3250,
-  "unlocked_default": true
+  "unlocked_default": false
 }
