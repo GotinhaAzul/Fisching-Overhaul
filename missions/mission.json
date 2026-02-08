@@ -1,0 +1,26 @@
+{
+  "id": "viagem_recife",
+  "name": "Um recife a distancia!",
+  "description": "Conserte seu barco e navegue ate o recife.",
+  "starts_unlocked": true,
+  "requirements": [
+    {
+      "type": "level",
+      "level": 5
+    },
+    {
+      "type": "spend_money",
+      "amount": 400
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 150
+    },
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Grande Recife"]
+    }
+  ]
+}
