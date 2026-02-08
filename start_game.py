@@ -4,7 +4,6 @@ import sys
 
 
 DEPENDENCIAS_OBRIGATORIAS = {
-    "pygame": "pygame",
     "colorama": "colorama",
     "pynput": "pynput",
 }
