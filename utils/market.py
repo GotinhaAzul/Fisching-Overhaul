@@ -10,7 +10,7 @@ from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
 from utils.mutations import Mutation, choose_mutation
 from utils.rods import Rod
-from utils.ui import clear_screen, print_spaced_lines
+from utils.ui import clear_screen, choose_numbered_index_with_mouse, print_spaced_lines
 
 if TYPE_CHECKING:
     from utils.pesca import FishProfile, FishingPool
@@ -364,33 +364,39 @@ def show_market(
                 input("\nEnter para voltar.")
                 continue
 
-            print_spaced_lines([
+            title_lines = [
                 "🔎 Appraise",
                 "Escolha um peixe para rerolar KG e mutação.",
                 "O custo é 35% do valor atual do peixe.",
-            ])
-            for idx, entry in enumerate(inventory, start=1):
+            ]
+            option_lines = []
+            for entry in inventory:
                 value = calculate_entry_value(entry)
                 cost = _appraise_cost(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-                print(
-                    f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                option_lines.append(
+                    f"{entry.name} ({entry.kg:0.2f}kg){mutation_label} "
                     f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
                 )
 
-            selection = input("Digite o número do peixe: ").strip()
-            if not selection.isdigit():
+            def _fallback_input() -> str:
+                clear_screen()
+                print_spaced_lines(title_lines)
+                for idx, line in enumerate(option_lines, start=1):
+                    print(f"{idx}. {line}")
+                return input("Digite o número do peixe: ").strip()
+
+            selected_index = choose_numbered_index_with_mouse(
+                title_lines=title_lines,
+                options=option_lines,
+                fallback_input=_fallback_input,
+            )
+            if selected_index is None:
                 print("Entrada inválida.")
                 input("\nEnter para voltar.")
                 continue
 
-            idx = int(selection)
-            if not (1 <= idx <= len(inventory)):
-                print("Número fora do intervalo.")
-                input("\nEnter para voltar.")
-                continue
-
-            entry = inventory[idx - 1]
+            entry = inventory[selected_index]
             profile = fish_by_name.get(entry.name)
             if not profile:
                 print("Esse peixe não pode ser avaliado agora.")

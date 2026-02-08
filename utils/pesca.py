@@ -57,7 +57,7 @@ from utils.save_system import (
     restore_xp,
     save_game,
 )
-from utils.ui import clear_screen
+from utils.ui import choose_menu_option_with_mouse, clear_screen
 
 # -----------------------------
 # Config / Modelos
@@ -578,33 +578,48 @@ def show_main_menu(
     xp: int,
     active_event: Optional[ActiveEvent],
 ) -> str:
-    clear_screen()
-    print("🎣 === Menu Principal ===")
-    print(get_menu_line())
-    print(f"Pool atual: {selected_pool.name}")
-    print(f"Nível: {level} | XP: {xp}/{xp_required_for_level(level)}")
+    title_lines = [
+        "🎣 === Menu Principal ===",
+        get_menu_line(),
+        f"Pool atual: {selected_pool.name}",
+        f"Nível: {level} | XP: {xp}/{xp_required_for_level(level)}",
+    ]
+
     if active_event:
         time_left = math.ceil(active_event.time_left() / 60)
         event = active_event.definition
-        print(
-            f"🌟 Evento ativo: {event.name} "
-            f"({time_left} min restantes)"
+        title_lines.append(
+            f"🌟 Evento ativo: {event.name} ({time_left} min restantes)"
         )
         if event.description:
-            print(f"   {event.description}")
-        print(
-            "   "
-            f"Sorte x{event.luck_multiplier:0.2f} | "
-            f"XP x{event.xp_multiplier:0.2f}"
+            title_lines.append(f"   {event.description}")
+        title_lines.append(
+            f"   Sorte x{event.luck_multiplier:0.2f} | XP x{event.xp_multiplier:0.2f}"
         )
-    print("1. Pescar")
-    print("2. Pools")
-    print("3. Inventário")
-    print("4. Mercado")
-    print("5. Bestiário")
-    print("6. Missões")
-    print("0. Sair")
-    return input("Escolha uma opção: ").strip()
+
+    menu_entries = [
+        ("1", "Pescar"),
+        ("2", "Pools"),
+        ("3", "Inventário"),
+        ("4", "Mercado"),
+        ("5", "Bestiário"),
+        ("6", "Missões"),
+        ("0", "Sair"),
+    ]
+
+    def _fallback_input() -> str:
+        clear_screen()
+        for line in title_lines:
+            print(line)
+        for value, label in menu_entries:
+            print(f"{value}. {label}")
+        return input("Escolha uma opção: ").strip()
+
+    return choose_menu_option_with_mouse(
+        title_lines=title_lines,
+        menu_entries=menu_entries,
+        fallback_input=_fallback_input,
+    )
 
 
 def autosave_state(
