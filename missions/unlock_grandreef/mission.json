@@ -16,11 +16,12 @@
   "rewards": [
     {
       "type": "xp",
-      "amount": 150
+      "amount": 1500
     },
     {
       "type": "unlock_pools",
       "pool_names": ["Grande Recife"]
     }
   ]
+
 }
