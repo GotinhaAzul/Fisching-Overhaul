@@ -602,9 +602,42 @@ def show_main_menu(
     print("4. Mercado")
     print("5. Bestiário")
     print("6. Missões")
-    print("7. Salvar jogo")
     print("0. Sair")
     return input("Escolha uma opção: ").strip()
+
+
+def autosave_state(
+    save_path: Path,
+    balance: float,
+    inventory: List[InventoryEntry],
+    owned_rods: List[Rod],
+    equipped_rod: Rod,
+    selected_pool: FishingPool,
+    unlocked_pools: set[str],
+    unlocked_rods: set[str],
+    level: int,
+    xp: int,
+    discovered_fish: set[str],
+    mission_state,
+    mission_progress: MissionProgress,
+    pool_market_orders,
+) -> None:
+    save_game(
+        save_path,
+        balance=balance,
+        inventory=inventory,
+        owned_rods=owned_rods,
+        equipped_rod=equipped_rod,
+        selected_pool=selected_pool,
+        unlocked_pools=sorted(unlocked_pools),
+        unlocked_rods=sorted(unlocked_rods),
+        level=level,
+        xp=xp,
+        discovered_fish=sorted(discovered_fish),
+        mission_state=serialize_mission_state(mission_state),
+        mission_progress=serialize_mission_progress(mission_progress),
+        pool_market_orders=serialize_pool_market_orders(pool_market_orders),
+    )
 
 
 def format_rod_stats(rod: Rod) -> str:
@@ -926,6 +959,10 @@ def main():
         pools=pools,
         discovered_fish=discovered_fish,
     )
+    state_ready = True
+    exit_requested = False
+    autosave_done = False
+
     try:
         while True:
             loop_start = time.monotonic()
@@ -993,46 +1030,7 @@ def main():
                     available_rods=available_rods,
                     fish_by_name=fish_by_name,
                 )
-            elif choice == "7":
-                save_game(
-                    save_path,
-                    balance=balance,
-                    inventory=inventory,
-                    owned_rods=owned_rods,
-                    equipped_rod=equipped_rod,
-                    selected_pool=selected_pool,
-                    unlocked_pools=sorted(unlocked_pools),
-                    unlocked_rods=sorted(unlocked_rods),
-                    level=level,
-                    xp=xp,
-                    discovered_fish=sorted(discovered_fish),
-                    mission_state=serialize_mission_state(mission_state),
-                    mission_progress=serialize_mission_progress(mission_progress),
-                    pool_market_orders=serialize_pool_market_orders(pool_market_orders),
-                )
-                print(f"Jogo salvo em {save_path.name}.")
-                time.sleep(1)
             elif choice == "0":
-                clear_screen()
-                choice = input("Deseja salvar antes de sair? (s/n): ").strip().lower()
-                if choice == "s":
-                    save_game(
-                        save_path,
-                        balance=balance,
-                        inventory=inventory,
-                        owned_rods=owned_rods,
-                        equipped_rod=equipped_rod,
-                        selected_pool=selected_pool,
-                        unlocked_pools=sorted(unlocked_pools),
-                        unlocked_rods=sorted(unlocked_rods),
-                        level=level,
-                        xp=xp,
-                        discovered_fish=sorted(discovered_fish),
-                        mission_state=serialize_mission_state(mission_state),
-                        mission_progress=serialize_mission_progress(mission_progress),
-                        pool_market_orders=serialize_pool_market_orders(pool_market_orders),
-                    )
-                    print(f"Jogo salvo em {save_path.name}.")
                 mission_progress.add_play_time(time.monotonic() - loop_start)
                 update_mission_completions(
                     missions,
@@ -1042,6 +1040,24 @@ def main():
                     pools=pools,
                     discovered_fish=discovered_fish,
                 )
+                autosave_state(
+                    save_path,
+                    balance,
+                    inventory,
+                    owned_rods,
+                    equipped_rod,
+                    selected_pool,
+                    unlocked_pools,
+                    unlocked_rods,
+                    level,
+                    xp,
+                    discovered_fish,
+                    mission_state,
+                    mission_progress,
+                    pool_market_orders,
+                )
+                autosave_done = True
+                exit_requested = True
                 print("Saindo...")
                 break
             else:
@@ -1056,12 +1072,30 @@ def main():
                 pools=pools,
                 discovered_fish=discovered_fish,
             )
+    except KeyboardInterrupt:
+        exit_requested = True
     finally:
+        if not exit_requested:
+            exit_requested = True
+        if state_ready and exit_requested and not autosave_done:
+            autosave_state(
+                save_path,
+                balance,
+                inventory,
+                owned_rods,
+                equipped_rod,
+                selected_pool,
+                unlocked_pools,
+                unlocked_rods,
+                level,
+                xp,
+                discovered_fish,
+                mission_state,
+                mission_progress,
+                pool_market_orders,
+            )
         event_manager.stop()
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nEncerrado.")
+    main()
