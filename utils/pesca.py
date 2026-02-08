@@ -18,7 +18,11 @@ from utils.bestiary import show_bestiary
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
-from utils.market import show_market
+from utils.market import (
+    restore_pool_market_orders,
+    serialize_pool_market_orders,
+    show_market,
+)
 from utils.missions import (
     MissionProgress,
     load_missions,
@@ -867,6 +871,7 @@ def main():
     balance = 0.0
     level = 1
     xp = 0
+    pool_market_orders = {}
 
     save_path = get_default_save_path()
     save_data = load_game(save_path)
@@ -904,6 +909,7 @@ def main():
         xp = restore_xp(save_data.get("xp"), xp)
         mission_state = restore_mission_state(save_data.get("mission_state"), missions)
         mission_progress = restore_mission_progress(save_data.get("mission_progress"))
+        pool_market_orders = restore_pool_market_orders(save_data.get("pool_market_orders"))
         print("Save carregado com sucesso!")
         time.sleep(1)
 
@@ -946,11 +952,15 @@ def main():
             elif choice == "3":
                 equipped_rod = show_inventory(inventory, owned_rods, equipped_rod)
             elif choice == "4":
-                balance = show_market(
+                balance, level, xp = show_market(
                     inventory,
                     balance,
+                    selected_pool,
+                    level,
+                    xp,
                     available_rods,
                     owned_rods,
+                    pool_orders=pool_market_orders,
                     unlocked_rods=unlocked_rods,
                     on_money_earned=mission_progress.record_money_earned,
                     on_money_spent=mission_progress.record_money_spent,
@@ -998,6 +1008,7 @@ def main():
                     discovered_fish=sorted(discovered_fish),
                     mission_state=serialize_mission_state(mission_state),
                     mission_progress=serialize_mission_progress(mission_progress),
+                    pool_market_orders=serialize_pool_market_orders(pool_market_orders),
                 )
                 print(f"Jogo salvo em {save_path.name}.")
                 time.sleep(1)
@@ -1019,6 +1030,7 @@ def main():
                         discovered_fish=sorted(discovered_fish),
                         mission_state=serialize_mission_state(mission_state),
                         mission_progress=serialize_mission_progress(mission_progress),
+                        pool_market_orders=serialize_pool_market_orders(pool_market_orders),
                     )
                     print(f"Jogo salvo em {save_path.name}.")
                 mission_progress.add_play_time(time.monotonic() - loop_start)
