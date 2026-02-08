@@ -188,7 +188,7 @@ def show_market(
             "2. Vender inventário inteiro",
             "3. Comprar vara",
             order_line,
-            "5. Appraise (rerolar kg + mutação)",
+            "5. Appraise - rerolar kg + mutação",
             "0. Voltar",
         ])
 
@@ -330,6 +330,7 @@ def show_market(
             for idx, rod in enumerate(rods_for_sale, start=1):
                 print(format_rod_entry(idx, rod))
                 print(f"   {rod.description}")
+                print()
 
             selection = input("Digite o número da vara: ").strip()
             if not selection.isdigit():
