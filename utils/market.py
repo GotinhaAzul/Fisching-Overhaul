@@ -169,13 +169,13 @@ def show_market(
     while True:
         clear_screen()
         order = get_pool_market_order(selected_pool, pool_orders)
-        order_line = "4. Pedido rotativo da pool"
+        order_line = "4. Pedido atual"
         if order:
             time_left_s = max(0, int(order.expires_at - time.time()))
             minutes_left = time_left_s // 60
             seconds_left = time_left_s % 60
             order_line = (
-                "4. Pedido rotativo da pool "
+                "4. Pedido atual "
                 f"({order.required_count}x {order.fish_name} [{order.rarity}] | "
                 f"{minutes_left:02d}:{seconds_left:02d})"
             )
@@ -253,7 +253,7 @@ def show_market(
                 if entry.name == order.fish_name
             ]
             print_spaced_lines([
-                "📦 Pedido rotativo",
+                "📦 Pedido Atual ",
                 f"Pool: {order.pool_name}",
                 f"Solicitação: {order.required_count}x {order.fish_name} [{order.rarity}]",
                 f"Disponível no inventário: {len(matching_entries)}",
@@ -368,7 +368,7 @@ def show_market(
             print_spaced_lines([
                 "🔎 Appraise",
                 "Escolha um peixe para rerolar KG e mutação.",
-                "O custo é 35% do valor atual do peixe.",
+                "Que a sorte esteja com você!",
             ])
             for idx, entry in enumerate(inventory, start=1):
                 value = calculate_entry_value(entry)
