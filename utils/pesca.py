@@ -4,6 +4,7 @@ import json
 import math
 import os
 import random
+import signal
 import sys
 import threading
 import time
@@ -965,6 +966,25 @@ def main():
     loop_start: Optional[float] = None
     play_time_recorded_for_loop = True
 
+    handled_signals = [signal.SIGTERM]
+    if hasattr(signal, "SIGHUP"):
+        handled_signals.append(signal.SIGHUP)
+    if hasattr(signal, "SIGBREAK"):
+        handled_signals.append(signal.SIGBREAK)
+
+    previous_signal_handlers = {
+        signum: signal.getsignal(signum)
+        for signum in handled_signals
+    }
+
+    def request_graceful_exit(signum, _frame):
+        signame = signal.Signals(signum).name if signum in signal.Signals.__members__.values() else str(signum)
+        print(f"\nRecebido {signame}. Salvando antes de sair...")
+        raise KeyboardInterrupt
+
+    for signum in handled_signals:
+        signal.signal(signum, request_graceful_exit)
+
     try:
         while True:
             loop_start = time.monotonic()
@@ -1090,6 +1110,8 @@ def main():
             )
         exit_requested = True
     finally:
+        for signum, handler in previous_signal_handlers.items():
+            signal.signal(signum, handler)
         if not exit_requested:
             exit_requested = True
         if state_ready and exit_requested and not autosave_done:
