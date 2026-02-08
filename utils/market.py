@@ -10,6 +10,7 @@ from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
 from utils.mutations import Mutation, choose_mutation
 from utils.rods import Rod
+from utils.audio import audio_manager
 from utils.ui import clear_screen, print_spaced_lines
 
 if TYPE_CHECKING:
@@ -236,6 +237,7 @@ def show_market(
                 f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
                 f"por {format_currency(value)}."
             )
+            audio_manager.play_sfx("sell_fish.ogg")
             input("\nEnter para voltar.")
             continue
 
@@ -310,6 +312,7 @@ def show_market(
             if on_money_earned:
                 on_money_earned(total)
             print(f"Inventário vendido por {format_currency(total)}.")
+            audio_manager.play_sfx("sell_fish.ogg")
             input("\nEnter para voltar.")
             continue
 
@@ -355,6 +358,7 @@ def show_market(
                 on_money_spent(rod.price)
             owned_rods.append(rod)
             print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
+            audio_manager.play_sfx("buy_rod.ogg")
             input("\nEnter para voltar.")
             continue
 
@@ -437,6 +441,7 @@ def show_market(
                     f"({value_delta:+.2f})"
                 ),
             ])
+            audio_manager.play_sfx("appraise.ogg")
             input("\nEnter para voltar.")
             continue
 
