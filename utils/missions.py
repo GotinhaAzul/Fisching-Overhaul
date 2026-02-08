@@ -267,6 +267,14 @@ def show_missions_menu(
 ) -> Tuple[int, int, float]:
     mission_by_id = {mission.mission_id: mission for mission in missions}
     while True:
+        update_mission_completions(
+            missions,
+            state,
+            progress,
+            level=level,
+            pools=pools,
+            discovered_fish=discovered_fish,
+        )
         clear_screen()
         print_spaced_lines([
             "📜 === Missões ===",
@@ -339,11 +347,67 @@ def show_missions_menu(
             print("- Recompensas ocultas")
 
 
-        if mission.mission_id in state.completed and mission.mission_id not in state.claimed:
-            print("\n1. Resgatar recompensa")
+        mission_actions = _build_mission_actions(
+            mission,
+            progress,
+            state.completed,
+            level=level,
+            pools=pools,
+            discovered_fish=discovered_fish,
+        )
+        can_claim_reward = mission.mission_id in state.completed and mission.mission_id not in state.claimed
+
+        if mission_actions or can_claim_reward:
+            print("\nAções:")
+            action_map: Dict[str, str] = {}
+            option_number = 1
+
+            deliver_requirements = mission_actions.get("deliver_fish", []) + mission_actions.get("deliver_fish_with_mutation", [])
+            if deliver_requirements:
+                key = str(option_number)
+                action_map[key] = "deliver_fish"
+                print(f"{key}. Entregar peixe para a missão")
+                option_number += 1
+            if mission_actions.get("spend_money"):
+                key = str(option_number)
+                action_map[key] = "spend_money"
+                print(f"{key}. Pagar dinheiro para a missão")
+                option_number += 1
+            if can_claim_reward:
+                key = str(option_number)
+                action_map[key] = "claim_reward"
+                print(f"{key}. Resgatar recompensa")
+
             print("0. Voltar")
             selection = input("Escolha uma opção: ").strip()
-            if selection == "1":
+            action = action_map.get(selection)
+            if not action:
+                continue
+
+            if action == "deliver_fish":
+                if _deliver_fish_for_mission(
+                    deliver_requirements,
+                    inventory,
+                    progress,
+                ):
+                    print("Peixe entregue para a missão!")
+                input("\nEnter para voltar.")
+                continue
+
+            if action == "spend_money":
+                amount = _request_mission_payment(
+                    mission_actions["spend_money"],
+                    progress,
+                    balance,
+                )
+                if amount > 0:
+                    balance -= amount
+                    progress.record_money_spent(amount)
+                    print(f"Pagamento de R$ {amount:0.2f} enviado para a missão.")
+                input("\nEnter para voltar.")
+                continue
+
+            if action == "claim_reward":
                 balance, level, xp, notes = apply_mission_rewards(
                     mission,
                     progress,
@@ -475,6 +539,123 @@ def _format_mission_status(mission: MissionDefinition, state: MissionState) -> s
     if mission.mission_id in state.completed:
         return "(🎁 Recompensa disponível)"
     return "(🟡 Em progresso)"
+
+
+def _build_mission_actions(
+    mission: MissionDefinition,
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    *,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Dict[str, List[Dict[str, object]]]:
+    actions: Dict[str, List[Dict[str, object]]] = {}
+    for requirement in mission.requirements:
+        req_type = requirement.get("type")
+        if req_type not in {"deliver_fish", "deliver_fish_with_mutation", "spend_money"}:
+            continue
+
+        _, current, target, _ = _format_requirement(
+            requirement,
+            progress,
+            completed_missions,
+            mission.mission_id,
+            level=level,
+            pools=pools,
+            discovered_fish=discovered_fish,
+        )
+        if current >= target:
+            continue
+
+        actions.setdefault(req_type, []).append(requirement)
+    return actions
+
+
+def _deliver_fish_for_mission(
+    requirements: List[Dict[str, object]],
+    inventory: List[InventoryEntry],
+    progress: MissionProgress,
+) -> bool:
+    valid_indexes: List[int] = []
+    for idx, entry in enumerate(inventory, start=1):
+        if _entry_matches_delivery_requirements(entry, requirements):
+            valid_indexes.append(idx)
+
+    if not valid_indexes:
+        print("Você não possui peixes válidos para esta missão.")
+        return False
+
+    print("\nPeixes que podem ser entregues:")
+    for idx in valid_indexes:
+        entry = inventory[idx - 1]
+        mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+        print(f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label}")
+
+    selection = input("Digite o número do peixe para entregar: ").strip()
+    if not selection.isdigit():
+        print("Entrada inválida.")
+        return False
+
+    selected_index = int(selection)
+    if selected_index not in valid_indexes:
+        print("Peixe não elegível para esta missão.")
+        return False
+
+    delivered = inventory.pop(selected_index - 1)
+    progress.record_fish_delivered(delivered.name, delivered.mutation_name)
+    return True
+
+
+def _entry_matches_delivery_requirements(
+    entry: InventoryEntry,
+    requirements: List[Dict[str, object]],
+) -> bool:
+    for requirement in requirements:
+        fish_name = requirement.get("fish_name")
+        req_type = requirement.get("type")
+
+        if isinstance(fish_name, str) and entry.name != fish_name:
+            continue
+        if req_type == "deliver_fish_with_mutation" and not entry.mutation_name:
+            continue
+        return True
+    return False
+
+
+def _request_mission_payment(
+    requirements: List[Dict[str, object]],
+    progress: MissionProgress,
+    balance: float,
+) -> float:
+    required_amount = _required_spend_payment_amount(requirements, progress)
+    if required_amount <= 0:
+        return 0.0
+
+    print(f"Saldo atual: R$ {balance:0.2f}")
+    print(f"Pagamento necessário para a missão: R$ {required_amount:0.2f}")
+    if balance < required_amount:
+        print("Saldo insuficiente para pagar o valor integral exigido.")
+        return 0.0
+
+    confirm = input("Confirmar pagamento integral? (s/n): ").strip().lower()
+    if confirm != "s":
+        print("Pagamento cancelado.")
+        return 0.0
+    return required_amount
+
+
+def _required_spend_payment_amount(
+    requirements: List[Dict[str, object]],
+    progress: MissionProgress,
+) -> float:
+    required_amount = 0.0
+    current = progress.total_money_spent
+    for requirement in requirements:
+        target = _safe_float(requirement.get("amount"))
+        remaining = max(0.0, target - current)
+        required_amount = max(required_amount, remaining)
+    return required_amount
 
 
 def _format_requirement(
