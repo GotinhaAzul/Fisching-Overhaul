@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.levels import apply_xp_gain
-from utils.ui import clear_screen, choose_numbered_index_with_mouse, print_spaced_lines
+from utils.ui import clear_screen, print_spaced_lines
 
 if TYPE_CHECKING:
     from utils.pesca import FishProfile, FishingPool
@@ -595,30 +595,23 @@ def _deliver_fish_for_mission(
         print("Você não possui peixes válidos para esta missão.")
         return False
 
-    title_lines = ["Peixes que podem ser entregues:"]
-    option_lines: List[str] = []
+    print("\nPeixes que podem ser entregues:")
     for idx in valid_indexes:
         entry = inventory[idx - 1]
         mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-        option_lines.append(f"{entry.name} ({entry.kg:0.2f}kg){mutation_label}")
+        print(f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label}")
 
-    def _fallback_input() -> str:
-        print("\nPeixes que podem ser entregues:")
-        for option_idx, line in enumerate(option_lines, start=1):
-            print(f"{option_idx}. {line}")
-        return input("Digite o número do peixe para entregar: ").strip()
-
-    selected_option_index = choose_numbered_index_with_mouse(
-        title_lines=title_lines,
-        options=option_lines,
-        fallback_input=_fallback_input,
-    )
-    if selected_option_index is None:
+    selection = input("Digite o número do peixe para entregar: ").strip()
+    if not selection.isdigit():
         print("Entrada inválida.")
         return False
 
-    selected_inventory_index = valid_indexes[selected_option_index]
-    delivered = inventory.pop(selected_inventory_index - 1)
+    selected_index = int(selection)
+    if selected_index not in valid_indexes:
+        print("Peixe não elegível para esta missão.")
+        return False
+
+    delivered = inventory.pop(selected_index - 1)
     progress.record_fish_delivered(delivered.name, delivered.mutation_name)
     return True
 
