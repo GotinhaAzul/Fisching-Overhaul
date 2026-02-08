@@ -1,0 +1,10 @@
+{
+  "name": "Tetra-Serpae",
+  "rarity": "Raro",
+  "description": "Peixe extremamente colorido!.",
+  "kg_min": 3.0,
+  "kg_max": 5.0,
+  "base_value": 70,
+  "sequence_len": 5,
+  "reaction_time_s": 1.5
+}

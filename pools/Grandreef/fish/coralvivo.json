@@ -1,0 +1,10 @@
+{
+  "name": "Coral-Vivo",
+  "rarity": "Incomum",
+  "description": "Caranguejos Hermitoes que passaram a viver dentro de corais.",
+  "kg_min": 0.5,
+  "kg_max": 1.0,
+  "base_value": 25,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

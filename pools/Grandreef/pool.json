@@ -1,0 +1,11 @@
+{
+  "name": "Grande Recife",
+  "description": "As cores vividas dos corais atraem pescadores de todos os cantos.",
+  "rarity_chances": {
+    "Comum": 62,
+    "Incomum": 23,
+    "Raro": 8,
+    "Epico": 6,
+    "Lendario": 1
+  }
+}

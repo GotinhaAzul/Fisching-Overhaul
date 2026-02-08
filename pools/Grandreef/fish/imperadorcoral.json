@@ -1,0 +1,10 @@
+{
+  "name": "Imperador do Coral",
+  "rarity": "Lendario",
+  "description": "Um grande predador azul do coral! Atinge velocidades extraordinarias.",
+  "kg_min": 10.0,
+  "kg_max": 15.0,
+  "base_value": 110,
+  "sequence_len": 8,
+  "reaction_time_s": 1.6
+}

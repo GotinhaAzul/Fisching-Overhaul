@@ -1,0 +1,10 @@
+{
+  "name": "Peixegaio Coral",
+  "rarity": "Raro",
+  "description": "Uhm... ele se parece com um papagaio? Usa de seu bico para comer algas.",
+  "kg_min": 6.0,
+  "kg_max": 8.0,
+  "base_value": 60,
+  "sequence_len": 7,
+  "reaction_time_s": 2.0
+}
