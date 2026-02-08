@@ -395,7 +395,11 @@ def show_missions_menu(
                 continue
 
             if action == "spend_money":
-                amount = _request_mission_payment(balance)
+                amount = _request_mission_payment(
+                    mission_actions["spend_money"],
+                    progress,
+                    balance,
+                )
                 if amount > 0:
                     balance -= amount
                     progress.record_money_spent(amount)
@@ -619,17 +623,39 @@ def _entry_matches_delivery_requirements(
     return False
 
 
-def _request_mission_payment(balance: float) -> float:
+def _request_mission_payment(
+    requirements: List[Dict[str, object]],
+    progress: MissionProgress,
+    balance: float,
+) -> float:
+    required_amount = _required_spend_payment_amount(requirements, progress)
+    if required_amount <= 0:
+        return 0.0
+
     print(f"Saldo atual: R$ {balance:0.2f}")
-    raw_value = input("Digite quanto deseja pagar para a missão: ").strip().replace(",", ".")
-    amount = _safe_float(raw_value)
-    if amount <= 0:
-        print("Valor inválido.")
+    print(f"Pagamento necessário para a missão: R$ {required_amount:0.2f}")
+    if balance < required_amount:
+        print("Saldo insuficiente para pagar o valor integral exigido.")
         return 0.0
-    if amount > balance:
-        print("Saldo insuficiente.")
+
+    confirm = input("Confirmar pagamento integral? (s/n): ").strip().lower()
+    if confirm != "s":
+        print("Pagamento cancelado.")
         return 0.0
-    return amount
+    return required_amount
+
+
+def _required_spend_payment_amount(
+    requirements: List[Dict[str, object]],
+    progress: MissionProgress,
+) -> float:
+    required_amount = 0.0
+    current = progress.total_money_spent
+    for requirement in requirements:
+        target = _safe_float(requirement.get("amount"))
+        remaining = max(0.0, target - current)
+        required_amount = max(required_amount, remaining)
+    return required_amount
 
 
 def _format_requirement(
