@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 4
+SAVE_VERSION = 5
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -47,6 +47,7 @@ def save_game(
     discovered_fish: Sequence[str],
     mission_state: Dict[str, object],
     mission_progress: Dict[str, object],
+    pool_market_orders: Optional[Dict[str, object]] = None,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -62,6 +63,7 @@ def save_game(
         "discovered_fish": list(discovered_fish),
         "mission_state": mission_state,
         "mission_progress": mission_progress,
+        "pool_market_orders": pool_market_orders or {},
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
