@@ -962,10 +962,13 @@ def main():
     state_ready = True
     exit_requested = False
     autosave_done = False
+    loop_start: Optional[float] = None
+    play_time_recorded_for_loop = True
 
     try:
         while True:
             loop_start = time.monotonic()
+            play_time_recorded_for_loop = False
             active_event = event_manager.get_active_event()
             choice = show_main_menu(selected_pool, level, xp, active_event)
             if choice == "1":
@@ -1032,6 +1035,7 @@ def main():
                 )
             elif choice == "0":
                 mission_progress.add_play_time(time.monotonic() - loop_start)
+                play_time_recorded_for_loop = True
                 update_mission_completions(
                     missions,
                     mission_state,
@@ -1064,6 +1068,7 @@ def main():
                 print("Opção inválida.")
                 time.sleep(1)
             mission_progress.add_play_time(time.monotonic() - loop_start)
+            play_time_recorded_for_loop = True
             update_mission_completions(
                 missions,
                 mission_state,
@@ -1073,6 +1078,16 @@ def main():
                 discovered_fish=discovered_fish,
             )
     except KeyboardInterrupt:
+        if loop_start is not None and not play_time_recorded_for_loop:
+            mission_progress.add_play_time(time.monotonic() - loop_start)
+            update_mission_completions(
+                missions,
+                mission_state,
+                mission_progress,
+                level=level,
+                pools=pools,
+                discovered_fish=discovered_fish,
+            )
         exit_requested = True
     finally:
         if not exit_requested:
