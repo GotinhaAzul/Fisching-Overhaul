@@ -362,7 +362,11 @@ def show_missions_menu(
             action_map: Dict[str, str] = {}
             option_number = 1
 
-            deliver_requirements = mission_actions.get("deliver_fish", []) + mission_actions.get("deliver_fish_with_mutation", [])
+            deliver_requirements = (
+                mission_actions.get("deliver_fish", [])
+                + mission_actions.get("deliver_mutation", [])
+                + mission_actions.get("deliver_fish_with_mutation", [])
+            )
             if deliver_requirements:
                 key = str(option_number)
                 action_map[key] = "deliver_fish"
@@ -553,7 +557,12 @@ def _build_mission_actions(
     actions: Dict[str, List[Dict[str, object]]] = {}
     for requirement in mission.requirements:
         req_type = requirement.get("type")
-        if req_type not in {"deliver_fish", "deliver_fish_with_mutation", "spend_money"}:
+        if req_type not in {
+            "deliver_fish",
+            "deliver_mutation",
+            "deliver_fish_with_mutation",
+            "spend_money",
+        }:
             continue
 
         _, current, target, _ = _format_requirement(
@@ -613,10 +622,16 @@ def _entry_matches_delivery_requirements(
 ) -> bool:
     for requirement in requirements:
         fish_name = requirement.get("fish_name")
+        mutation_name = requirement.get("mutation_name")
         req_type = requirement.get("type")
 
         if isinstance(fish_name, str) and entry.name != fish_name:
             continue
+        if req_type == "deliver_mutation":
+            if not entry.mutation_name:
+                continue
+            if isinstance(mutation_name, str) and entry.mutation_name != mutation_name:
+                continue
         if req_type == "deliver_fish_with_mutation" and not entry.mutation_name:
             continue
         return True

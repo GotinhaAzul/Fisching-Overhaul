@@ -1023,6 +1023,10 @@ def main():
                     pool_orders=pool_market_orders,
                     unlocked_rods=unlocked_rods,
                     on_money_earned=mission_progress.record_money_earned,
+                    on_fish_delivered=lambda entry: mission_progress.record_fish_delivered(
+                        entry.name,
+                        entry.mutation_name,
+                    ),
                 )
             elif choice == "5":
                 show_bestiary(
