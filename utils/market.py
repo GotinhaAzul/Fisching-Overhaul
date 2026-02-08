@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
+from utils.mutations import Mutation, choose_mutation
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
 
@@ -151,6 +152,8 @@ def show_market(
     xp: int,
     available_rods: List[Rod],
     owned_rods: List[Rod],
+    fish_by_name: Dict[str, "FishProfile"],
+    available_mutations: List[Mutation],
     *,
     pool_orders: Optional[Dict[str, PoolMarketOrder]] = None,
     unlocked_rods: Optional[set[str]] = None,
@@ -159,6 +162,10 @@ def show_market(
     on_fish_delivered=None,
 ) -> tuple[float, int, int]:
     pool_orders = pool_orders if pool_orders is not None else {}
+
+    def _appraise_cost(entry: InventoryEntry) -> float:
+        return max(1.0, calculate_entry_value(entry) * 0.35)
+
     while True:
         clear_screen()
         order = get_pool_market_order(selected_pool, pool_orders)
@@ -181,6 +188,7 @@ def show_market(
             "2. Vender inventário inteiro",
             "3. Comprar vara",
             order_line,
+            "5. Appraise (rerolar kg + mutação)",
             "0. Voltar",
         ])
 
@@ -346,6 +354,88 @@ def show_market(
                 on_money_spent(rod.price)
             owned_rods.append(rod)
             print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
+            input("\nEnter para voltar.")
+            continue
+
+        if choice == "5":
+            clear_screen()
+            if not inventory:
+                print("Inventário vazio.")
+                input("\nEnter para voltar.")
+                continue
+
+            print_spaced_lines([
+                "🔎 Appraise",
+                "Escolha um peixe para rerolar KG e mutação.",
+                "O custo é 35% do valor atual do peixe.",
+            ])
+            for idx, entry in enumerate(inventory, start=1):
+                value = calculate_entry_value(entry)
+                cost = _appraise_cost(entry)
+                mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+                print(
+                    f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                    f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
+                )
+
+            selection = input("Digite o número do peixe: ").strip()
+            if not selection.isdigit():
+                print("Entrada inválida.")
+                input("\nEnter para voltar.")
+                continue
+
+            idx = int(selection)
+            if not (1 <= idx <= len(inventory)):
+                print("Número fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            entry = inventory[idx - 1]
+            profile = fish_by_name.get(entry.name)
+            if not profile:
+                print("Esse peixe não pode ser avaliado agora.")
+                input("\nEnter para voltar.")
+                continue
+
+            cost = _appraise_cost(entry)
+            if balance < cost:
+                print("Saldo insuficiente para appraise.")
+                input("\nEnter para voltar.")
+                continue
+
+            old_kg = entry.kg
+            old_mutation = entry.mutation_name
+            old_value = calculate_entry_value(entry)
+
+            confirm = input(
+                f"Cobrar {format_currency(cost)} para rerolar {entry.name}. Confirmar? (s/n): "
+            ).strip().lower()
+            if confirm != "s":
+                continue
+
+            balance -= cost
+            if on_money_spent:
+                on_money_spent(cost)
+
+            entry.kg = random.uniform(profile.kg_min, profile.kg_max)
+            mutation = choose_mutation(available_mutations)
+            entry.mutation_name = mutation.name if mutation else None
+            entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
+            entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
+            new_value = calculate_entry_value(entry)
+
+            old_mutation_label = old_mutation if old_mutation else "Sem mutação"
+            new_mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutação"
+            value_delta = new_value - old_value
+            print_spaced_lines([
+                "✅ Appraise concluído!",
+                f"KG: {old_kg:0.2f} -> {entry.kg:0.2f}",
+                f"Mutação: {old_mutation_label} -> {new_mutation_label}",
+                (
+                    f"Valor estimado: {format_currency(old_value)} -> {format_currency(new_value)} "
+                    f"({value_delta:+.2f})"
+                ),
+            ])
             input("\nEnter para voltar.")
             continue
 
