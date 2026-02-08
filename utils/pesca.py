@@ -798,6 +798,7 @@ def run_fishing_round(
         ks.stop()
 
         if result.success:
+            first_catch = fish.name not in discovered_fish
             caught_kg = random.uniform(fish.kg_min, fish.kg_max)
             if caught_kg > equipped_rod.kg_max:
                 caught_kg = equipped_rod.kg_max
@@ -832,6 +833,8 @@ def run_fishing_round(
             )
             level, xp, level_ups = apply_xp_gain(level, xp, gained_xp)
             print(f"🎣 Você pescou: {fish.name} [{fish.rarity}] - {caught_kg:0.2f}kg")
+            if first_catch:
+                print(f"📘 Primeira captura registrada no bestiário: {fish.name}!")
             if mutation:
                 print(
                     "🧬 Mutação: "
