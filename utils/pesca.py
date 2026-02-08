@@ -15,6 +15,7 @@ from typing import Callable, Dict, List, Optional
 from colorama import init as colorama_init
 from pynput import keyboard
 
+from utils.audio import audio_manager
 from utils.bestiary import show_bestiary
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
@@ -842,6 +843,7 @@ def run_fishing_round(
                     f"x{mutation_gold_multiplier:0.2f} Gold)"
                 )
             print(f"✨ Ganhou {gained_xp} XP.")
+            audio_manager.play_sfx("fish_catch_success.ogg")
             if level_ups:
                 print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
         else:
@@ -875,6 +877,7 @@ def run_fishing_round(
 def main():
     colorama_init(autoreset=True)
     random.seed()
+    audio_manager.start_bgm("background_music.ogg")
 
     base_dir = Path(__file__).resolve().parent.parent / "pools"
     pools = load_pools(base_dir)
@@ -1114,6 +1117,7 @@ def main():
             )
         exit_requested = True
     finally:
+        audio_manager.stop_bgm()
         for signum, handler in previous_signal_handlers.items():
             signal.signal(signum, handler)
         if not exit_requested:
