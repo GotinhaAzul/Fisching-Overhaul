@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 
 
 BASE_XP_REQUIREMENT = 100
-XP_GROWTH_RATE = 1.5
+XP_GROWTH_RATE = 1.35
 
 RARITY_XP: Dict[str, int] = {
     "Comum": 10,
