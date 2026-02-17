@@ -1,10 +1,11 @@
 {
   "name": "Polvo Luminoso",
   "rarity": "Epico",
-  "description": "Uma especie de polvo rara que atrai presas com o brilho nos tentaculos.",
+  "description": "O Polvo Luminoso usa padroes de bioluminescencia nos tentaculos para atrair presas em aguas de baixa visibilidade. Cada pulso de luz pode indicar estado de alerta, caca ou defesa territorial, tornando seu comportamento dificil de prever. Vive perto de estruturas rochosas profundas, onde encontra abrigo e pontos de ataque. Quando capturado, utiliza jatos curtos e torcoes simultaneas para resistir ate o fim.",
   "kg_min": 5.0,
   "kg_max": 10.0,
   "base_value": 95,
   "sequence_len": 7,
   "reaction_time_s": 2.3
 }
+

@@ -1,0 +1,9 @@
+{
+  "name": "Vara Eclipse",
+  "luck": 0.3,
+  "kg_max": 100.0,
+  "control": 0,
+  "description": "Não irei permitir que o eclipse da dor, encubra minha luz interior.",
+  "price": 0,
+  "unlocked_default": false
+}

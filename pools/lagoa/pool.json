@@ -3,8 +3,8 @@
   "description": "Uma lagoa calma com peixes de água doce.",
   "unlocked_default": true,
   "rarity_chances": {
-    "Comum": 60,
-    "Incomum": 25,
+    "Comum": 65,
+    "Incomum": 20,
     "Raro": 10,
     "Epico": 4,
     "Lendario": 1

@@ -1,0 +1,11 @@
+{
+  "name": "Salmajoia",
+  "rarity": "Incomum",
+  "description": "O Salmajoia apresenta cristais verdes incrustados entre as escamas, resultado da exposicao continua a minerais raros das profundezas. Esses fragmentos funcionam como armadura parcial e refletem luz fraca, criando um brilho discreto em aguas escuras. A especie percorre longas rotas internas em busca de correntes ricas em nutrientes. Embora pareca tranquilo, oferece resistencia firme e constante quando fisgado.",
+  "kg_min": 3.0,
+  "kg_max": 5.0,
+  "base_value": 18,
+  "sequence_len": 5,
+  "reaction_time_s": 1.5
+}
+

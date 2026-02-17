@@ -1,0 +1,12 @@
+{
+  "name": "Profundezas Desoladas",
+  "description": "Uma ruina esquecida pelo tempo, um grande caminho abaixo do oceano.",
+ "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 40,
+    "Incomum": 40,
+    "Raro": 14,
+    "Epico": 11,
+    "Lendario": 2
+  }
+}

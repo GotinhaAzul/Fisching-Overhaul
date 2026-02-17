@@ -3,12 +3,28 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
 
+from utils.crafting import (
+    CraftingDefinition,
+    CraftingProgress,
+    CraftingState,
+    apply_craft_submission,
+    count_inventory_fish,
+    count_inventory_mutations,
+    deliver_inventory_entry_for_craft,
+    format_crafting_requirement,
+    get_craft_deliverable_indexes,
+    has_any_pool_bestiary_full_completion,
+    is_craft_ready,
+    pay_craft_requirement,
+    required_money_for_craft,
+    update_crafting_unlocks,
+)
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
-from utils.mutations import Mutation, choose_mutation
+from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
 
@@ -144,6 +160,297 @@ def format_rod_entry(index: int, rod: Rod) -> str:
     )
 
 
+def _craft_requirements_progress(
+    definition: CraftingDefinition,
+    crafting_progress: CraftingProgress,
+    level: int,
+) -> tuple[int, int]:
+    total = len(definition.craft_requirements)
+    done = 0
+    for requirement in definition.craft_requirements:
+        _, _, _, requirement_done = format_crafting_requirement(
+            requirement,
+            definition.craft_id,
+            crafting_progress,
+            level,
+        )
+        if requirement_done:
+            done += 1
+    return done, total
+
+
+def _format_crafting_recipe_status(
+    definition: CraftingDefinition,
+    crafting_state: CraftingState,
+    crafting_progress: CraftingProgress,
+    level: int,
+) -> str:
+    if definition.craft_id in crafting_state.crafted:
+        return "[CONCLUIDA]"
+    if is_craft_ready(definition, crafting_progress, level):
+        return "[PRONTA]"
+    done, total = _craft_requirements_progress(definition, crafting_progress, level)
+    return f"[EM PROGRESSO {done}/{total}]"
+
+
+def _show_crafting_recipe_detail(
+    definition: CraftingDefinition,
+    inventory: List[InventoryEntry],
+    balance: float,
+    level: int,
+    available_rods: Sequence[Rod],
+    owned_rods: List[Rod],
+    unlocked_rods: set[str],
+    crafting_state: CraftingState,
+    crafting_progress: CraftingProgress,
+    on_money_spent,
+    on_inventory_changed: Optional[Callable[[], None]] = None,
+) -> float:
+    while True:
+        clear_screen()
+        done_count, total_count = _craft_requirements_progress(
+            definition,
+            crafting_progress,
+            level,
+        )
+        recipe_status = _format_crafting_recipe_status(
+            definition,
+            crafting_state,
+            crafting_progress,
+            level,
+        )
+        header_lines = [
+            f"=== Crafting: {definition.name} ===",
+            f"Status: {recipe_status}",
+            f"Vara alvo: {definition.rod_name}",
+            f"Progresso: {done_count}/{total_count} requisitos concluidos",
+        ]
+        if definition.description:
+            header_lines.insert(1, definition.description)
+        print_spaced_lines(header_lines)
+
+        print("")
+        print("Requisitos:")
+        for requirement in definition.craft_requirements:
+            label, current, target, done = format_crafting_requirement(
+                requirement,
+                definition.craft_id,
+                crafting_progress,
+                level,
+            )
+            requirement_status = "OK" if done else "PENDENTE"
+            print(f"- {label} ({current}/{target}) [{requirement_status}]")
+
+        deliverable_indexes = get_craft_deliverable_indexes(
+            definition,
+            crafting_progress,
+            inventory,
+        )
+        money_remaining = required_money_for_craft(definition, crafting_progress)
+        can_craft = is_craft_ready(definition, crafting_progress, level)
+
+        action_map: Dict[str, str] = {}
+        option_number = 1
+        print("\nAcoes:")
+        if deliverable_indexes:
+            key = str(option_number)
+            action_map[key] = "deliver_fish"
+            print(f"{key}. Entregar peixe ({len(deliverable_indexes)} elegivel/eis)")
+            option_number += 1
+        if money_remaining > 0:
+            key = str(option_number)
+            action_map[key] = "pay_money"
+            print(f"{key}. Pagar dinheiro ({format_currency(money_remaining)} pendente)")
+            option_number += 1
+        if can_craft:
+            key = str(option_number)
+            action_map[key] = "craft"
+            print(f"{key}. Criar vara")
+        print("0. Voltar")
+
+        choice = input("Escolha uma opcao: ").strip()
+        if choice == "0":
+            return balance
+
+        action = action_map.get(choice)
+        if not action:
+            print("Opcao invalida.")
+            input("\nEnter para voltar.")
+            continue
+
+        if action == "deliver_fish":
+            clear_screen()
+            print_spaced_lines([
+                "=== Entrega para crafting ===",
+                f"Receita: {definition.name}",
+                "Peixes elegiveis no inventario:",
+            ])
+            for index in deliverable_indexes:
+                entry = inventory[index - 1]
+                mutation_label = f" * {entry.mutation_name}" if entry.mutation_name else ""
+                print(
+                    f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                    f"- {format_currency(calculate_entry_value(entry))}"
+                )
+
+            selection = input("Digite o numero do peixe: ").strip()
+            if not selection.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            selected_index = int(selection)
+            delivered = deliver_inventory_entry_for_craft(
+                definition,
+                crafting_progress,
+                inventory,
+                selected_index,
+            )
+            if not delivered:
+                print("Peixe nao elegivel para este crafting.")
+                input("\nEnter para voltar.")
+                continue
+
+            mutation_label = f" * {delivered.mutation_name}" if delivered.mutation_name else ""
+            print(
+                f"Entrega registrada: {delivered.name} ({delivered.kg:0.2f}kg){mutation_label}"
+            )
+            if on_inventory_changed:
+                on_inventory_changed()
+            input("\nEnter para voltar.")
+            continue
+
+        if action == "pay_money":
+            clear_screen()
+            print_spaced_lines([
+                "=== Pagamento de crafting ===",
+                f"Receita: {definition.name}",
+                f"Saldo atual: {format_currency(balance)}",
+                f"Valor pendente: {format_currency(money_remaining)}",
+            ])
+            if balance < money_remaining:
+                print("Saldo insuficiente para quitar o valor pendente.")
+                input("\nEnter para voltar.")
+                continue
+
+            confirm = input("Confirmar pagamento integral? (s/n): ").strip().lower()
+            if confirm != "s":
+                continue
+
+            paid = pay_craft_requirement(
+                definition,
+                crafting_progress,
+                money_remaining,
+            )
+            balance -= paid
+            if on_money_spent and paid > 0:
+                on_money_spent(paid)
+            print(f"Pagamento registrado: {format_currency(paid)}")
+            input("\nEnter para voltar.")
+            continue
+
+        if action == "craft":
+            success, message = apply_craft_submission(
+                definition,
+                crafting_state,
+                crafting_progress,
+                available_rods,
+                owned_rods,
+                unlocked_rods,
+                level=level,
+            )
+            print(message)
+            input("\nEnter para voltar.")
+            if success:
+                return balance
+
+
+def _show_crafting_menu(
+    inventory: List[InventoryEntry],
+    balance: float,
+    level: int,
+    available_rods: Sequence[Rod],
+    owned_rods: List[Rod],
+    unlocked_rods: set[str],
+    crafting_definitions: Sequence[CraftingDefinition],
+    crafting_state: CraftingState,
+    crafting_progress: CraftingProgress,
+    on_money_spent,
+    refresh_unlocks: Callable[[], None],
+    on_inventory_changed: Optional[Callable[[], None]] = None,
+) -> float:
+    crafting_by_id = {definition.craft_id: definition for definition in crafting_definitions}
+
+    while True:
+        refresh_unlocks()
+        clear_screen()
+
+        visible_recipes = sorted(
+            (
+                definition
+                for definition in crafting_by_id.values()
+                if definition.craft_id in crafting_state.unlocked
+                and definition.craft_id not in crafting_state.crafted
+            ),
+            key=lambda definition: definition.name,
+        )
+        print_spaced_lines([
+            "=== Crafting de varas ===",
+            f"Receitas desbloqueadas: {len(visible_recipes)}",
+            f"Receitas concluidas: {len(crafting_state.crafted)}",
+        ])
+        if not visible_recipes:
+            print("Nenhuma receita disponivel no momento.")
+            input("\nEnter para voltar.")
+            return balance
+
+        print("")
+        print("Receitas:")
+        for index, definition in enumerate(visible_recipes, start=1):
+            recipe_status = _format_crafting_recipe_status(
+                definition,
+                crafting_state,
+                crafting_progress,
+                level,
+            )
+            done_count, total_count = _craft_requirements_progress(
+                definition,
+                crafting_progress,
+                level,
+            )
+            print(f"{index}. {definition.name} {recipe_status} ({done_count}/{total_count})")
+        print("0. Voltar")
+
+        choice = input("Escolha uma receita: ").strip()
+        if choice == "0":
+            return balance
+        if not choice.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            continue
+
+        selected_index = int(choice)
+        if not (1 <= selected_index <= len(visible_recipes)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            continue
+
+        selected_recipe = visible_recipes[selected_index - 1]
+        balance = _show_crafting_recipe_detail(
+            selected_recipe,
+            inventory,
+            balance,
+            level,
+            available_rods,
+            owned_rods,
+            unlocked_rods,
+            crafting_state,
+            crafting_progress,
+            on_money_spent,
+            on_inventory_changed,
+        )
+
+
 def show_market(
     inventory: List[InventoryEntry],
     balance: float,
@@ -155,95 +462,279 @@ def show_market(
     fish_by_name: Dict[str, "FishProfile"],
     available_mutations: List[Mutation],
     *,
+    equipped_rod: Optional[Rod] = None,
+    pools: Optional[Sequence["FishingPool"]] = None,
+    discovered_fish: Optional[set[str]] = None,
+    mission_state: object = None,
+    play_time_seconds: float = 0.0,
+    crafting_definitions: Optional[Sequence[CraftingDefinition]] = None,
+    crafting_state: Optional[CraftingState] = None,
+    crafting_progress: Optional[CraftingProgress] = None,
     pool_orders: Optional[Dict[str, PoolMarketOrder]] = None,
     unlocked_rods: Optional[set[str]] = None,
+    unlocked_pools: Optional[set[str]] = None,
     on_money_earned=None,
     on_money_spent=None,
     on_fish_delivered=None,
+    on_appraise_completed: Optional[Callable[[InventoryEntry], Optional[List[str]]]] = None,
 ) -> tuple[float, int, int]:
     pool_orders = pool_orders if pool_orders is not None else {}
+    resolved_pools = list(pools) if pools is not None else []
+    resolved_discovered_fish = discovered_fish if discovered_fish is not None else set()
+    resolved_unlocked_rods = unlocked_rods if unlocked_rods is not None else set()
+    resolved_unlocked_pools = unlocked_pools if unlocked_pools is not None else set()
+    normalized_unlocked_pools = {
+        pool_name.strip().casefold()
+        for pool_name in resolved_unlocked_pools
+    }
+    selected_pool_id = selected_pool.folder.name.strip().casefold()
+    selected_pool_name = selected_pool.name.strip().casefold()
+    crafting_notifications: List[str] = []
+    inventory_fish_counts_cache: Dict[str, int] = {}
+    inventory_mutation_counts_cache: Dict[str, int] = {}
+    inventory_fish_counts_dirty = True
 
     def _appraise_cost(entry: InventoryEntry) -> float:
         return max(1.0, calculate_entry_value(entry) * 0.35)
 
+    def _mark_inventory_fish_counts_dirty() -> None:
+        nonlocal inventory_fish_counts_dirty
+        inventory_fish_counts_dirty = True
+
+    def _rebuild_inventory_count_caches_if_needed() -> None:
+        nonlocal inventory_fish_counts_dirty
+        if not inventory_fish_counts_dirty:
+            return
+        inventory_fish_counts_cache.clear()
+        inventory_fish_counts_cache.update(count_inventory_fish(inventory))
+        inventory_mutation_counts_cache.clear()
+        inventory_mutation_counts_cache.update(count_inventory_mutations(inventory))
+        inventory_fish_counts_dirty = False
+
+    def _get_inventory_fish_counts() -> Dict[str, int]:
+        _rebuild_inventory_count_caches_if_needed()
+        return inventory_fish_counts_cache
+
+    def _get_inventory_mutation_counts() -> Dict[str, int]:
+        _rebuild_inventory_count_caches_if_needed()
+        return inventory_mutation_counts_cache
+
+    def _refresh_crafting_unlocks() -> None:
+        if not crafting_definitions or not crafting_state or not crafting_progress:
+            return
+        newly_unlocked = update_crafting_unlocks(
+            crafting_definitions,
+            crafting_state,
+            crafting_progress,
+            level=level,
+            pools=resolved_pools,
+            discovered_fish=resolved_discovered_fish,
+            unlocked_pools=resolved_unlocked_pools,
+            mission_state=mission_state,
+            unlocked_rods=resolved_unlocked_rods,
+            play_time_seconds=play_time_seconds,
+            inventory_fish_counts=_get_inventory_fish_counts(),
+            inventory_mutation_counts=_get_inventory_mutation_counts(),
+        )
+        for definition in newly_unlocked:
+            crafting_notifications.append(f"Nova receita desbloqueada: {definition.rod_name}")
+
+    def _crafting_gate_status() -> tuple[bool, str]:
+        if not resolved_pools:
+            return False, "Crafting indisponivel sem pools carregadas."
+        if level < 8:
+            return False, "Crafting bloqueado: alcance o nivel 8."
+        if not has_any_pool_bestiary_full_completion(resolved_pools, resolved_discovered_fish):
+            return False, "Crafting bloqueado: complete 100% do bestiario em ao menos uma pool."
+        return True, ""
+
     while True:
+        _refresh_crafting_unlocks()
         clear_screen()
         order = get_pool_market_order(selected_pool, pool_orders)
-        order_line = "4. Pedido atual"
+        order_line = "3. Pedido atual"
         if order:
             time_left_s = max(0, int(order.expires_at - time.time()))
             minutes_left = time_left_s // 60
             seconds_left = time_left_s % 60
             order_line = (
-                "4. Pedido atual "
+                "3. Pedido atual "
                 f"({order.required_count}x {order.fish_name} [{order.rarity}] | "
                 f"{minutes_left:02d}:{seconds_left:02d})"
             )
-        print_spaced_lines([
+
+        crafting_gate_open, crafting_gate_reason = _crafting_gate_status()
+        crafting_line = "5. Crafting de varas"
+        if not (crafting_definitions and crafting_state and crafting_progress):
+            crafting_line += " (indisponivel)"
+        elif not crafting_gate_open:
+            crafting_line += " (bloqueado)"
+
+        lines = [
             "🛒 === Mercado ===",
             get_market_line(),
             f"Pool atual: {selected_pool.name}",
             f"Dinheiro: {format_currency(balance)}",
-            "1. Vender peixe individual",
-            "2. Vender inventário inteiro",
-            "3. Comprar vara",
-            order_line,
-            "5. Appraise - rerolar kg + mutação",
-            "0. Voltar",
-        ])
+        ]
+        if crafting_notifications:
+            lines.extend(f"🔔 {note}" for note in crafting_notifications)
+            crafting_notifications.clear()
+        lines.extend(
+            [
+                "1. Vender peixe",
+                "2. Comprar vara",
+                order_line,
+                "4. Appraise - rerolar kg + mutacao",
+                crafting_line,
+                "0. Voltar",
+            ]
+        )
+        print_spaced_lines(lines)
 
-        choice = input("Escolha uma opção: ").strip()
+        choice = input("Escolha uma opcao: ").strip()
         if choice == "0":
             return balance, level, xp
 
         if choice == "1":
             clear_screen()
             if not inventory:
-                print("Inventário vazio.")
+                print("Inventario vazio.")
                 input("\nEnter para voltar.")
                 continue
 
-            print_spaced_lines(["Escolha o peixe para vender:"])
-            for idx, entry in enumerate(inventory, start=1):
+            print_spaced_lines([
+                "Escolha como vender:",
+                "1. Vender peixe individual",
+                "2. Vender inventario inteiro",
+                "0. Voltar",
+            ])
+
+            sell_choice = input("Escolha uma opcao: ").strip()
+            if sell_choice == "0":
+                continue
+
+            if sell_choice == "1":
+                clear_screen()
+                print_spaced_lines(["Escolha o peixe para vender:"])
+                for index, entry in enumerate(inventory, start=1):
+                    value = calculate_entry_value(entry)
+                    mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+                    print(
+                        f"{index}. {entry.name} "
+                        f"({entry.kg:0.2f}kg){mutation_label} - {format_currency(value)}"
+                    )
+
+                selection = input("Digite o numero do peixe: ").strip()
+                if not selection.isdigit():
+                    print("Entrada invalida.")
+                    input("\nEnter para voltar.")
+                    continue
+
+                selected_index = int(selection)
+                if not (1 <= selected_index <= len(inventory)):
+                    print("Numero fora do intervalo.")
+                    input("\nEnter para voltar.")
+                    continue
+
+                entry = inventory.pop(selected_index - 1)
+                _mark_inventory_fish_counts_dirty()
                 value = calculate_entry_value(entry)
+                balance += value
+                if on_money_earned:
+                    on_money_earned(value)
+                if on_fish_delivered:
+                    on_fish_delivered(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
                 print(
-                    f"{idx}. {entry.name} "
-                    f"({entry.kg:0.2f}kg){mutation_label} - {format_currency(value)}"
+                    f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                    f"por {format_currency(value)}."
                 )
-
-            selection = input("Digite o número do peixe: ").strip()
-            if not selection.isdigit():
-                print("Entrada inválida.")
                 input("\nEnter para voltar.")
                 continue
 
-            idx = int(selection)
-            if not (1 <= idx <= len(inventory)):
-                print("Número fora do intervalo.")
+            if sell_choice == "2":
+                clear_screen()
+                total = sum(calculate_entry_value(entry) for entry in inventory)
+                if on_fish_delivered:
+                    for entry in inventory:
+                        on_fish_delivered(entry)
+                inventory.clear()
+                _mark_inventory_fish_counts_dirty()
+                balance += total
+                if on_money_earned:
+                    on_money_earned(total)
+                print(f"Inventario vendido por {format_currency(total)}.")
                 input("\nEnter para voltar.")
                 continue
 
-            entry = inventory.pop(idx - 1)
-            value = calculate_entry_value(entry)
-            balance += value
-            if on_money_earned:
-                on_money_earned(value)
-            if on_fish_delivered:
-                on_fish_delivered(entry)
-            mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-            print(
-                f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                f"por {format_currency(value)}."
-            )
+            print("Opcao invalida.")
             input("\nEnter para voltar.")
             continue
 
-        if choice == "4":
+        if choice == "2":
+            clear_screen()
+            owned_rod_names = {rod.name for rod in owned_rods}
+            rods_for_sale = [
+                rod
+                for rod in available_rods
+                if rod.name not in owned_rod_names
+                and (
+                    unlocked_rods is None
+                    or rod.name in resolved_unlocked_rods
+                    or (
+                        bool(rod.unlocks_with_pool)
+                        and rod.unlocks_with_pool.strip().casefold()
+                        in {selected_pool_id, selected_pool_name}
+                        and (
+                            selected_pool.name in resolved_unlocked_pools
+                            or selected_pool_id in normalized_unlocked_pools
+                            or selected_pool_name in normalized_unlocked_pools
+                        )
+                    )
+                )
+            ]
+            if not rods_for_sale:
+                print("Nenhuma vara disponivel para compra.")
+                input("\nEnter para voltar.")
+                continue
+
+            print_spaced_lines(["Varas disponiveis:"])
+            for index, rod in enumerate(rods_for_sale, start=1):
+                print(format_rod_entry(index, rod))
+                print(f"   {rod.description}")
+                print()
+
+            selection = input("Digite o numero da vara: ").strip()
+            if not selection.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            selected_index = int(selection)
+            if not (1 <= selected_index <= len(rods_for_sale)):
+                print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            rod = rods_for_sale[selected_index - 1]
+            if balance < rod.price:
+                print("Saldo insuficiente.")
+                input("\nEnter para voltar.")
+                continue
+
+            balance -= rod.price
+            if on_money_spent:
+                on_money_spent(rod.price)
+            owned_rods.append(rod)
+            print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
+            input("\nEnter para voltar.")
+            continue
+
+        if choice == "3":
             clear_screen()
             order = get_pool_market_order(selected_pool, pool_orders)
             if not order:
-                print("Não há pedido disponível para esta pool agora.")
+                print("Nao ha pedido disponivel para esta pool agora.")
                 input("\nEnter para voltar.")
                 continue
 
@@ -255,13 +746,13 @@ def show_market(
             print_spaced_lines([
                 "📦 Pedido Atual ",
                 f"Pool: {order.pool_name}",
-                f"Solicitação: {order.required_count}x {order.fish_name} [{order.rarity}]",
-                f"Disponível no inventário: {len(matching_entries)}",
+                f"Solicitacao: {order.required_count}x {order.fish_name} [{order.rarity}]",
+                f"Disponivel no inventario: {len(matching_entries)}",
                 f"Recompensa: {format_currency(order.reward_money)} + {order.reward_xp} XP",
             ])
 
             if len(matching_entries) < order.required_count:
-                print("Você ainda não tem peixes suficientes para cumprir o pedido.")
+                print("Voce ainda nao tem peixes suficientes para cumprir o pedido.")
                 input("\nEnter para voltar.")
                 continue
 
@@ -280,121 +771,58 @@ def show_market(
                 remaining_inventory.append(entry)
 
             inventory[:] = remaining_inventory
+            _mark_inventory_fish_counts_dirty()
             balance += order.reward_money
             level, xp, level_ups = apply_xp_gain(level, xp, order.reward_xp)
             if on_money_earned:
                 on_money_earned(order.reward_money)
             print(
-                f"Pedido entregue! Você recebeu {format_currency(order.reward_money)} "
+                f"Pedido entregue! Voce recebeu {format_currency(order.reward_money)} "
                 f"e {order.reward_xp} XP."
             )
             if level_ups:
-                print(f"⬆️ Você subiu {level_ups} nível(is)!")
+                print(f"⬆️ Voce subiu {level_ups} nivel(is)!")
             pool_orders.pop(selected_pool.name, None)
             input("\nEnter para voltar.")
             continue
 
-        if choice == "2":
+        if choice == "4":
             clear_screen()
             if not inventory:
-                print("Inventário vazio.")
-                input("\nEnter para voltar.")
-                continue
-
-            total = sum(calculate_entry_value(entry) for entry in inventory)
-            if on_fish_delivered:
-                for entry in inventory:
-                    on_fish_delivered(entry)
-            inventory.clear()
-            balance += total
-            if on_money_earned:
-                on_money_earned(total)
-            print(f"Inventário vendido por {format_currency(total)}.")
-            input("\nEnter para voltar.")
-            continue
-
-        if choice == "3":
-            clear_screen()
-            rods_for_sale = [
-                rod
-                for rod in available_rods
-                if rod.name not in {r.name for r in owned_rods}
-                and (unlocked_rods is None or rod.name in unlocked_rods)
-            ]
-            if not rods_for_sale:
-                print("Nenhuma vara disponível para compra.")
-                input("\nEnter para voltar.")
-                continue
-
-            print_spaced_lines(["Varas disponíveis:"])
-            for idx, rod in enumerate(rods_for_sale, start=1):
-                print(format_rod_entry(idx, rod))
-                print(f"   {rod.description}")
-                print()
-
-            selection = input("Digite o número da vara: ").strip()
-            if not selection.isdigit():
-                print("Entrada inválida.")
-                input("\nEnter para voltar.")
-                continue
-
-            idx = int(selection)
-            if not (1 <= idx <= len(rods_for_sale)):
-                print("Número fora do intervalo.")
-                input("\nEnter para voltar.")
-                continue
-
-            rod = rods_for_sale[idx - 1]
-            if balance < rod.price:
-                print("Saldo insuficiente.")
-                input("\nEnter para voltar.")
-                continue
-
-            balance -= rod.price
-            if on_money_spent:
-                on_money_spent(rod.price)
-            owned_rods.append(rod)
-            print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
-            input("\nEnter para voltar.")
-            continue
-
-        if choice == "5":
-            clear_screen()
-            if not inventory:
-                print("Inventário vazio.")
+                print("Inventario vazio.")
                 input("\nEnter para voltar.")
                 continue
 
             print_spaced_lines([
                 "🔎 Appraise",
-                "Escolha um peixe para rerolar KG e mutação.",
-                "Que a sorte esteja com você!",
+                "Escolha um peixe para rerolar KG e mutacao.",
+                "Que a sorte esteja com voce!",
             ])
-            for idx, entry in enumerate(inventory, start=1):
+            for index, entry in enumerate(inventory, start=1):
                 value = calculate_entry_value(entry)
                 cost = _appraise_cost(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
                 print(
-                    f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                    f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
                     f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
                 )
 
-            selection = input("Digite o número do peixe: ").strip()
+            selection = input("Digite o numero do peixe: ").strip()
             if not selection.isdigit():
-                print("Entrada inválida.")
+                print("Entrada invalida.")
                 input("\nEnter para voltar.")
                 continue
 
-            idx = int(selection)
-            if not (1 <= idx <= len(inventory)):
-                print("Número fora do intervalo.")
+            selected_index = int(selection)
+            if not (1 <= selected_index <= len(inventory)):
+                print("Numero fora do intervalo.")
                 input("\nEnter para voltar.")
                 continue
 
-            entry = inventory[idx - 1]
+            entry = inventory[selected_index - 1]
             profile = fish_by_name.get(entry.name)
             if not profile:
-                print("Esse peixe não pode ser avaliado agora.")
+                print("Esse peixe nao pode ser avaliado agora.")
                 input("\nEnter para voltar.")
                 continue
 
@@ -419,26 +847,66 @@ def show_market(
                 on_money_spent(cost)
 
             entry.kg = random.uniform(profile.kg_min, profile.kg_max)
-            mutation = choose_mutation(available_mutations)
+            appraise_mutations = (
+                filter_mutations_for_rod(available_mutations, equipped_rod.name)
+                if equipped_rod is not None
+                else list(available_mutations)
+            )
+            mutation = choose_mutation(appraise_mutations)
             entry.mutation_name = mutation.name if mutation else None
             entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
             entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
             new_value = calculate_entry_value(entry)
 
-            old_mutation_label = old_mutation if old_mutation else "Sem mutação"
-            new_mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutação"
+            old_mutation_label = old_mutation if old_mutation else "Sem mutacao"
+            new_mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
             value_delta = new_value - old_value
             print_spaced_lines([
-                "✅ Appraise concluído!",
+                "✅ Appraise concluido!",
                 f"KG: {old_kg:0.2f} -> {entry.kg:0.2f}",
-                f"Mutação: {old_mutation_label} -> {new_mutation_label}",
+                f"Mutacao: {old_mutation_label} -> {new_mutation_label}",
                 (
                     f"Valor estimado: {format_currency(old_value)} -> {format_currency(new_value)} "
                     f"({value_delta:+.2f})"
                 ),
             ])
+
+            if on_appraise_completed:
+                notes = on_appraise_completed(entry)
+                if notes:
+                    print("")
+                    for note in notes:
+                        print(note)
+            _refresh_crafting_unlocks()
+
             input("\nEnter para voltar.")
             continue
 
-        print("Opção inválida.")
+        if choice == "5":
+            if not (crafting_definitions and crafting_state and crafting_progress):
+                print("Sistema de crafting indisponivel no momento.")
+                input("\nEnter para voltar.")
+                continue
+            if not crafting_gate_open:
+                print(crafting_gate_reason)
+                input("\nEnter para voltar.")
+                continue
+
+            balance = _show_crafting_menu(
+                inventory,
+                balance,
+                level,
+                available_rods,
+                owned_rods,
+                resolved_unlocked_rods,
+                crafting_definitions,
+                crafting_state,
+                crafting_progress,
+                on_money_spent,
+                _refresh_crafting_unlocks,
+                _mark_inventory_fish_counts_dirty,
+            )
+            continue
+
+        print("Opcao invalida.")
         input("\nEnter para voltar.")

@@ -1,0 +1,14 @@
+{
+  "name": "Eclipse Solar",
+  "description": "O sol escurece, coberto pela lua de forma anelar. Uma espessa nevoa se forma sobre as aguas.",
+  "chance_percent": 12,
+  "interval_minutes": 6,
+  "duration_minutes": 2,
+  "luck_multiplier": 1.2,
+  "xp_multiplier": 1.2,
+  "rarity_chances": {
+    "Incomum": 4,
+    "Raro": 4,
+    "Epico": 3
+  }
+}

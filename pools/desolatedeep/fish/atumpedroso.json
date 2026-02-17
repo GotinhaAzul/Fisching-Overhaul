@@ -1,0 +1,10 @@
+{
+  "name": "Atum Pedroso",
+  "rarity": "Raro",
+  "description": "O Atum Pedroso e um predador oportunista adaptado ao relevo quebrado das Profundezas Desoladas. Apesar de preferir caçar axolotes, a escassez de presas fez a especie desenvolver uma camada externa rigida, parecida com rocha, que serve tanto para camuflagem quanto para defesa. Permanece quase imovel entre destrocos por longos periodos e acelera em explosoes curtas quando detecta movimento. Essa combinacao de paciencia e arrancada torna sua captura imprevisivel.",
+  "kg_min": 5.0,
+  "kg_max": 7.0,
+  "base_value": 70,
+  "sequence_len": 7,
+  "reaction_time_s": 2.0
+}

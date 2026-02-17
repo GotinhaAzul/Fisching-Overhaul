@@ -1,7 +1,7 @@
 {
   "name": "Coral-Vivo",
   "rarity": "Incomum",
-  "description": "Caranguejos Hermitoes que passaram a viver dentro de corais.",
+  "description": "O Coral-Vivo e uma colonia de caranguejos ermitoes que passou geracoes moldando conchas com fragmentos de coral do Grande Recife. A estrutura externa funciona como abrigo e camuflagem ao mesmo tempo, confundindo predadores e pescadores desatentos. Costuma se mover lentamente entre formacoes rasas em busca de restos organicos e pequenos moluscos. Quando fisgado, prende as garras no fundo e oferece resistencia inesperada para o tamanho.",
   "kg_min": 0.5,
   "kg_max": 1.0,
   "base_value": 25,

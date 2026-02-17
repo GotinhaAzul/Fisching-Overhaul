@@ -1,7 +1,7 @@
 {
   "name": "Tilápia",
   "rarity": "Comum",
-  "description": "Um peixe resistente e comum em lagoas tranquilas.",
+  "description": "A Tilapia e uma das especies mais versateis da Lagoa Tranquila, capaz de prosperar em diferentes profundidades e condicoes de agua. Alimenta-se de algas, pequenos invertebrados e residuos organicos, mantendo papel importante no equilibrio local. E comum em margens calmas e zonas com vegetacao submersa. Na pesca, oferece luta moderada e consistente, sendo excelente para capturas frequentes.",
   "kg_min": 0.4,
   "kg_max": 2.0,
   "base_value": 5,

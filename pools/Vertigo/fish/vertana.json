@@ -1,10 +1,11 @@
 {
   "name": "Vertana",
   "rarity": "Comum",
-  "description": "As escamas de peixe formam um espiral profundo, abundante por aqui.",
+  "description": "A Vertana e abundante em Vertigo e reconhecida pelas escamas com padroes espiralados que acompanham o fluxo local. Apesar de comum, e altamente adaptada: economiza energia ao nadar em circulos largos e aproveita correntes para migrar entre zonas de alimento. Alimenta-se de particulas organicas e pequenos invertebrados carregados pela agua. Sua captura e ideal para iniciantes que querem aprender a ler o ritmo instavel da regiao.",
   "kg_min": 1.2,
   "kg_max": 5.0,
   "base_value": 10,
   "sequence_len": 5,
   "reaction_time_s": 2.5
 }
+

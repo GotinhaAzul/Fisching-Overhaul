@@ -1,10 +1,10 @@
 {
   "name": "Jundiá",
   "rarity": "Raro",
-  "description": "Bagre de lagoa conhecido por sua resistência.",
+  "description": "O Jundia e um bagre resistente da Lagoa Tranquila, adaptado a aguas mais turvas e zonas de fundo lodoso. Usa barbilhoes sensiveis para localizar alimento mesmo com baixa visibilidade. Durante o dia, tende a permanecer em areas profundas e protegidas, tornando-se mais ativo ao entardecer. Quando capturado, combina peso e movimentos firmes para testar a paciencia do pescador.",
   "kg_min": 1.2,
   "kg_max": 3.5,
   "base_value": 28,
   "sequence_len": 5,
-  "reaction_time_s": 2.3
+  "reaction_time_s": 1.9
 }

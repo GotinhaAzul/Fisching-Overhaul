@@ -1,7 +1,7 @@
 {
   "name": "Anchova",
   "rarity": "Incomum",
-  "description": "Peixe rápido comum em águas costeiras.",
+  "description": "A Anchova e uma predadora agil do Mar Aberto, acostumada a perseguir cardumes em zonas costeiras de alta movimentacao. Seu nado rapido e coordenado permite ataques precisos em grupos pequenos. Alimenta-se principalmente de peixes menores e crustaceos que sobem com a mare. Na pesca, reage com corrida inicial forte e mudancas repentinas de direcao.",
   "kg_min": 1.0,
   "kg_max": 4.0,
   "base_value": 25,

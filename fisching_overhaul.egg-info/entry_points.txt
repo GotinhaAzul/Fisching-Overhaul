@@ -1,0 +1,2 @@
+[console_scripts]
+fisching = start_game:main

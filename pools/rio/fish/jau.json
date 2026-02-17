@@ -1,7 +1,7 @@
 {
   "name": "Jaú",
   "rarity": "Raro",
-  "description": "Bagre de grande porte encontrado em rios profundos.",
+  "description": "O Jau habita pocos profundos do Rio Correnteza, onde o fundo lodoso e a baixa luz favorecem sua estrategia de emboscada. Como bagre de grande porte, usa barbilhoes sensiveis para localizar alimento mesmo em agua turva. Costuma se mover pouco durante o dia e se torna mais ativo em periodos de menor luminosidade. Quando fisgado, aposta no peso do proprio corpo para cansar o pescador.",
   "kg_min": 4.0,
   "kg_max": 14.0,
   "base_value": 45,

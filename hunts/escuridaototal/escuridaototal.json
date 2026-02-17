@@ -1,0 +1,16 @@
+{
+  "name": "Escuridao Total...",
+  "description": "As profundezas escurecem, uma enorme silhueta surge, rodando os pequenos pontos de superficie.",
+  "pool_name": "As profundezas",
+  "duration_minutes": 4,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 2,
+  "disturbance_max": 1500,
+  "rarity_chances": {
+    "Raro": 6,
+    "Epico": 5,
+    "Lendario": 3
+  },
+  "cooldown_minutes": 8,
+  "disturbance_decay_per_check": 2
+}

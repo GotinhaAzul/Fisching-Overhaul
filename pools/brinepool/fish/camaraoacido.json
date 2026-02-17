@@ -1,0 +1,10 @@
+{
+  "name": "Camarão Acido",
+  "rarity": "Comum",
+  "description": "O camarão acido é um pequeno crustáceo. Ele possui a capacidade de se adaptar e sobreviver em condições extremas, particularmente em águas incrivelmente salgadas como as da Piscina de Salmoura. Alimenta-se de microorganismos durante o dia e está na base da cadeia alimentar.",
+  "kg_min": 0.7,
+  "kg_max": 1.2,
+  "base_value": 7,
+  "sequence_len": 4,
+  "reaction_time_s": 2.5
+}

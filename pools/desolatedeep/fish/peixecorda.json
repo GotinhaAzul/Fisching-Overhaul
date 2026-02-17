@@ -1,0 +1,10 @@
+{
+  "name": "Peixe-Corda",
+  "rarity": "Comum",
+  "description": "O Peixe-Corda tem corpo alongado e musculatura flexivel, capaz de se dobrar em angulos improvaveis para atravessar rachaduras estreitas. Vive entre estruturas colapsadas das Profundezas Desoladas, onde aproveita correntes fracas para economizar energia durante longos deslocamentos. Alimenta-se de larvas e residuos organicos presos nas paredes rochosas. Quando se debate no anzol, torce o proprio corpo como um no para escapar.",
+  "kg_min": 1.2,
+  "kg_max": 5.0,
+  "base_value": 10,
+  "sequence_len": 5,
+  "reaction_time_s": 2.5
+}

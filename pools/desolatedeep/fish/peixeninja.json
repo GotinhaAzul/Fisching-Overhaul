@@ -1,0 +1,10 @@
+{
+  "name": "Peixe Ninja",
+  "rarity": "Epico",
+  "description": "O Peixe Ninja e um herbivoro veloz que patrulha jardins de algas nas areas mais escuras da ruina. Seu corpo compacto e as nadadeiras estreitas reduzem arrasto, permitindo mudancas de direcao quase instantaneas. Embora nao seja um predador, seu comportamento territorial o torna agressivo contra invasores do mesmo porte. Pescadores experientes relatam que ele some da vista por instantes antes de reaparecer em outro ponto da linha.",
+  "kg_min": 5.0,
+  "kg_max": 10.0,
+  "base_value": 95,
+  "sequence_len": 4,
+  "reaction_time_s": 0.9
+}

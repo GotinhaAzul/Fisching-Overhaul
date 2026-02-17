@@ -1,0 +1,19 @@
+{
+  "id": "brinepool_unlock",
+  "name": "Uma rachadura no canto.",
+  "description": "Tem uma rachadura nas paredes, um brilho verde sai dela, mas fica dificil ver muito alem disso..",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Profundezas Desoladas",
+      "percent": 60
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Piscina de Salmoura"]
+    }
+  ]
+}

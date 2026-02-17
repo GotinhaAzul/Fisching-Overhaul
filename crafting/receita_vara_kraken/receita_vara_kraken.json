@@ -1,0 +1,39 @@
+{
+  "id": "vara_kraken_craft",
+  "rod_name": "Vara do Kraken",
+  "name": "Tentaculos das profundezas",
+  "description": "Reconstrua o poder da lula gigante em uma ferramenta que sabe utilizar.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "find_fish",
+        "count": 1,
+        "fish_name": "Lula Gigante"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Lula Gigante",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Marlim Azul",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Peixe-Corda",
+        "count": 3
+      },
+      {
+        "type": "money",
+        "amount": 10000
+      }
+    ]
+  }
+}

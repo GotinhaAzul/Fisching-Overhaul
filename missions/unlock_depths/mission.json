@@ -1,0 +1,29 @@
+{
+  "id": "depths_unlock",
+  "name": "A passagem.",
+  "description": "No fim da espiral, uma passagem exige sacrificios.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "level",
+      "level": 20
+    },
+    {
+      "type": "deliver_fish_with_mutation",
+      "count": 2,
+      "fish_name": "Barracunfunda",
+      "mutation_name": "Brilhante"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Artefato-Espiral"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["As profundezas"]
+    }
+  ]
+}

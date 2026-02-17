@@ -1,7 +1,7 @@
 {
   "name": "Pintado",
   "rarity": "Epico",
-  "description": "Peixe grande e cobiçado, raro de aparecer em lagoas.",
+  "description": "O Pintado e uma captura cobicada na Lagoa Tranquila por unir porte elevado e comportamento desconfiado. Vive proximo a estruturas submersas, onde espera o momento certo para atacar presas menores. Sua musculatura forte garante arranques potentes quando sente a tensao da linha. Fisga-lo costuma exigir insistencia, leitura do ponto e equipamento bem ajustado.",
   "kg_min": 2.5,
   "kg_max": 7.0,
   "base_value": 60,

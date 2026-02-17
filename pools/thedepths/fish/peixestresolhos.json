@@ -1,0 +1,11 @@
+{
+  "name": "Peixe Tres-Olhos",
+  "rarity": "Raro",
+  "description": "O Peixe Tres-Olhos evoluiu para navegar em baixa visibilidade usando um terceiro olho central, sensivel a variacoes minimas de luz. Essa adaptacao permite detectar presas e predadores antes que qualquer outro peixe da regiao perceba movimento. Costuma viver em pequenos grupos perto de paredoes inclinados, onde encontra abrigo e alimento com facilidade. Quando preso no anzol, sua leitura rapida do ambiente torna as tentativas de fuga surpreendentemente eficientes.",
+  "kg_min": 2.0,
+  "kg_max": 3.0,
+  "base_value": 80,
+  "sequence_len": 6,
+  "reaction_time_s": 1.6
+}
+

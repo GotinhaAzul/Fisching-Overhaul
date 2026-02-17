@@ -1,7 +1,7 @@
 {
   "name": "Robalo",
   "rarity": "Raro",
-  "description": "Espécie valorizada que vive em águas salgadas.",
+  "description": "O Robalo ocupa faixas de transicao do Mar Aberto, alternando entre aguas mais fundas e areas proximas da costa conforme a mare. E um cacador oportunista, atento a movimentos sutis de presas perto de estruturas submersas. Sua adaptabilidade faz com que apareca em diferentes condicoes de clima e corrente. Na pesca, costuma oferecer resistencia consistente e tecnica.",
   "kg_min": 2.0,
   "kg_max": 8.0,
   "base_value": 55,

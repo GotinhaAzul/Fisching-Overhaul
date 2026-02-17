@@ -1,7 +1,7 @@
 {
   "name": "Lambari",
   "rarity": "Comum",
-  "description": "Peixe pequeno e ágil, típico de lagoas rasas.",
+  "description": "O Lambari e pequeno, agil e extremamente comum na Lagoa Tranquila, formando cardumes que se espalham por areas rasas. Sua dieta variada inclui insetos, larvas e particulas organicas da superficie. Por reagir rapido a qualquer movimento, e um bom indicador da atividade geral da lagoa. Na pesca, exige reflexo e timing, mesmo sendo uma captura leve.",
   "kg_min": 0.1,
   "kg_max": 0.5,
   "base_value": 3,

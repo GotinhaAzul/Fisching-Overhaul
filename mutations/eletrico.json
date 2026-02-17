@@ -1,8 +1,8 @@
 {
   "name": "Elétrico",
   "description": "Ai! Cuidado ao tocar nesse peixe.",
-  "xp_multiplier": 1.4,
-  "gold_multiplier": 1.4,
-  "chance_percent": 0.07
+  "xp_multiplier": 1.2,
+  "gold_multiplier": 1.2,
+  "chance_percent": 0.28
 
 }

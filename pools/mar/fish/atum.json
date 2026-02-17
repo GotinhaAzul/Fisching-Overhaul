@@ -1,7 +1,7 @@
 {
   "name": "Atum",
   "rarity": "Epico",
-  "description": "Peixe oceânico conhecido pela velocidade e tamanho.",
+  "description": "O Atum domina amplas faixas do Mar Aberto com velocidade, resistencia e grande capacidade de deslocamento. Ele percorre longas rotas em busca de agua com temperatura ideal e alta disponibilidade de presas. Sua musculatura poderosa sustenta combates longos, mesmo depois de fisgado. E uma captura de alto valor que testa equipamento e tecnica do pescador.",
   "kg_min": 6.0,
   "kg_max": 20.0,
   "base_value": 110,

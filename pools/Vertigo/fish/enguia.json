@@ -1,10 +1,11 @@
 {
   "name": "Enguia",
   "rarity": "Raro",
-  "description": "Estranhamente, nada de diferente com essa aqui.",
+  "description": "Esta Enguia de Vertigo parece simples a primeira vista, mas sua adaptacao ao ambiente espiralado e impressionante. Ela usa correntes rotativas para acelerar sem gasto excessivo de energia e se esconder em fendas estreitas. Alimenta-se de pequenos crustaceos e larvas carregados pelo fluxo constante da regiao. Quando fisgada, faz movimentos ondulatorios longos para desgastar a tensao da linha.",
   "kg_min": 1.0,
   "kg_max": 3.0,
   "base_value": 80,
   "sequence_len": 5,
   "reaction_time_s": 1.9
 }
+

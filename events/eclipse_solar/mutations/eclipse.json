@@ -1,0 +1,7 @@
+{
+  "name": "Eclipse",
+  "description": "O peixe toma uma aparencia escura, oculto pela lua.",
+  "xp_multiplier": 1.4,
+  "gold_multiplier": 1.4,
+  "chance_percent": 14.0
+}

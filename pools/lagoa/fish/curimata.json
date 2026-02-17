@@ -1,7 +1,7 @@
 {
   "name": "Curimatã",
   "rarity": "Incomum",
-  "description": "Peixe de água doce muito presente em lagoas calmas.",
+  "description": "A Curimata e uma especie abundante na Lagoa Tranquila, conhecida pelo comportamento gregario e deslocamento em cardumes compactos. Alimenta-se de materia organica e microalgas, ajudando a reciclar nutrientes do ambiente. Seu nado e continuo, com mudancas suaves de direcao para acompanhar correntes leves. Embora nao seja agressiva, pode surpreender com arrancadas curtas quando fisgada.",
   "kg_min": 0.8,
   "kg_max": 2.5,
   "base_value": 12,

@@ -1,0 +1,16 @@
+{
+  "name": "Ataque a lula!",
+  "description": "Tentaculos surgem do fundo do oceano, eles chacoalham violentamente, criandos correntes poderosas.",
+  "pool_name": "Mar Aberto",
+  "duration_minutes": 5,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 1,
+  "disturbance_max": 1000,
+  "rarity_chances": {
+    "Raro": 6,
+    "Epico": 5,
+    "Lendario": 4
+  },
+  "cooldown_minutes": 8,
+  "disturbance_decay_per_check": 2
+}

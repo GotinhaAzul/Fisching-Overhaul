@@ -1,0 +1,16 @@
+{
+  "name": "Farseas",
+  "description": "Nao importa oque voce faça, no farseas, nao navegue mais a frente.",
+  "unlocked_default": false,
+  "hidden_from_pool_selection": true,
+  "secret_entry_code": "farseas",
+  "hidden_from_bestiary_until_unlocked": true,
+  "exclude_from_bestiary_completion": true,
+  "rarity_chances": {
+    "Comum": 99,
+    "Incomum": 0,
+    "Raro": 0,
+    "Epico": 0,
+    "Lendario": 1
+  }
+}

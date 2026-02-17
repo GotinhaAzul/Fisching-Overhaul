@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fisching-overhaul"
+version = "0.1.0"
+description = "Simple fishing text game overhaul"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "colorama",
+    "pynput",
+]
+
+[project.scripts]
+fisching = "start_game:main"
+
+[tool.setuptools]
+py-modules = ["start_game"]
+packages = ["utils"]

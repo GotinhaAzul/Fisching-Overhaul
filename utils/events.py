@@ -37,8 +37,9 @@ class ActiveEvent:
 
 
 class EventManager:
-    def __init__(self, events: List[EventDefinition]):
+    def __init__(self, events: List[EventDefinition], dev_tools_enabled: bool = False):
         self._events = list(events)
+        self._dev_tools_enabled = bool(dev_tools_enabled)
         self._lock = threading.Lock()
         self._active: Optional[ActiveEvent] = None
         self._last_checks = {event.name: time.monotonic() for event in self._events}
@@ -72,6 +73,43 @@ class EventManager:
     def get_active_event(self) -> Optional[ActiveEvent]:
         with self._lock:
             return self._active
+
+    def list_events(self) -> List[EventDefinition]:
+        with self._lock:
+            return list(self._events)
+
+    def force_event(self, event_name: str) -> Optional[EventDefinition]:
+        if not self._dev_tools_enabled:
+            return None
+
+        target_name = event_name.casefold()
+        selected: Optional[EventDefinition] = None
+        now = time.monotonic()
+        previous: Optional[ActiveEvent] = None
+
+        with self._lock:
+            for event in self._events:
+                if event.name.casefold() == target_name:
+                    selected = event
+                    break
+            if not selected:
+                return None
+            previous = self._active
+            self._active = ActiveEvent(
+                definition=selected,
+                started_at=now,
+                ends_at=now + selected.duration_s,
+            )
+            self._last_checks[selected.name] = now
+
+        if previous and previous.definition.name != selected.name:
+            self._emit_notification(
+                f"O evento '{previous.definition.name}' foi encerrado (forcado)."
+            )
+        self._emit_notification(
+            f"Evento iniciado: {selected.name}! {selected.description}"
+        )
+        return selected
 
     def _emit_notification(self, message: str) -> None:
         with self._lock:

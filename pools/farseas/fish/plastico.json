@@ -1,0 +1,12 @@
+{
+  "name": "Plastico",
+  "rarity": "Comum",
+  "description": "O Plastico boia entre correntes frias de Farseas como um aviso silencioso do que foi abandonado no oceano. Fragmentos gastos e cobertos por sal acumulam microorganismos e atraem criaturas menores para perto da superficie. Pescadores experientes usam sua aparicao como sinal de aguas instaveis e baixa seguranca na regiao. Nao e uma captura nobre, mas reforca a sensacao de que algo pior observa alem da neblina.",
+  "exclude_from_bestiary_completion": true,
+  "kg_min": 0.1,
+  "kg_max": 0.2,
+  "base_value": 2,
+  "sequence_len": 1,
+  "reaction_time_s": 2.5
+}
+

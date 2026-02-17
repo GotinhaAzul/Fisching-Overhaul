@@ -1,7 +1,7 @@
 {
   "name": "Dourado",
   "rarity": "Raro",
-  "description": "Predador veloz típico de rios com correnteza.",
+  "description": "O Dourado e um predador veloz do Rio Correnteza, famoso por perseguir presas contra o fluxo da agua com explosoes de forca. Seu corpo alongado e musculoso permite saltos e mudancas bruscas de direcao durante a caca. Prefere trechos com corrente forte e boa oxigenacao, onde domina o territorio com agressividade. Na pesca, e uma captura intensa que exige controle firme da linha do inicio ao fim.",
   "kg_min": 3.0,
   "kg_max": 12.0,
   "base_value": 60,

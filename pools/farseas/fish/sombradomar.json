@@ -1,0 +1,12 @@
+{
+  "name": "Sombra do Mar.",
+  "rarity": "Lendario",
+  "description": "Voce deveria ter virado o barco. O mar fica quieto. A Sombra do Mar te observa. Voce a acordou. Seu corpo se extende ate o fundo do oceano. Dois olhos humanos fixos alem da tela. Nenhuma cor. Nenhum som, alem do coracao dela batendo sob a agua. Cada batida puxa seu barco para baixo, movendo o oceano e gerando as mares que voce tanto se aventurou. Se voce esta vendo isso, voce nao deveria estar aqui. Vire agora. Nao olhe para tras.",
+  "exclude_from_bestiary_completion": true,
+  "kg_min": 250.0,
+  "kg_max": 100000.0,
+  "base_value": 10000,
+  "sequence_len": 50,
+  "reaction_time_s": 6
+}
+

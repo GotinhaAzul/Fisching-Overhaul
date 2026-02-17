@@ -1,7 +1,7 @@
 {
   "name": "Pirarucu",
   "rarity": "Lendario",
-  "description": "Gigante de água doce que raramente aparece em lagoas.",
+  "description": "O Pirarucu e um gigante de agua doce que aparece raramente na Lagoa Tranquila, geralmente em periodos de atividade incomum. Seu tamanho imponente e a resistencia prolongada transformam qualquer captura em evento memoravel. Costuma circular por trechos mais fundos e silenciosos, afastado de cardumes menores. Quando fisgado, inicia um combate longo que exige tecnica e controle total da linha.",
   "kg_min": 6.0,
   "kg_max": 18.0,
   "base_value": 110,

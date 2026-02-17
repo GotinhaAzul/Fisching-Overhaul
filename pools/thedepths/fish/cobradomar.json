@@ -1,0 +1,11 @@
+{
+  "name": "Cobra do mar",
+  "rarity": "Lendario",
+  "description": "A Cobra do Mar patrulha corredores escuros das profundezas com movimentos lentos e precisos. Seu veneno se dissolve na agua em trilhas finas, enfraquecendo presas antes do ataque final. Quando acuada, contrai o corpo e produz um rugido subaquatico capaz de vibrar as paredes rochosas ao redor. Fisga-la exige calma, porque ela alterna entre periodos de imobilidade total e arrancadas extremamente agressivas.",
+  "kg_min": 15.0,
+  "kg_max": 25.0,
+  "base_value": 170,
+  "sequence_len": 12,
+  "reaction_time_s": 2.3
+}
+

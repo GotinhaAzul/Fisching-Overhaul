@@ -1,0 +1,12 @@
+{
+  "name": "Piscina de Salmoura",
+  "description": "O cheiro daqui dentro é podre, cuidado ao fisgar os peixes.",
+ "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 40,
+    "Incomum": 38,
+    "Raro": 18,
+    "Epico": 12,
+    "Lendario": 1
+  }
+}

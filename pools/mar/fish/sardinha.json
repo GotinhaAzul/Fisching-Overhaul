@@ -1,7 +1,7 @@
 {
   "name": "Sardinha",
   "rarity": "Comum",
-  "description": "Peixe de cardume típico de áreas costeiras.",
+  "description": "A Sardinha forma cardumes extensos no Mar Aberto e desempenha papel central na cadeia alimentar marinha. Seus movimentos sincronizados reduzem risco de predacao e facilitam a busca por plankton em massa. A especie responde rapidamente a variacoes de luz, temperatura e presenca de predadores. E uma captura comum, mas essencial para compreender o comportamento do ecossistema local.",
   "kg_min": 0.2,
   "kg_max": 1.0,
   "base_value": 8,

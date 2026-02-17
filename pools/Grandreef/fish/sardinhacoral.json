@@ -1,7 +1,7 @@
 {
   "name": "Sardinha de Coral",
   "rarity": "Comum",
-  "description": "Uma sardinha que viveu tempo demais entre os corais, suas escamas ganharam cores reluzentes.",
+  "description": "A Sardinha de Coral e um peixe de cardume adaptado as zonas rasas do Grande Recife, onde as escamas ganharam tons iridescentes ao longo das geracoes. Ela se desloca em massa para confundir predadores, alterando direcao em movimentos quase simultaneos. Alimenta-se de plankton e particulas finas trazidas pela mare. E comum, mas essencial para sustentar a cadeia alimentar de especies maiores.",
   "kg_min": 0.2,
   "kg_max": 1.2,
   "base_value": 6,

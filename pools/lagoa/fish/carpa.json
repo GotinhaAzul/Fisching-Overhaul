@@ -1,7 +1,7 @@
 {
   "name": "Carpa",
   "rarity": "Incomum",
-  "description": "Carpa de água doce com tamanho considerável.",
+  "description": "A Carpa da Lagoa Tranquila cresce em aguas calmas e ricas em vegetacao, onde encontra abrigo e alimento com facilidade. Seu corpo robusto permite suportar variacoes de temperatura e qualidade da agua sem perder vigor. Costuma buscar o fundo em horarios quentes e subir para se alimentar no inicio da manha e no fim da tarde. Na linha, oferece resistencia constante e previsivel, ideal para quem quer treinar controle de tracao.",
   "kg_min": 1.0,
   "kg_max": 4.0,
   "base_value": 15,

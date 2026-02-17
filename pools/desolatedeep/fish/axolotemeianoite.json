@@ -1,0 +1,10 @@
+{
+  "name": "Axolote da Meia Noite",
+  "rarity": "Lendario",
+  "description": "O Axolote da Meia Noite e uma especie rara que evoluiu em camadas profundas da ruina. Em ausencia de luz direta, sua pele assume transparencia parcial, revelando veias bioluminescentes discretas que pulsam em ritmo lento. E uma criatura cautelosa, normalmente vista perto de fendas quentes e bolsos de agua mineralizada, onde encontra abrigo e alimento. Fora do habitat, torna-se extremamente sensivel e dificil de manter na linha por muito tempo.",
+  "kg_min": 0.5,
+  "kg_max": 1.0,
+  "base_value": 130,
+  "sequence_len": 7,
+  "reaction_time_s": 1.8
+}

@@ -1,0 +1,28 @@
+{
+  "id": "desolate_unlock",
+  "name": "Existe um furo no fundo do oceano logo a frente do recife.",
+  "description": "Nao da para ver o fundo, mas talvez um peixe veloz o bastante pode ajuda-lo.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Grande Recife",
+      "percent": 80
+    },
+    {
+      "type": "catch_fish",
+      "count": 1,
+      "fish_name": "Imperador do Coral"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Profundezas Desoladas"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["brinepool_unlock"]
+    }
+  ]
+}

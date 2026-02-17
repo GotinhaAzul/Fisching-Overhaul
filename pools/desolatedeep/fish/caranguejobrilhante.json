@@ -1,0 +1,10 @@
+{
+  "name": "Caranguejo Brilhante",
+  "rarity": "Raro",
+  "description": "O Caranguejo Brilhante carrega uma concha coberta por minerais luminosos das paredes antigas. O brilho em anel ao redor do casco funciona como distracao para possiveis predadores e tambem como sinal territorial entre individuos da mesma especie. Move-se de lado por corredores estreitos, recolhendo fragmentos organicos e pequenos moluscos para se alimentar. Mesmo pequeno, e resistente e costuma travar a linha com movimentos curtos e repetidos.",
+  "kg_min": 1.0,
+  "kg_max": 2.0,
+  "base_value": 65,
+  "sequence_len": 5,
+  "reaction_time_s": 1.9
+}

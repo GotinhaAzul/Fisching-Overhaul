@@ -1,0 +1,11 @@
+{
+  "name": "Nautilus",
+  "rarity": "Lendario",
+  "description": "O Nautilus das profundezas carrega uma concha espiral espessa, formada por camadas minerais acumuladas ao longo de decadas. Ele usa jatos curtos de agua para manobrar em espacos apertados e recolhe o corpo inteiro ao menor sinal de perigo. Predadores maiores costumam desistir da caca por causa da resistencia da concha e da paciencia da especie. Na pesca, sua defesa prolonga o confronto e exige constancia para nao perder a captura.",
+  "kg_min": 1.0,
+  "kg_max": 4.5,
+  "base_value": 135,
+  "sequence_len": 9,
+  "reaction_time_s": 2.4
+}
+

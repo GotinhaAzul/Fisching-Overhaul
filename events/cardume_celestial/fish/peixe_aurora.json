@@ -5,6 +5,6 @@
   "kg_min": 2.5,
   "kg_max": 6.5,
   "base_value": 120,
-  "sequence_len": 6,
+  "sequence_len": 12,
   "reaction_time_s": 2.0
 }

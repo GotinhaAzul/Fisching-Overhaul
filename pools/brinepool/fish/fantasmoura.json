@@ -1,0 +1,10 @@
+{
+  "name": "Fantasma de Salmoura",
+  "rarity": "Epico",
+  "description": "O Fantasma de Salmoura é um predador hostil. Ele possui várias mandíbulas afiadas na parte frontal do rosto, que usa para subjugar suas presas. O Fantasma da Salmoura inibe comportamentos agressivos em relação a outras criaturas que se aproximem dele.",
+  "kg_min": 5.0,
+  "kg_max": 10.0,
+  "base_value": 90,
+  "sequence_len": 8,
+  "reaction_time_s": 1.8
+}

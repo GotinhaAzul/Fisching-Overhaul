@@ -1,8 +1,8 @@
 {
   "name": "Espiral",
   "description": "O peixe desorientado repete os movimentos do redemoinho.",
-  "xp_multiplier": 1.5,
-  "gold_multiplier": 1.5,
+  "xp_multiplier": 1.3,
+  "gold_multiplier": 1.3,
   "chance_percent": 17.5,
   "required_rods": ["Vertigem"]
 }

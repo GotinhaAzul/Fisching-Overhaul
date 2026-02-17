@@ -1,7 +1,7 @@
 {
   "name": "Marlim Azul",
   "rarity": "Lendario",
-  "description": "Espécie lendária do mar aberto, muito difícil de capturar.",
+  "description": "O Marlim Azul e uma das capturas mais emblematicas do Mar Aberto, conhecido por velocidade extrema e saltos impressionantes. Seu rostro alongado ajuda a cortar a agua e desorientar cardumes durante a caca. Migra por grandes distancias e aparece em janelas curtas de atividade, o que aumenta sua raridade. Fisga-lo exige preparo completo, pois o combate pode se estender por muito tempo.",
   "kg_min": 10.0,
   "kg_max": 30.0,
   "base_value": 150,

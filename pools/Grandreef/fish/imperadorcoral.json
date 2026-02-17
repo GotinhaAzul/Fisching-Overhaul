@@ -1,10 +1,10 @@
 {
   "name": "Imperador do Coral",
   "rarity": "Lendario",
-  "description": "Um grande predador azul do coral! Atinge velocidades extraordinarias.",
+  "description": "O Imperador do Coral e um predador de topo do Grande Recife, reconhecido pela coloracao azul intensa e pelo corpo hidrodinamico. Ele patrulha corredores entre recifes e ataca com arrancadas curtas de altissima velocidade. Sua presenca afasta cardumes menores e altera o comportamento de quase toda a fauna local. Na linha, exige reflexos rapidos, pois muda de direcao de forma abrupta para quebrar o ritmo do pescador.",
   "kg_min": 10.0,
   "kg_max": 15.0,
   "base_value": 110,
-  "sequence_len": 8,
-  "reaction_time_s": 1.6
+  "sequence_len": 6,
+  "reaction_time_s": 0.9
 }

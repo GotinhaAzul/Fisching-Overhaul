@@ -1,0 +1,34 @@
+{
+  "id": "vara_eclipse_craft",
+  "rod_name": "Vara Eclipse",
+  "name": "A rara ocorrencia.",
+  "description": "Presencie esse evento lendario e torne a sua beleza tangivel.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "find_mutation",
+        "count": 3,
+        "mutation_name": "Eclipse"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Axolote da Meia Noite",
+        "count": 1
+      },
+      {
+        "type": "mutation",
+        "mutation_name": "Solar",
+        "count": 1
+      },
+      {
+        "type": "money",
+        "amount": 8000
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: fisching-overhaul
+Version: 0.1.0
+Summary: Simple fishing text game overhaul
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: colorama
+Requires-Dist: pynput
+
+# Fisching-Overhaul
+
+Simple Fisching text game overhaul.
+
+Focused on being very easily expandable
+
+## Como executar
+
+```bash
+pip install -e .
+fisching
+```
+
+Ou, sem instalar como comando global:
+
+```bash
+python start_game.py
+```

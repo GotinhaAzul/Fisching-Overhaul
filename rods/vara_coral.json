@@ -1,0 +1,10 @@
+{
+  "name": "Vara de Coral",
+  "luck": 0.05,
+  "kg_max": 2.5,
+  "control": 0.6,
+  "description": "Feita com fragmentos de coral; sensivel e precisa para capturas leves.",
+  "price": 950,
+  "unlocked_default": false,
+  "unlockswithpool": "grandreef"
+}

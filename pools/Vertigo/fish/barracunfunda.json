@@ -1,10 +1,11 @@
 {
   "name": "Barracunfunda",
   "rarity": "Incomum",
-  "description": "Especialista em ataques surpresa, se camufla com tom escuro.",
+  "description": "A Barracunfunda e especialista em emboscadas nos corredores escuros de Vertigo. A coloracao opaca do corpo se confunde com rochas e sombras, permitindo aproximacoes silenciosas contra presas distraidas. Ela prefere ataques rapidos e precisos, recuando logo em seguida para evitar confronto prolongado. Na linha, esse padrao se traduz em puxoes repentinos que testam o reflexo do pescador.",
   "kg_min": 9.0,
   "kg_max": 10.0,
   "base_value": 20,
   "sequence_len": 5,
   "reaction_time_s": 1.5
 }
+

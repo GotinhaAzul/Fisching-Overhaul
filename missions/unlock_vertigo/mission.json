@@ -21,7 +21,7 @@
     },
     {
       "type": "unlock_missions",
-      "mission_ids": ["vertigem_unlock"]
+      "mission_ids": ["vertigem_unlock", "depths_unlock"]
     }
   ]
 }

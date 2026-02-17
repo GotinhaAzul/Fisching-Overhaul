@@ -16,12 +16,17 @@
   "rewards": [
     {
       "type": "xp",
-      "amount": 1500
+      "amount": 1100
     },
     {
       "type": "unlock_pools",
       "pool_names": ["Grande Recife"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["desolate_unlock"]
     }
+
   ]
 
 }

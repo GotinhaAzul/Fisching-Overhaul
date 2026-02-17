@@ -1,0 +1,10 @@
+{
+  "name": "Arraia Fantasma",
+  "rarity": "Incomum",
+  "description": "A Arraia Fantasma habita tuneis silenciosos das Profundezas Desoladas, onde quase nao existe luz. Sua pele palida reflete brilhos fracos das ruinas submersas, fazendo seu corpo parecer desaparecer e reaparecer entre as correntes. Costuma deslizar rente ao fundo em busca de pequenos invertebrados, mas evita confronto direto sempre que pode. Quando fisgada, muda de direcao varias vezes para confundir o pescador antes de tentar escapar para o fundo.",
+  "kg_min": 3.0,
+  "kg_max": 10.0,
+  "base_value": 20,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

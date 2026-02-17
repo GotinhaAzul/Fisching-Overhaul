@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 5
+SAVE_VERSION = 7
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -27,6 +27,7 @@ def serialize_inventory(inventory: Sequence[InventoryEntry]) -> List[Dict[str, o
             "mutation_name": entry.mutation_name,
             "mutation_xp_multiplier": entry.mutation_xp_multiplier,
             "mutation_gold_multiplier": entry.mutation_gold_multiplier,
+            "is_hunt": entry.is_hunt,
         }
         for entry in inventory
     ]
@@ -48,6 +49,9 @@ def save_game(
     mission_state: Dict[str, object],
     mission_progress: Dict[str, object],
     pool_market_orders: Optional[Dict[str, object]] = None,
+    hunt_state: Optional[Dict[str, object]] = None,
+    crafting_state: Optional[Dict[str, object]] = None,
+    crafting_progress: Optional[Dict[str, object]] = None,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -64,6 +68,9 @@ def save_game(
         "mission_state": mission_state,
         "mission_progress": mission_progress,
         "pool_market_orders": pool_market_orders or {},
+        "hunt_state": hunt_state or {},
+        "crafting_state": crafting_state or {},
+        "crafting_progress": crafting_progress or {},
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
@@ -111,6 +118,8 @@ def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
         except (TypeError, ValueError):
             mutation_xp_multiplier = 1.0
             mutation_gold_multiplier = 1.0
+        raw_is_hunt = item.get("is_hunt", False)
+        is_hunt = raw_is_hunt if isinstance(raw_is_hunt, bool) else False
         restored.append(
             InventoryEntry(
                 name=name,
@@ -120,6 +129,7 @@ def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
                 mutation_name=mutation_name or None,
                 mutation_xp_multiplier=mutation_xp_multiplier,
                 mutation_gold_multiplier=mutation_gold_multiplier,
+                is_hunt=is_hunt,
             )
         )
     return restored
@@ -225,3 +235,21 @@ def restore_xp(raw_xp: object, fallback: int) -> int:
     except (TypeError, ValueError):
         return fallback
     return max(0, xp)
+
+
+def restore_hunt_state(raw_hunt_state: object) -> Dict[str, object]:
+    default_state: Dict[str, object] = {
+        "hunts": {},
+        "active_by_pool": {},
+    }
+    if not isinstance(raw_hunt_state, dict):
+        return default_state
+
+    raw_hunts = raw_hunt_state.get("hunts")
+    raw_active_by_pool = raw_hunt_state.get("active_by_pool")
+    hunts = raw_hunts if isinstance(raw_hunts, dict) else {}
+    active_by_pool = raw_active_by_pool if isinstance(raw_active_by_pool, dict) else {}
+    return {
+        "hunts": hunts,
+        "active_by_pool": active_by_pool,
+    }

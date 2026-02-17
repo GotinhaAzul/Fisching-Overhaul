@@ -1,7 +1,7 @@
 {
   "name": "Marimbá",
   "rarity": "Incomum",
-  "description": "Normalmente encontrado em grupos, dizem ter um bom gosto.",
+  "description": "A Marimba costuma viajar em grupos densos pelas aguas claras do Grande Recife, mantendo distancia sincronizada entre individuos. Alimenta-se de pequenos crustaceos e particulas organicas arrastadas pelas correntes costeiras. Seu comportamento coletivo cria nuvens prateadas que cintilam entre os corais ao amanhecer. Apesar do porte modesto, e uma captura valorizada pela regularidade e pela carne apreciada.",
   "kg_min": 0.9,
   "kg_max": 2.0,
   "base_value": 17,

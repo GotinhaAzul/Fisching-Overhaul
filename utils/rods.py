@@ -14,7 +14,11 @@ class Rod:
     price: float
     can_slash: bool = False
     slash_chance: float = 0.0
+    can_slam: bool = False
+    slam_chance: float = 0.0
+    slam_time_bonus: float = 0.0
     unlocked_default: bool = False
+    unlocks_with_pool: str = ""
 
 
 def load_rods(base_dir: Path) -> List[Rod]:
@@ -29,6 +33,12 @@ def load_rods(base_dir: Path) -> List[Rod]:
         name = data.get("name")
         if not name:
             continue
+        raw_unlocks_with_pool = data.get("unlockswithpool", data.get("unlocks_with_pool", ""))
+        unlocks_with_pool = (
+            raw_unlocks_with_pool.strip()
+            if isinstance(raw_unlocks_with_pool, str)
+            else ""
+        )
 
         rods.append(
             Rod(
@@ -40,7 +50,11 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 price=float(data.get("price", 0.0)),
                 can_slash=bool(data.get("can_slash", False)),
                 slash_chance=float(data.get("slash_chance", 0.0)),
+                can_slam=bool(data.get("can_slam", False)),
+                slam_chance=float(data.get("slam_chance", 0.0)),
+                slam_time_bonus=float(data.get("slam_time_bonus", 0.0)),
                 unlocked_default=bool(data.get("unlocked_default", False)),
+                unlocks_with_pool=unlocks_with_pool,
             )
         )
 

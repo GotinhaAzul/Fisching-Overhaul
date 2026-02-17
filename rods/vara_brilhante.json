@@ -1,9 +1,9 @@
 {
   "name": "Vara Brilhante",
   "luck": 0.10,
-  "kg_max": 7.5,
+  "kg_max": 12.5,
   "control": 0.35,
-  "description": "O brilho nesta vara diz atrair luzes profundas.",
+  "description": "O brilho nesta vara diz atrair luzes profundas, tem uma chance de aumentar o valor dos peixes com brilho!.",
   "price": 3250,
   "unlocked_default": false
 }

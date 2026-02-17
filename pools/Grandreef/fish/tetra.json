@@ -1,7 +1,7 @@
 {
   "name": "Tetra-Serpae",
   "rarity": "Raro",
-  "description": "Peixe extremamente colorido!.",
+  "description": "O Tetra-Serpae chama atencao pelas cores intensas e pelo comportamento inquieto entre os jardins de coral do Grande Recife. Vive em pequenos grupos e reage rapidamente a qualquer variacao de luz ou sombra na agua. Sua dieta inclui microcrustaceos e larvas, o que o mantem ativo durante quase todo o dia. Mesmo nao sendo grande, oferece uma luta agil e tecnica quando fisgado.",
   "kg_min": 3.0,
   "kg_max": 5.0,
   "base_value": 70,

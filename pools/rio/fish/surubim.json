@@ -1,7 +1,7 @@
 {
   "name": "Surubim",
   "rarity": "Epico",
-  "description": "Peixe de couro muito valorizado pela pesca esportiva.",
+  "description": "O Surubim e um predador noturno do Rio Correnteza, identificado pelas manchas no corpo e pela leitura precisa de vibracoes na agua. Passa o dia em zonas profundas e rochosas, saindo para cacar quando a luz diminui. Sua musculatura densa e a pele resistente tornam a especie valorizada na pesca esportiva. Na linha, combina peso e arrancadas curtas que exigem paciencia para dominar.",
   "kg_min": 5.0,
   "kg_max": 16.0,
   "base_value": 85,

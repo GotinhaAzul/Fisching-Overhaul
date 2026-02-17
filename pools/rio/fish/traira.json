@@ -1,7 +1,7 @@
 {
   "name": "Traíra",
   "rarity": "Incomum",
-  "description": "Predadora de água doce comum em rios tranquilos.",
+  "description": "A Traira e uma cacadora de emboscada comum no Rio Correnteza, especialmente em margens com vegetacao e remansos protegidos. Ela permanece quase imovel ate detectar o momento exato de ataque. Alimenta-se de peixes menores, insetos e anfibios, mantendo comportamento territorial em areas de abrigo. Mesmo em tamanho medio, surpreende pela agressividade quando fisgada.",
   "kg_min": 1.0,
   "kg_max": 4.5,
   "base_value": 18,

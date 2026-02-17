@@ -1,7 +1,7 @@
 {
   "name": "Pedra",
   "rarity": "Comum",
-  "description": "Uma pedra... como voce fisgou isso?",
+  "description": "A Pedra parece apenas um destroco comum, mas aparece com frequencia nas linhas do Grande Recife por causa das correntes de retorno. Muitas carregam incrustacoes vivas, como algas, cracas e microcorais que crescem em camadas ao longo do tempo. Fisga-la geralmente indica que o ponto tem fundo ativo e boa circulacao de nutrientes. Nao e uma criatura, mas funciona como sinal valioso para localizar cardumes mais raros por perto.",
   "kg_min": 1.0,
   "kg_max": 4.5,
   "base_value": 2,

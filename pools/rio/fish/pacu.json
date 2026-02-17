@@ -1,7 +1,7 @@
 {
   "name": "Pacu",
   "rarity": "Comum",
-  "description": "Peixe de rio conhecido por sua força.",
+  "description": "O Pacu e um peixe robusto do Rio Correnteza, com mandibula forte e dieta variada que inclui frutos, sementes e pequenos invertebrados. Essa versatilidade alimentar ajuda a especie a prosperar em diferentes trechos do rio. Apesar da aparencia tranquila, reage com potencia quando sente a tensao da linha. E uma captura classica para quem busca consistencia sem abrir mao de desafio.",
   "kg_min": 1.2,
   "kg_max": 5.0,
   "base_value": 6,

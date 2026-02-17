@@ -1,0 +1,11 @@
+{
+  "name": "Peixe Dragao Sombrio",
+  "rarity": "Raro",
+  "description": "Apesar do tamanho moderado, o Peixe Dragao Sombrio domina seu territorio com comportamento intimidador. Linhas avermelhadas sob as escamas lembram lava em movimento, ficando mais intensas quando ele esta sob estresse. Vive proximo a fendas quentes e se alimenta de pequenos peixes atraidos pelo calor local. Ao ser fisgado, alterna investidas curtas e mudancas bruscas de profundidade para quebrar o ritmo do pescador.",
+  "kg_min": 3.0,
+  "kg_max": 5.0,
+  "base_value": 68,
+  "sequence_len": 6,
+  "reaction_time_s": 1.8
+}
+

@@ -1,10 +1,10 @@
 {
   "name": "Vertigem",
   "luck": 0.10,
-  "kg_max": 25.0,
+  "kg_max": 180.0,
   "control": 0.5,
   "description": "A tontura daquele lugar te assombra quando segura esta vara... mas isso tambem parece afetar os peixes.",
   "price": 5555,
   "can_slash": true,
-  "slash_chance": 0.2
+  "slash_chance": 0.15
 }

@@ -1,0 +1,8 @@
+{
+  "name": "Eclipsado",
+  "description": "O peixe se torna fosco, com um novo brilho interior.",
+  "xp_multiplier": 1.8,
+  "gold_multiplier": 1.8,
+  "chance_percent": 16.5,
+  "required_rods": ["Vara Eclipse"]
+}

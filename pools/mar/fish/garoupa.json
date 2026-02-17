@@ -1,7 +1,7 @@
 {
   "name": "Garoupa",
   "rarity": "Raro",
-  "description": "Peixe de carne firme, encontrado em áreas rochosas.",
+  "description": "A Garoupa vive proxima a estruturas rochosas do Mar Aberto, onde encontra abrigo e pontos ideais para emboscada. Seu corpo robusto e a boca ampla permitem capturar presas de diferentes tamanhos com pouco esforco. Costuma manter territorio fixo e reagir com agressividade a invasores. Quando entra na linha, tenta retornar ao fundo para usar as rochas como vantagem.",
   "kg_min": 3.0,
   "kg_max": 9.0,
   "base_value": 70,

@@ -1,7 +1,7 @@
 {
   "name": "Matrinxã",
   "rarity": "Incomum",
-  "description": "Peixe ativo de rio com força surpreendente.",
+  "description": "A Matrinxa e uma especie inquieta do Rio Correnteza, conhecida por nado continuo e reflexos rapidos. Alimenta-se de frutos, insetos e pequenos organismos carregados pela corrente, adaptando a dieta conforme a estacao. Vive em grupos soltos e responde rapidamente a disturbios na superficie. Sua captura costuma ser dinamica, com varios arranques curtos em sequencia.",
   "kg_min": 0.9,
   "kg_max": 3.0,
   "base_value": 14,

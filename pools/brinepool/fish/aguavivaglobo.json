@@ -1,0 +1,10 @@
+{
+  "name": "Agua-Viva Globo",
+  "rarity": "Incomum",
+  "description": "A Agua-Viva Globo é parente distante da Agua-viva Imperatriz. Ela é altamente venenosa ao inves de eletrizante, o que a torna uma ameaça para qualquer criatura que entre em contato com ela.",
+  "kg_min": 3.0,
+  "kg_max": 4.0,
+  "base_value": 18,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

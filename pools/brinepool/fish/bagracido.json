@@ -1,0 +1,10 @@
+{
+  "name": "Bagracido",
+  "rarity": "Raro",
+  "description": "O Bagracido é encontrado perto do fundo da Piscina de Salmoura. Ele possui nadadeiras brilhantes e escamas escuras por todo o corpo, que utiliza para se camuflar de possíveis predadores dentro da Piscina de Salmoura.",
+  "kg_min": 3.0,
+  "kg_max": 5.0,
+  "base_value": 68,
+  "sequence_len": 6,
+  "reaction_time_s": 1.8
+}

@@ -1,7 +1,7 @@
 {
   "name": "Piracanjuba",
   "rarity": "Lendario",
-  "description": "Espécie lendária de rio, famosa por sua força.",
+  "description": "A Piracanjuba e uma lenda viva do Rio Correnteza, admirada pela forca e pela resistencia em aguas de fluxo intenso. Ela percorre longas distancias entre trechos de alimentacao e reproducao, demonstrando grande capacidade de adaptacao. Seu corpo hidrodinamico favorece nado estavel mesmo contra correntes pesadas. Fisga-la e raro, mas quando acontece, o combate costuma ser longo e tecnico.",
   "kg_min": 3.0,
   "kg_max": 10.0,
   "base_value": 120,

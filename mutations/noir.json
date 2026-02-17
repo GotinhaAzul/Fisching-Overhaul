@@ -3,6 +3,6 @@
   "description": "Uma mutaçao natural para peixes, bonita de se ver.",
   "xp_multiplier": 1.1,
   "gold_multiplier": 1.5,
-  "chance_percent": 0.09
+  "chance_percent": 0.25
 
 }

@@ -1,0 +1,12 @@
+{
+  "name": "Vara do Kraken",
+  "luck": 0.03,
+  "kg_max": 800.0,
+  "control": 1.5,
+  "description": "Canaliza a energia dos tentaculos da lula e os utiliza para imobilizar os peixes.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_slam": true,
+  "slam_chance": 0.15,
+  "slam_time_bonus": 0.2
+}
