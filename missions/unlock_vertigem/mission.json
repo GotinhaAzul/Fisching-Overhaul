@@ -8,6 +8,11 @@
       "type": "deliver_fish",
       "count": 2,
       "fish_name": "Polvo Luminoso"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Pato-Borracha"
     }
   ],
   "rewards": [

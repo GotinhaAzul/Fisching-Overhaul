@@ -27,11 +27,11 @@ Cada missão fica em uma pasta com um `mission.json`. Isso facilita adicionar, r
 | `spend_money` | `amount` | Total de dinheiro gasto. |
 | `level` | `level` | Alcançar um nível mínimo. |
 | `catch_fish` | `count`, `fish_name?` | Capturar peixes (geral ou específico). |
-| `deliver_fish` | `count`, `fish_name?` | Vender peixes (geral ou específico). |
+| `deliver_fish` | `count`, `fish_name?` | Entregar peixes para missão (geral ou específico). |
 | `catch_mutation` | `count`, `mutation_name?` | Capturar peixes com mutação (geral ou específica). |
-| `deliver_mutation` | `count`, `mutation_name?` | Vender peixes com mutação. |
+| `deliver_mutation` | `count`, `mutation_name?` | Entregar peixes com mutação para missão. |
 | `catch_fish_with_mutation` | `count`, `fish_name?` | Capturar peixe com mutação. |
-| `deliver_fish_with_mutation` | `count`, `fish_name?` | Vender peixe com mutação. |
+| `deliver_fish_with_mutation` | `count`, `fish_name?` | Entregar peixe com mutação para missão. |
 | `play_time` | `seconds`/`minutes`/`hours` | Tempo total de jogo. |
 | `missions_completed` | `count` | Quantidade de missões concluídas. |
 | `bestiary_percent` | `percent` | % do bestiário completo. |

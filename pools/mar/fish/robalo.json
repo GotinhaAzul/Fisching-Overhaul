@@ -4,7 +4,7 @@
   "description": "O Robalo ocupa faixas de transicao do Mar Aberto, alternando entre aguas mais fundas e areas proximas da costa conforme a mare. E um cacador oportunista, atento a movimentos sutis de presas perto de estruturas submersas. Sua adaptabilidade faz com que apareca em diferentes condicoes de clima e corrente. Na pesca, costuma oferecer resistencia consistente e tecnica.",
   "kg_min": 2.0,
   "kg_max": 8.0,
-  "base_value": 55,
+  "base_value": 45,
   "sequence_len": 6,
-  "reaction_time_s": 2.5
+  "reaction_time_s": 2.0
 }

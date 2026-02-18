@@ -160,13 +160,14 @@ def serialize_mission_progress(progress: MissionProgress) -> Dict[str, object]:
         "fish_delivered": progress.fish_delivered,
         "mutated_fish_caught": progress.mutated_fish_caught,
         "mutated_fish_delivered": progress.mutated_fish_delivered,
-        "fish_caught_by_name": progress.fish_caught_by_name,
-        "fish_delivered_by_name": progress.fish_delivered_by_name,
-        "fish_caught_with_mutation_by_name": progress.fish_caught_with_mutation_by_name,
-        "fish_delivered_with_mutation_by_name": progress.fish_delivered_with_mutation_by_name,
-        "fish_delivered_with_mutation_pair_counts": progress.fish_delivered_with_mutation_pair_counts,
-        "mutations_caught_by_name": progress.mutations_caught_by_name,
-        "mutations_delivered_by_name": progress.mutations_delivered_by_name,
+        # Snapshot maps to avoid mission baselines sharing mutable dict references.
+        "fish_caught_by_name": dict(progress.fish_caught_by_name),
+        "fish_delivered_by_name": dict(progress.fish_delivered_by_name),
+        "fish_caught_with_mutation_by_name": dict(progress.fish_caught_with_mutation_by_name),
+        "fish_delivered_with_mutation_by_name": dict(progress.fish_delivered_with_mutation_by_name),
+        "fish_delivered_with_mutation_pair_counts": dict(progress.fish_delivered_with_mutation_pair_counts),
+        "mutations_caught_by_name": dict(progress.mutations_caught_by_name),
+        "mutations_delivered_by_name": dict(progress.mutations_delivered_by_name),
         "play_time_seconds": progress.play_time_seconds,
     }
 

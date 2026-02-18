@@ -1,7 +1,7 @@
 {
   "id": "desolate_unlock",
-  "name": "Existe um furo no fundo do oceano logo a frente do recife.",
-  "description": "Nao da para ver o fundo, mas talvez um peixe veloz o bastante pode ajuda-lo.",
+  "name": "Passagem alem do Coral.",
+  "description": "Existe um furo no fundo do oceano logo a frente do recife. Nao da para ver o fundo, mas talvez um peixe veloz o bastante pode ajuda-lo.",
   "starts_unlocked": false,
   "requirements": [
     {

@@ -2215,10 +2215,6 @@ def main(dev_mode: bool = False):
                     unlocked_rods=unlocked_rods,
                     unlocked_pools=unlocked_pool_market_keys,
                     on_money_earned=mission_progress.record_money_earned,
-                    on_fish_delivered=lambda entry: mission_progress.record_fish_delivered(
-                        entry.name,
-                        entry.mutation_name,
-                    ),
                     on_appraise_completed=on_market_appraise_completed,
                 )
                 mark_inventory_fish_counts_dirty()
