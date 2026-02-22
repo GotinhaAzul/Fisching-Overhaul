@@ -1,0 +1,12 @@
+{
+  "name": "Vara das Profundezas",
+  "luck": 0.19,
+  "kg_max": 300.0,
+  "control": 0.3,
+  "description": "As asas do Dragao Profundo se encaixam de forma harmoniosa nessa vara, permitindo capturas extraordinarias.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_slash": true,
+  "slash_chance": 0.2,
+  "slash_power": 1
+}

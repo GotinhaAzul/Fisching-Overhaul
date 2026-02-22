@@ -1,8 +1,8 @@
 {
   "name": "Vara de Plastico",
-  "luck": 0.07,
+  "luck": 0.04,
   "kg_max": 2.0,
-  "control": 0.6,
+  "control": 0.4,
   "description": "Uma vara cuja estrutura foi feita inteiramente com o lixo encontrado de um oceano distante.",
   "price": 500,
   "unlocked_default": true

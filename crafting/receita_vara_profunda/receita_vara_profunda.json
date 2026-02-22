@@ -1,0 +1,38 @@
+{
+  "id": "vara_profunda_craft",
+  "rod_name": "Vara das Profundezas",
+  "name": "A caça ao dragao.",
+  "description": "Derrote aquele que atormenta o profundo a eras.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "As profundezas"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Dragao do Profundo",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Cobra do mar",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Metal enferrujado",
+        "count": 10
+      },
+      {
+        "type": "money",
+        "amount": 7777
+      }
+    ]
+  }
+}

@@ -507,9 +507,9 @@ def _check_unlock_requirement(
         fish_name = _safe_str(requirement.get("fish_name"))
         if not fish_name:
             return False
-        found_count = progress.find_fish_counts_by_name.get(fish_name, 0)
+        found_count = _count_name_case_insensitive(progress.find_fish_counts_by_name, fish_name)
         inventory_count = (
-            max(0, _safe_int(inventory_fish_counts.get(fish_name, 0)))
+            _count_name_case_insensitive(inventory_fish_counts, fish_name)
             if inventory_fish_counts is not None
             else 0
         )
@@ -654,7 +654,7 @@ def _entry_matches_any_pending_requirement(
         fish_name = _safe_str(requirement.get("fish_name"))
         mutation_name = _safe_str(requirement.get("mutation_name"))
         if requirement_type == "fish":
-            if not fish_name or entry.name == fish_name:
+            if not fish_name or _fish_name_matches(entry.name, fish_name):
                 return True
         elif requirement_type == "mutation":
             if not entry.mutation_name:
@@ -664,7 +664,7 @@ def _entry_matches_any_pending_requirement(
         elif requirement_type == "fish_with_mutation":
             if not entry.mutation_name:
                 continue
-            fish_ok = (not fish_name) or (entry.name == fish_name)
+            fish_ok = (not fish_name) or _fish_name_matches(entry.name, fish_name)
             mutation_ok = (not mutation_name) or (entry.mutation_name == mutation_name)
             if fish_ok and mutation_ok:
                 return True
@@ -691,7 +691,7 @@ def _apply_delivery_progress(
             continue
 
         if requirement_type == "fish":
-            if fish_name and entry.name != fish_name:
+            if fish_name and not _fish_name_matches(entry.name, fish_name):
                 continue
             _increment_nested_counter(
                 progress.delivered_fish_counts_by_craft,
@@ -711,7 +711,7 @@ def _apply_delivery_progress(
         elif requirement_type == "fish_with_mutation":
             if not entry.mutation_name:
                 continue
-            if fish_name and entry.name != fish_name:
+            if fish_name and not _fish_name_matches(entry.name, fish_name):
                 continue
             if mutation_name and entry.mutation_name != mutation_name:
                 continue
@@ -813,7 +813,7 @@ def _increment_nested_counter(store: Dict[str, Dict[str, int]], craft_id: str, k
 def _delivered_fish_count(progress: CraftingProgress, craft_id: str, fish_name: str) -> int:
     delivered = progress.delivered_fish_counts_by_craft.get(craft_id, {})
     if fish_name:
-        return delivered.get(fish_name, 0)
+        return _count_name_case_insensitive(delivered, fish_name)
     return sum(delivered.values())
 
 
@@ -832,21 +832,49 @@ def _delivered_fish_with_mutation_count(
 ) -> int:
     delivered = progress.delivered_fish_with_mutation_pair_counts_by_craft.get(craft_id, {})
     if fish_name and mutation_name:
-        return delivered.get(_fish_mutation_key(fish_name, mutation_name), 0)
+        return _count_fish_mutation_pair(
+            delivered,
+            fish_name=fish_name,
+            mutation_name=mutation_name,
+        )
     if fish_name:
-        return sum(
-            count
-            for pair_key, count in delivered.items()
-            if pair_key.startswith(f"{fish_name}::")
-        )
+        return _count_fish_mutation_pair(delivered, fish_name=fish_name, mutation_name=None)
     if mutation_name:
-        suffix = f"::{mutation_name}"
-        return sum(
-            count
-            for pair_key, count in delivered.items()
-            if pair_key.endswith(suffix)
-        )
+        return _count_fish_mutation_pair(delivered, fish_name=None, mutation_name=mutation_name)
     return sum(delivered.values())
+
+
+def _fish_name_matches(actual_name: str, expected_name: str) -> bool:
+    return actual_name.casefold() == expected_name.casefold()
+
+
+def _count_name_case_insensitive(counts: Dict[str, int], name: str) -> int:
+    normalized_name = name.casefold()
+    return sum(
+        count
+        for key, count in counts.items()
+        if key.casefold() == normalized_name
+    )
+
+
+def _count_fish_mutation_pair(
+    counts: Dict[str, int],
+    *,
+    fish_name: Optional[str],
+    mutation_name: Optional[str],
+) -> int:
+    normalized_fish_name = fish_name.casefold() if fish_name else None
+    total = 0
+    for pair_key, count in counts.items():
+        fish_part, separator, mutation_part = pair_key.partition("::")
+        if separator != "::":
+            continue
+        if normalized_fish_name and fish_part.casefold() != normalized_fish_name:
+            continue
+        if mutation_name and mutation_part != mutation_name:
+            continue
+        total += count
+    return total
 
 
 def _fish_mutation_key(fish_name: str, mutation_name: str) -> str:

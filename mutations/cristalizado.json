@@ -1,0 +1,8 @@
+{
+  "name": "Cristalizado",
+  "description": "Molda a formaçao do peixe para transforma-lo em uma rara joia.",
+  "xp_multiplier": 1.2,
+  "gold_multiplier": 2.2,
+  "chance_percent": 20.0,
+  "required_rods": ["Vara Cristal"]
+}

@@ -153,6 +153,10 @@ def show_locked_entry():
     input("\nEnter para voltar.")
 
 
+def _rod_counts_for_completion(rod: Rod) -> bool:
+    return bool(getattr(rod, "counts_for_bestiary_completion", True))
+
+
 def _show_fish_bestiary_flat(
     fish_profiles: List["FishProfile"],
     unlocked_fish: Set[str],
@@ -588,13 +592,18 @@ def show_fish_bestiary(
 
 
 def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
+    countable_rods = [
+        rod
+        for rod in rods
+        if _rod_counts_for_completion(rod)
+    ]
     page = 0
     page_size = 10
     while True:
         clear_screen()
         print("=== Bestiario: Varas adquiridas ===")
-        total_rods = len(rods)
-        unlocked_count = sum(1 for rod in rods if rod.name in unlocked_rods)
+        total_rods = len(countable_rods)
+        unlocked_count = sum(1 for rod in countable_rods if rod.name in unlocked_rods)
         completion = (unlocked_count / total_rods * 100) if total_rods else 0
         print(f"Complecao: {unlocked_count}/{total_rods} ({completion:.0f}%)")
         if not rods:
@@ -610,10 +619,15 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
         page_items = rods[start:end]
         if use_modern_ui():
             clear_screen()
-            options = [
-                MenuOption(str(idx), rod.name if rod.name in unlocked_rods else "???")
-                for idx, rod in enumerate(page_items, start=1)
-            ]
+            options = []
+            for idx, rod in enumerate(page_items, start=1):
+                if rod.name not in unlocked_rods:
+                    label = "???"
+                elif not _rod_counts_for_completion(rod):
+                    label = f"{rod.name} (nao conta na complecao)"
+                else:
+                    label = rod.name
+                options.append(MenuOption(str(idx), label))
             if total_pages > 1:
                 options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
                 options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
@@ -654,10 +668,13 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
                 continue
 
             clear_screen()
+            detail_lines = [f"Descricao: {rod.description or '-'}"]
+            if not _rod_counts_for_completion(rod):
+                detail_lines.append("Esta vara nao conta para a complecao do bestiario.")
             print_menu_panel(
                 "VARA",
                 subtitle=rod.name,
-                header_lines=[f"Descricao: {rod.description or '-'}"],
+                header_lines=detail_lines,
                 options=[MenuOption("0", "Voltar")],
                 prompt="Pressione Enter para voltar:",
                 show_badge=False,
@@ -668,7 +685,12 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
         print(f"Pagina {page + 1}/{total_pages}\n")
 
         for idx, rod in enumerate(page_items, start=1):
-            label = rod.name if rod.name in unlocked_rods else "???"
+            if rod.name not in unlocked_rods:
+                label = "???"
+            elif not _rod_counts_for_completion(rod):
+                label = f"{rod.name} (nao conta na complecao)"
+            else:
+                label = rod.name
             print(f"{idx}. {label}")
 
         if total_pages > 1:
@@ -704,6 +726,8 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
         clear_screen()
         print(f"=== {rod.name} ===")
         print(f"Descricao: {rod.description or '-'}")
+        if not _rod_counts_for_completion(rod):
+            print("Esta vara nao conta para a complecao do bestiario.")
         input("\nEnter para voltar.")
 
 

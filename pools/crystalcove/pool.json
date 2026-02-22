@@ -1,0 +1,12 @@
+{
+  "name": "Angra Cristal",
+  "description": "Os cristais sao lindos... a sua luz reflete no teto, formando uma bela visao espelhada. A agua parece toxica... mas a pequena queda de agua esta cheia de vida.",
+ "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 38,
+    "Incomum": 36,
+    "Raro": 18,
+    "Epico": 13,
+    "Lendario": 2
+  }
+}

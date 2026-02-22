@@ -14,11 +14,13 @@ class Rod:
     price: float
     can_slash: bool = False
     slash_chance: float = 0.0
+    slash_power: int = 1
     can_slam: bool = False
     slam_chance: float = 0.0
     slam_time_bonus: float = 0.0
     unlocked_default: bool = False
     unlocks_with_pool: str = ""
+    counts_for_bestiary_completion: bool = True
 
 
 def load_rods(base_dir: Path) -> List[Rod]:
@@ -46,6 +48,13 @@ def load_rods(base_dir: Path) -> List[Rod]:
             if isinstance(raw_unlocks_with_pool, str)
             else ""
         )
+        raw_counts_flag = data.get("counts_for_bestiary_completion")
+        if isinstance(raw_counts_flag, bool):
+            counts_for_bestiary_completion = raw_counts_flag
+        else:
+            counts_for_bestiary_completion = not bool(
+                data.get("exclude_from_bestiary_completion", False)
+            )
 
         rods.append(
             Rod(
@@ -57,11 +66,13 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 price=float(data.get("price", 0.0)),
                 can_slash=bool(data.get("can_slash", False)),
                 slash_chance=float(data.get("slash_chance", 0.0)),
+                slash_power=max(1, int(data.get("slash_power", 1))),
                 can_slam=bool(data.get("can_slam", False)),
                 slam_chance=float(data.get("slam_chance", 0.0)),
                 slam_time_bonus=float(data.get("slam_time_bonus", 0.0)),
                 unlocked_default=bool(data.get("unlocked_default", False)),
                 unlocks_with_pool=unlocks_with_pool,
+                counts_for_bestiary_completion=counts_for_bestiary_completion,
             )
         )
 

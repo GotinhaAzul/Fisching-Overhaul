@@ -1,0 +1,12 @@
+{
+  "name": "Cafe",
+  "rarity": "Comum",
+  "description": "Aceita um copo? Quantidade de cafes tomados pelo desenvolvedor durante desenvolvimento ate agora: 3 ",
+  "exclude_from_bestiary_completion": true,
+  "kg_min": 0.1,
+  "kg_max": 0.2,
+  "base_value": 2,
+  "sequence_len": 1,
+  "reaction_time_s": 2.5
+}
+

@@ -1,8 +1,8 @@
 {
   "name": "Vara de Fibra",
   "luck": 0.12,
-  "kg_max": 8.0,
-  "control": 0.2,
+  "kg_max": 5.0,
+  "control": -0.2,
   "description": "Encantada com sorte, tem uma boa chance de fisgar algo.",
   "price": 980,
   "unlocked_default": true

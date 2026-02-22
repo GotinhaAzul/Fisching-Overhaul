@@ -1,0 +1,33 @@
+{
+  "id": "crystalcove_unlock",
+  "name": "Cristais, Brilhos, Beleza.",
+  "description": "As cores prismaticas inundam seus olhos de cor na distancia das profundezas.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "level",
+      "level": 20
+    },
+    {
+      "type": "deliver_fish",
+      "count": 5,
+      "fish_name": "Salmajoia"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 5,
+      "fish_name": "Peixe Tres-Olhos"
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "As profundezas",
+      "percent": 50
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Angra Cristal"]
+    }
+  ]
+}

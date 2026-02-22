@@ -1,0 +1,11 @@
+{
+  "name": "Camarao Cristal",
+  "rarity": "Incomum",
+  "description": "Um camarão radiante, adornado com incrustações cristalinas, brilha intensamente na Angra Cristal, capturado apenas por pescadores ardilosos.",
+  "kg_min": 1.0,
+  "kg_max": 2.0,
+  "base_value": 22,
+  "sequence_len": 5,
+  "reaction_time_s": 1.5
+}
+

@@ -1,0 +1,8 @@
+{
+  "name": "Profundo",
+  "description": "Alterado por poderes desconhecidos, os peixes tem a sua essencia tocada.",
+  "xp_multiplier": 1.0,
+  "gold_multiplier": 1.2,
+  "chance_percent": 30.0,
+  "required_rods": ["Vara das Profundezas"]
+}

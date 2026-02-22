@@ -12,5 +12,5 @@
     "Lendario": 3
   },
   "cooldown_minutes": 8,
-  "disturbance_decay_per_check": 2
+  "disturbance_decay_per_check": 4
 }

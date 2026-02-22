@@ -24,6 +24,10 @@
     {
       "type": "unlock_pools",
       "pool_names": ["As profundezas"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["crystalcove_unlock"]
     }
   ]
 }

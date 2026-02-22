@@ -1,0 +1,16 @@
+{
+  "name": "Eletricidade Desolada",
+  "description": "Uma luz eterea se impulsa pelas aguas graciosamente. O ar se torna eletrico, tocar na agua sera perigoso.",
+  "pool_name": "Profundezas Desoladas",
+  "duration_minutes": 5,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 2,
+  "disturbance_max": 1200,
+  "rarity_chances": {
+    "Raro": 6,
+    "Epico": 5,
+    "Lendario": 3
+  },
+  "cooldown_minutes": 8,
+  "disturbance_decay_per_check": 2
+}

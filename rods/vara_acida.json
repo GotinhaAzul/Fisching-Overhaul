@@ -1,0 +1,10 @@
+{
+  "name": "Vara Acida",
+  "luck": 0.11,
+  "kg_max": 50,
+  "control": 0.9,
+  "description": "Jogue veneno nos peixes e o assista lutar contra si mesmo.",
+  "price": 4000,
+  "unlocked_default": false,
+  "unlockswithpool": "Piscina de Salmoura"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Envenenado",
+  "description": "O peixe foi envenenado....",
+  "xp_multiplier": 1.0,
+  "gold_multiplier": 0.3,
+  "chance_percent": 40.0,
+  "required_rods": ["Vara Acida", "Vara Cristal"]
+}

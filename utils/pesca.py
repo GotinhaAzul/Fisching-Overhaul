@@ -243,8 +243,8 @@ def _apply_luck_to_weights(
     if not weights:
         return {}
 
-    luck = max(0.0, float(rod_luck))
-    if luck <= 0:
+    luck = float(rod_luck)
+    if luck == 0:
         return weights
 
     rarities = list(weights.keys())
@@ -262,8 +262,12 @@ def _apply_luck_to_weights(
     for rarity in rarities:
         rank = ranks.get(rarity, 0)
         rank_ratio = rank / max_rank
-        luck_boost = luck * (1 + luck)
-        multiplier = 1 + (luck_boost * rank_ratio)
+        if luck > 0:
+            luck_boost = luck * (1 + luck)
+            multiplier = 1 + (luck_boost * rank_ratio)
+        else:
+            penalty = abs(luck) * (1 + abs(luck))
+            multiplier = max(0.0, 1 - (penalty * rank_ratio))
         adjusted[rarity] = float(weights[rarity]) * multiplier
 
     adjusted_total = sum(adjusted.values())
@@ -714,6 +718,7 @@ class FishingMiniGame:
         *,
         can_slash: bool = False,
         slash_chance: float = 0.0,
+        slash_power: int = 1,
         can_slam: bool = False,
         slam_chance: float = 0.0,
         slam_time_bonus: float = 0.0,
@@ -724,6 +729,7 @@ class FishingMiniGame:
         self.start_time = 0.0
         self.can_slash = can_slash
         self.slash_chance = max(0.0, min(1.0, float(slash_chance)))
+        self.slash_power = max(1, int(slash_power))
         self.can_slam = can_slam
         self.slam_chance = max(0.0, min(1.0, float(slam_chance)))
         self.slam_time_bonus = max(0.0, float(slam_time_bonus))
@@ -764,8 +770,17 @@ class FishingMiniGame:
         min_slash_index = self.index + 2
         if self.can_slash and self.slash_chance > 0 and min_slash_index < len(self.attempt.sequence):
             if random.random() <= self.slash_chance:
-                remove_index = random.randrange(min_slash_index, len(self.attempt.sequence))
-                self.attempt.sequence.pop(remove_index)
+                remaining_letters = len(self.attempt.sequence) - self.index
+                if self.slash_power > remaining_letters:
+                    self.index = len(self.attempt.sequence)
+                    elapsed = time.perf_counter() - self.start_time
+                    return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
+
+                removable = len(self.attempt.sequence) - min_slash_index
+                cuts = min(self.slash_power, removable)
+                for _ in range(cuts):
+                    remove_index = random.randrange(min_slash_index, len(self.attempt.sequence))
+                    self.attempt.sequence.pop(remove_index)
                 if self.is_done():
                     elapsed = time.perf_counter() - self.start_time
                     return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
@@ -1889,7 +1904,6 @@ def run_fishing_round(
             combined_weights = selected_pool.rarity_weights
 
         rod_luck = equipped_rod.luck * (event_def.luck_multiplier if event_def else 1.0)
-        rod_luck = max(0.0, rod_luck)
         fish = selected_pool.choose_fish(
             eligible_fish,
             rod_luck,
@@ -1910,6 +1924,7 @@ def run_fishing_round(
             attempt,
             can_slash=equipped_rod.can_slash,
             slash_chance=equipped_rod.slash_chance,
+            slash_power=equipped_rod.slash_power,
             can_slam=equipped_rod.can_slam,
             slam_chance=equipped_rod.slam_chance,
             slam_time_bonus=equipped_rod.slam_time_bonus,

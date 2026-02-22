@@ -710,7 +710,7 @@ def _entry_matches_delivery_requirements(
         mutation_name = requirement.get("mutation_name")
         req_type = requirement.get("type")
 
-        if isinstance(fish_name, str) and entry.name != fish_name:
+        if isinstance(fish_name, str) and not _fish_name_matches(entry.name, fish_name):
             continue
         if req_type == "deliver_mutation":
             if not entry.mutation_name:
@@ -794,8 +794,8 @@ def _format_requirement(
         if isinstance(fish_name, str):
             current = max(
                 0,
-                progress.fish_caught_by_name.get(fish_name, 0)
-                - baseline_progress.fish_caught_by_name.get(fish_name, 0),
+                _count_fish_name(progress.fish_caught_by_name, fish_name)
+                - _count_fish_name(baseline_progress.fish_caught_by_name, fish_name),
             )
             return f"Capturar {fish_name}", current, target, current >= target
         current = max(0, progress.fish_caught - baseline_progress.fish_caught)
@@ -806,8 +806,8 @@ def _format_requirement(
         if isinstance(fish_name, str):
             current = max(
                 0,
-                progress.fish_delivered_by_name.get(fish_name, 0)
-                - baseline_progress.fish_delivered_by_name.get(fish_name, 0),
+                _count_fish_name(progress.fish_delivered_by_name, fish_name)
+                - _count_fish_name(baseline_progress.fish_delivered_by_name, fish_name),
             )
             return f"Entregar {fish_name}", current, target, current >= target
         current = max(0, progress.fish_delivered - baseline_progress.fish_delivered)
@@ -818,8 +818,8 @@ def _format_requirement(
         if isinstance(fish_name, str):
             current = max(
                 0,
-                progress.fish_sold_by_name.get(fish_name, 0)
-                - baseline_progress.fish_sold_by_name.get(fish_name, 0),
+                _count_fish_name(progress.fish_sold_by_name, fish_name)
+                - _count_fish_name(baseline_progress.fish_sold_by_name, fish_name),
             )
             return f"Vender {fish_name}", current, target, current >= target
         current = max(0, progress.fish_sold - baseline_progress.fish_sold)
@@ -854,8 +854,8 @@ def _format_requirement(
         if isinstance(fish_name, str):
             current = max(
                 0,
-                progress.fish_caught_with_mutation_by_name.get(fish_name, 0)
-                - baseline_progress.fish_caught_with_mutation_by_name.get(fish_name, 0),
+                _count_fish_name(progress.fish_caught_with_mutation_by_name, fish_name)
+                - _count_fish_name(baseline_progress.fish_caught_with_mutation_by_name, fish_name),
             )
             return f"Capturar {fish_name} com mutação", current, target, current >= target
         current = max(0, progress.mutated_fish_caught - baseline_progress.mutated_fish_caught)
@@ -865,11 +865,18 @@ def _format_requirement(
         fish_name = requirement.get("fish_name")
         mutation_name = requirement.get("mutation_name")
         if isinstance(fish_name, str) and isinstance(mutation_name, str):
-            pair_key = _fish_mutation_key(fish_name, mutation_name)
             current = max(
                 0,
-                progress.fish_delivered_with_mutation_pair_counts.get(pair_key, 0)
-                - baseline_progress.fish_delivered_with_mutation_pair_counts.get(pair_key, 0),
+                _count_fish_mutation_pair(
+                    progress.fish_delivered_with_mutation_pair_counts,
+                    fish_name=fish_name,
+                    mutation_name=mutation_name,
+                )
+                - _count_fish_mutation_pair(
+                    baseline_progress.fish_delivered_with_mutation_pair_counts,
+                    fish_name=fish_name,
+                    mutation_name=mutation_name,
+                ),
             )
             return (
                 f"Entregar {fish_name} com muta??o {mutation_name}",
@@ -880,8 +887,8 @@ def _format_requirement(
         if isinstance(fish_name, str):
             current = max(
                 0,
-                progress.fish_delivered_with_mutation_by_name.get(fish_name, 0)
-                - baseline_progress.fish_delivered_with_mutation_by_name.get(fish_name, 0),
+                _count_fish_name(progress.fish_delivered_with_mutation_by_name, fish_name)
+                - _count_fish_name(baseline_progress.fish_delivered_with_mutation_by_name, fish_name),
             )
             return f"Entregar {fish_name} com muta??o", current, target, current >= target
         if isinstance(mutation_name, str):
@@ -1040,6 +1047,39 @@ def _extract_string_list(value: object) -> List[str]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, str)]
+
+
+def _fish_name_matches(actual_name: str, expected_name: str) -> bool:
+    return actual_name.casefold() == expected_name.casefold()
+
+
+def _count_fish_name(counts: Dict[str, int], fish_name: str) -> int:
+    normalized_name = fish_name.casefold()
+    return sum(
+        count
+        for name, count in counts.items()
+        if name.casefold() == normalized_name
+    )
+
+
+def _count_fish_mutation_pair(
+    counts: Dict[str, int],
+    *,
+    fish_name: str,
+    mutation_name: str,
+) -> int:
+    normalized_name = fish_name.casefold()
+    total = 0
+    for pair_key, count in counts.items():
+        fish_part, separator, mutation_part = pair_key.partition("::")
+        if separator != "::":
+            continue
+        if fish_part.casefold() != normalized_name:
+            continue
+        if mutation_part != mutation_name:
+            continue
+        total += count
+    return total
 
 
 def _fish_mutation_key(fish_name: str, mutation_name: str) -> str:

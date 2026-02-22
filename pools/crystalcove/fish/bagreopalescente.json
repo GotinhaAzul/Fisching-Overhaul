@@ -1,0 +1,11 @@
+{
+  "name": "Bagre Opalescente",
+  "rarity": "Comum",
+  "description": "Este bagre reluzente desliza pela Angra Cristal com escamas iridescentes que refletem as águas cristalinas da primavera e do inverno, suas barbatanas semelhantes a bigodes brilhando suavemente.",
+  "kg_min": 1.2,
+  "kg_max": 4.2,
+  "base_value": 5,
+  "sequence_len": 5,
+  "reaction_time_s": 2.5
+}
+

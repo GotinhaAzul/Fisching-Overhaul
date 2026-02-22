@@ -1,0 +1,11 @@
+{
+  "name": "DJ Polvonopus",
+  "rarity": "Lendario",
+  "description": "Um polvo estiloso com tentáculos brilhantes que pulsam em um ritmo invisível, girando pelas noites claras da Angra Cristal.",
+  "kg_min": 8.0,
+  "kg_max": 25.5,
+  "base_value": 135,
+  "sequence_len": 7,
+  "reaction_time_s": 2.2
+}
+

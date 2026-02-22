@@ -2,7 +2,7 @@
   "name": "Vara de Carbono",
   "luck": 0.03,
   "kg_max": 200.0,
-  "control": 0.5,
+  "control": 0.4,
   "description": "Uma vara feita para aguentar peixes grandes.",
   "price": 2000,
   "unlocked_default": true

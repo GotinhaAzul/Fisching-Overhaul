@@ -1,0 +1,11 @@
+{
+  "name": "Lagosta Cristal",
+  "rarity": "Epico",
+  "description": "Uma lagosta majestosa com a carapaça incrustada de cristais deslumbrantes, brilhando intensamente na Angra Cristal, esquiva de todos, exceto de varas rapidas.",
+  "kg_min": 1.0,
+  "kg_max": 2.0,
+  "base_value": 65,
+  "sequence_len": 5,
+  "reaction_time_s": 1.4
+}
+

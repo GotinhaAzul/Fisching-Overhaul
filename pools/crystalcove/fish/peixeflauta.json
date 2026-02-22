@@ -1,0 +1,11 @@
+{
+  "name": "Peixe Flauta",
+  "rarity": "Raro",
+  "description": "Um peixe curioso com um corpo semelhante a uma flauta que se infla em condições de água clara, criando bolhas melódicas que ecoam pela Angra Cristal.",
+  "kg_min": 1.0,
+  "kg_max": 2.5,
+  "base_value": 62,
+  "sequence_len": 6,
+  "reaction_time_s": 1.7
+}
+

@@ -1,0 +1,34 @@
+{
+  "id": "vara_sniper_craft",
+  "rod_name": "Sniper",
+  "name": "Mirar... ATIRAR!",
+  "description": "Tem certeza que isso vai ser uma boa ideia?",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Cafeteria"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Agua-Viva Imperatriz",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Pedra",
+        "mutation_name": "Brilhante",
+        "count": 15
+      },
+      {
+        "type": "money",
+        "amount": 15000
+      }
+    ]
+  }
+}
