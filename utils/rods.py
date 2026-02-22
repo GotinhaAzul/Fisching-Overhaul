@@ -27,8 +27,15 @@ def load_rods(base_dir: Path) -> List[Rod]:
 
     rods: List[Rod] = []
     for rod_path in sorted(base_dir.glob("*.json")):
-        with rod_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
+        try:
+            with rod_path.open("r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: vara ignorada ({rod_path}): {exc}")
+            continue
+        if not isinstance(data, dict):
+            print(f"Aviso: vara ignorada ({rod_path}): formato invalido.")
+            continue
 
         name = data.get("name")
         if not name:

@@ -1,0 +1,22 @@
+{
+  "id": "unlock_mushgrove",
+  "name": "Cogumelos...?",
+  "description": "Atravesse o rio ate a 'ilha de cogumelos', mas antes, conheça os predadores no caminho.",
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Rio Correnteza",
+      "percent": 80
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Pantano Mushgrove"]
+    },
+    {
+      "type": "xp",
+      "amount": 200
+    }
+  ]
+}

@@ -39,10 +39,12 @@ class MissionProgress:
     total_money_spent: float = 0.0
     fish_caught: int = 0
     fish_delivered: int = 0
+    fish_sold: int = 0
     mutated_fish_caught: int = 0
     mutated_fish_delivered: int = 0
     fish_caught_by_name: Dict[str, int] = field(default_factory=dict)
     fish_delivered_by_name: Dict[str, int] = field(default_factory=dict)
+    fish_sold_by_name: Dict[str, int] = field(default_factory=dict)
     fish_caught_with_mutation_by_name: Dict[str, int] = field(default_factory=dict)
     fish_delivered_with_mutation_by_name: Dict[str, int] = field(default_factory=dict)
     fish_delivered_with_mutation_pair_counts: Dict[str, int] = field(default_factory=dict)
@@ -85,6 +87,10 @@ class MissionProgress:
             self.fish_delivered_with_mutation_pair_counts[pair_key] = (
                 self.fish_delivered_with_mutation_pair_counts.get(pair_key, 0) + 1
             )
+
+    def record_fish_sold(self, fish_name: str) -> None:
+        self.fish_sold += 1
+        self.fish_sold_by_name[fish_name] = self.fish_sold_by_name.get(fish_name, 0) + 1
 
     def add_play_time(self, seconds: float) -> None:
         if seconds > 0:
@@ -158,11 +164,13 @@ def serialize_mission_progress(progress: MissionProgress) -> Dict[str, object]:
         "total_money_spent": progress.total_money_spent,
         "fish_caught": progress.fish_caught,
         "fish_delivered": progress.fish_delivered,
+        "fish_sold": progress.fish_sold,
         "mutated_fish_caught": progress.mutated_fish_caught,
         "mutated_fish_delivered": progress.mutated_fish_delivered,
         # Snapshot maps to avoid mission baselines sharing mutable dict references.
         "fish_caught_by_name": dict(progress.fish_caught_by_name),
         "fish_delivered_by_name": dict(progress.fish_delivered_by_name),
+        "fish_sold_by_name": dict(progress.fish_sold_by_name),
         "fish_caught_with_mutation_by_name": dict(progress.fish_caught_with_mutation_by_name),
         "fish_delivered_with_mutation_by_name": dict(progress.fish_delivered_with_mutation_by_name),
         "fish_delivered_with_mutation_pair_counts": dict(progress.fish_delivered_with_mutation_pair_counts),
@@ -180,10 +188,12 @@ def restore_mission_progress(raw_progress: object) -> MissionProgress:
     progress.total_money_spent = _safe_float(raw_progress.get("total_money_spent"))
     progress.fish_caught = _safe_int(raw_progress.get("fish_caught"))
     progress.fish_delivered = _safe_int(raw_progress.get("fish_delivered"))
+    progress.fish_sold = _safe_int(raw_progress.get("fish_sold"))
     progress.mutated_fish_caught = _safe_int(raw_progress.get("mutated_fish_caught"))
     progress.mutated_fish_delivered = _safe_int(raw_progress.get("mutated_fish_delivered"))
     progress.fish_caught_by_name = _safe_str_int_map(raw_progress.get("fish_caught_by_name"))
     progress.fish_delivered_by_name = _safe_str_int_map(raw_progress.get("fish_delivered_by_name"))
+    progress.fish_sold_by_name = _safe_str_int_map(raw_progress.get("fish_sold_by_name"))
     progress.fish_caught_with_mutation_by_name = _safe_str_int_map(
         raw_progress.get("fish_caught_with_mutation_by_name")
     )
@@ -209,8 +219,16 @@ def load_missions(base_dir: Path) -> List[MissionDefinition]:
         if not config_path.exists():
             continue
 
-        with config_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
+        try:
+            with config_path.open("r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: missao ignorada ({config_path}): {exc}")
+            continue
+
+        if not isinstance(data, dict):
+            print(f"Aviso: missao ignorada ({config_path}): formato invalido.")
+            continue
 
         mission_id = data.get("id", mission_dir.name)
         if not isinstance(mission_id, str) or not mission_id:
@@ -794,6 +812,18 @@ def _format_requirement(
             return f"Entregar {fish_name}", current, target, current >= target
         current = max(0, progress.fish_delivered - baseline_progress.fish_delivered)
         return "Entregar peixes", current, target, current >= target
+    if requirement_type == "sell_fish":
+        target = _safe_int(requirement.get("count"))
+        fish_name = requirement.get("fish_name")
+        if isinstance(fish_name, str):
+            current = max(
+                0,
+                progress.fish_sold_by_name.get(fish_name, 0)
+                - baseline_progress.fish_sold_by_name.get(fish_name, 0),
+            )
+            return f"Vender {fish_name}", current, target, current >= target
+        current = max(0, progress.fish_sold - baseline_progress.fish_sold)
+        return "Vender peixes", current, target, current >= target
     if requirement_type == "catch_mutation":
         target = _safe_int(requirement.get("count"))
         mutation_name = requirement.get("mutation_name")

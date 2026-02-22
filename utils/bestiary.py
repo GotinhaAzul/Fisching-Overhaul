@@ -5,7 +5,14 @@ from typing import Dict, List, Optional, Sequence, Set, TYPE_CHECKING
 
 from colorama import Fore, Style
 
+from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, print_menu_panel, use_modern_ui
+from utils.pagination import (
+    PAGE_NEXT_KEY,
+    PAGE_PREV_KEY,
+    apply_page_hotkey,
+    get_page_slice,
+)
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
 
@@ -15,6 +22,13 @@ if TYPE_CHECKING:
 
 
 REGIONLESS_SECTION_NAME = "Sem regiao"
+
+
+def _read_choice(prompt: str, total_pages: int) -> str:
+    return read_menu_choice(
+        prompt,
+        instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set(),
+    ).lower()
 
 
 @dataclass(frozen=True)
@@ -151,20 +165,21 @@ def _show_fish_bestiary_flat(
     page_size = 10
     while True:
         clear_screen()
-        print("=== Bestiário: Peixes pescados ===")
+        print("=== Bestiario: Peixes pescados ===")
         total_fish = len(fish_profiles)
         unlocked_count = sum(1 for fish in fish_profiles if fish.name in unlocked_fish)
         completion = (unlocked_count / total_fish * 100) if total_fish else 0
-        print(f"Compleção: {unlocked_count}/{total_fish} ({completion:.0f}%)")
+        print(f"Complecao: {unlocked_count}/{total_fish} ({completion:.0f}%)")
         if not ordered_fish:
             print("Nenhum peixe cadastrado.")
             input("\nEnter para voltar.")
             return
 
-        total_pages = max(1, (len(ordered_fish) + page_size - 1) // page_size)
-        page = max(0, min(page, total_pages - 1))
-        start = page * page_size
-        end = start + page_size
+        page_slice = get_page_slice(len(ordered_fish), page, page_size)
+        page = page_slice.page
+        total_pages = page_slice.total_pages
+        start = page_slice.start
+        end = page_slice.end
         page_items = ordered_fish[start:end]
         if use_modern_ui():
             clear_screen()
@@ -173,8 +188,8 @@ def _show_fish_bestiary_flat(
                 for idx, fish in enumerate(page_items, start=1)
             ]
             if total_pages > 1:
-                options.append(MenuOption("n", "Proxima pagina"))
-                options.append(MenuOption("p", "Pagina anterior"))
+                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
+                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -187,16 +202,12 @@ def _show_fish_bestiary_flat(
                 prompt="Escolha um peixe:",
                 show_badge=False,
             )
-            choice = input("> ").strip()
+            choice = _read_choice("> ", total_pages)
             if choice == "0":
                 return
 
-            lowered = choice.lower()
-            if lowered == "n" and total_pages > 1:
-                page += 1
-                continue
-            if lowered == "p" and total_pages > 1:
-                page -= 1
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
                 continue
 
             if not choice.isdigit():
@@ -231,35 +242,34 @@ def _show_fish_bestiary_flat(
             input("> ")
             continue
 
-        print(f"Página {page + 1}/{total_pages}\n")
+        print(f"Pagina {page + 1}/{total_pages}\n")
 
         for idx, fish in enumerate(page_items, start=1):
             label = fish.name if fish.name in unlocked_fish else "???"
             print(f"{idx}. {label}")
 
         if total_pages > 1:
-            print("\nN. Próxima página | P. Página anterior")
+            print(
+                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
+                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
+            )
         print("0. Voltar")
-        choice = input("Escolha um peixe: ").strip()
+        choice = _read_choice("Escolha um peixe: ", total_pages)
         if choice == "0":
             return
 
-        lowered = choice.lower()
-        if lowered == "n" and total_pages > 1:
-            page += 1
-            continue
-        if lowered == "p" and total_pages > 1:
-            page -= 1
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
             continue
 
         if not choice.isdigit():
-            print("Entrada inválida.")
+            print("Entrada invalida.")
             input("\nEnter para voltar.")
             continue
 
         idx = int(choice)
         if not (1 <= idx <= len(page_items)):
-            print("Número fora do intervalo.")
+            print("Numero fora do intervalo.")
             input("\nEnter para voltar.")
             continue
 
@@ -271,7 +281,7 @@ def _show_fish_bestiary_flat(
         clear_screen()
         print(f"=== {fish.name} ===")
         print(f"Raridade: {fish.rarity}")
-        print(f"Descrição: {fish.description or '-'}")
+        print(f"Descricao: {fish.description or '-'}")
         print(f"KG (min-max): {fish.kg_min:g} - {fish.kg_max:g}")
         input("\nEnter para voltar.")
 
@@ -308,10 +318,11 @@ def _show_fish_bestiary_section(
             input("\nEnter para voltar.")
             return
 
-        total_pages = max(1, (len(ordered_fish) + page_size - 1) // page_size)
-        page = max(0, min(page, total_pages - 1))
-        start = page * page_size
-        end = start + page_size
+        page_slice = get_page_slice(len(ordered_fish), page, page_size)
+        page = page_slice.page
+        total_pages = page_slice.total_pages
+        start = page_slice.start
+        end = page_slice.end
         page_items = ordered_fish[start:end]
         if use_modern_ui():
             clear_screen()
@@ -335,8 +346,8 @@ def _show_fish_bestiary_section(
                 for idx, fish in enumerate(page_items, start=1)
             ]
             if total_pages > 1:
-                options.append(MenuOption("n", "Proxima pagina"))
-                options.append(MenuOption("p", "Pagina anterior"))
+                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
+                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -346,16 +357,12 @@ def _show_fish_bestiary_section(
                 prompt="Escolha um peixe:",
                 show_badge=False,
             )
-            choice = input("> ").strip()
+            choice = _read_choice("> ", total_pages)
             if choice == "0":
                 return
 
-            lowered = choice.lower()
-            if lowered == "n" and total_pages > 1:
-                page += 1
-                continue
-            if lowered == "p" and total_pages > 1:
-                page -= 1
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
                 continue
 
             if not choice.isdigit():
@@ -402,18 +409,17 @@ def _show_fish_bestiary_section(
             )
 
         if total_pages > 1:
-            print("\nN. Proxima pagina | P. Pagina anterior")
+            print(
+                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
+                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
+            )
         print("0. Voltar")
-        choice = input("Escolha um peixe: ").strip()
+        choice = _read_choice("Escolha um peixe: ", total_pages)
         if choice == "0":
             return
 
-        lowered = choice.lower()
-        if lowered == "n" and total_pages > 1:
-            page += 1
-            continue
-        if lowered == "p" and total_pages > 1:
-            page -= 1
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
             continue
 
         if not choice.isdigit():
@@ -470,10 +476,11 @@ def show_fish_bestiary(
             input("\nEnter para voltar.")
             return
 
-        total_pages = max(1, (len(sections) + page_size - 1) // page_size)
-        page = max(0, min(page, total_pages - 1))
-        start = page * page_size
-        end = start + page_size
+        page_slice = get_page_slice(len(sections), page, page_size)
+        page = page_slice.page
+        total_pages = page_slice.total_pages
+        start = page_slice.start
+        end = page_slice.end
         page_items = sections[start:end]
         if use_modern_ui():
             clear_screen()
@@ -491,8 +498,8 @@ def show_fish_bestiary(
                     label = f"{section.title} ({section_unlocked}/{section_total})"
                 options.append(MenuOption(str(idx), label))
             if total_pages > 1:
-                options.append(MenuOption("n", "Proxima pagina"))
-                options.append(MenuOption("p", "Pagina anterior"))
+                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
+                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -505,16 +512,12 @@ def show_fish_bestiary(
                 prompt="Escolha uma pool/regiao:",
                 show_badge=False,
             )
-            choice = input("> ").strip()
+            choice = _read_choice("> ", total_pages)
             if choice == "0":
                 return
 
-            lowered = choice.lower()
-            if lowered == "n" and total_pages > 1:
-                page += 1
-                continue
-            if lowered == "p" and total_pages > 1:
-                page -= 1
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
                 continue
 
             if not choice.isdigit():
@@ -552,18 +555,17 @@ def show_fish_bestiary(
             print(f"{idx}. {label}")
 
         if total_pages > 1:
-            print("\nN. Proxima pagina | P. Pagina anterior")
+            print(
+                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
+                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
+            )
         print("0. Voltar")
-        choice = input("Escolha uma pool/regiao: ").strip()
+        choice = _read_choice("Escolha uma pool/regiao: ", total_pages)
         if choice == "0":
             return
 
-        lowered = choice.lower()
-        if lowered == "n" and total_pages > 1:
-            page += 1
-            continue
-        if lowered == "p" and total_pages > 1:
-            page -= 1
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
             continue
 
         if not choice.isdigit():
@@ -590,20 +592,21 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
     page_size = 10
     while True:
         clear_screen()
-        print("=== Bestiário: Varas adquiridas ===")
+        print("=== Bestiario: Varas adquiridas ===")
         total_rods = len(rods)
         unlocked_count = sum(1 for rod in rods if rod.name in unlocked_rods)
         completion = (unlocked_count / total_rods * 100) if total_rods else 0
-        print(f"Compleção: {unlocked_count}/{total_rods} ({completion:.0f}%)")
+        print(f"Complecao: {unlocked_count}/{total_rods} ({completion:.0f}%)")
         if not rods:
             print("Nenhuma vara cadastrada.")
             input("\nEnter para voltar.")
             return
 
-        total_pages = max(1, (len(rods) + page_size - 1) // page_size)
-        page = max(0, min(page, total_pages - 1))
-        start = page * page_size
-        end = start + page_size
+        page_slice = get_page_slice(len(rods), page, page_size)
+        page = page_slice.page
+        total_pages = page_slice.total_pages
+        start = page_slice.start
+        end = page_slice.end
         page_items = rods[start:end]
         if use_modern_ui():
             clear_screen()
@@ -612,8 +615,8 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
                 for idx, rod in enumerate(page_items, start=1)
             ]
             if total_pages > 1:
-                options.append(MenuOption("n", "Proxima pagina"))
-                options.append(MenuOption("p", "Pagina anterior"))
+                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
+                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -626,16 +629,12 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
                 prompt="Escolha uma vara:",
                 show_badge=False,
             )
-            choice = input("> ").strip()
+            choice = _read_choice("> ", total_pages)
             if choice == "0":
                 return
 
-            lowered = choice.lower()
-            if lowered == "n" and total_pages > 1:
-                page += 1
-                continue
-            if lowered == "p" and total_pages > 1:
-                page -= 1
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
                 continue
 
             if not choice.isdigit():
@@ -666,35 +665,34 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
             input("> ")
             continue
 
-        print(f"Página {page + 1}/{total_pages}\n")
+        print(f"Pagina {page + 1}/{total_pages}\n")
 
         for idx, rod in enumerate(page_items, start=1):
             label = rod.name if rod.name in unlocked_rods else "???"
             print(f"{idx}. {label}")
 
         if total_pages > 1:
-            print("\nN. Próxima página | P. Página anterior")
+            print(
+                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
+                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
+            )
         print("0. Voltar")
-        choice = input("Escolha uma vara: ").strip()
+        choice = _read_choice("Escolha uma vara: ", total_pages)
         if choice == "0":
             return
 
-        lowered = choice.lower()
-        if lowered == "n" and total_pages > 1:
-            page += 1
-            continue
-        if lowered == "p" and total_pages > 1:
-            page -= 1
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
             continue
 
         if not choice.isdigit():
-            print("Entrada inválida.")
+            print("Entrada invalida.")
             input("\nEnter para voltar.")
             continue
 
         idx = int(choice)
         if not (1 <= idx <= len(page_items)):
-            print("Número fora do intervalo.")
+            print("Numero fora do intervalo.")
             input("\nEnter para voltar.")
             continue
 
@@ -705,7 +703,7 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
 
         clear_screen()
         print(f"=== {rod.name} ===")
-        print(f"Descrição: {rod.description or '-'}")
+        print(f"Descricao: {rod.description or '-'}")
         input("\nEnter para voltar.")
 
 
@@ -724,20 +722,21 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
     page_size = 10
     while True:
         clear_screen()
-        print("=== Bestiário: Pools desbloqueadas ===")
+        print("=== Bestiario: Pools desbloqueadas ===")
         total_pools = len(countable_pools)
         unlocked_count = sum(1 for pool in countable_pools if pool.name in unlocked_pools)
         completion = (unlocked_count / total_pools * 100) if total_pools else 0
-        print(f"Compleção: {unlocked_count}/{total_pools} ({completion:.0f}%)")
+        print(f"Complecao: {unlocked_count}/{total_pools} ({completion:.0f}%)")
         if not visible_pools:
             print("Nenhuma pool cadastrada.")
             input("\nEnter para voltar.")
             return
 
-        total_pages = max(1, (len(visible_pools) + page_size - 1) // page_size)
-        page = max(0, min(page, total_pages - 1))
-        start = page * page_size
-        end = start + page_size
+        page_slice = get_page_slice(len(visible_pools), page, page_size)
+        page = page_slice.page
+        total_pages = page_slice.total_pages
+        start = page_slice.start
+        end = page_slice.end
         page_items = visible_pools[start:end]
         if use_modern_ui():
             clear_screen()
@@ -751,8 +750,8 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
                     label = pool.name
                 options.append(MenuOption(str(idx), label))
             if total_pages > 1:
-                options.append(MenuOption("n", "Proxima pagina"))
-                options.append(MenuOption("p", "Pagina anterior"))
+                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
+                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -765,16 +764,12 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
                 prompt="Escolha uma pool:",
                 show_badge=False,
             )
-            choice = input("> ").strip()
+            choice = _read_choice("> ", total_pages)
             if choice == "0":
                 return
 
-            lowered = choice.lower()
-            if lowered == "n" and total_pages > 1:
-                page += 1
-                continue
-            if lowered == "p" and total_pages > 1:
-                page -= 1
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
                 continue
 
             if not choice.isdigit():
@@ -808,7 +803,7 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
             input("> ")
             continue
 
-        print(f"Página {page + 1}/{total_pages}\n")
+        print(f"Pagina {page + 1}/{total_pages}\n")
 
         for idx, pool in enumerate(page_items, start=1):
             if pool.name not in unlocked_pools:
@@ -820,28 +815,27 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
             print(f"{idx}. {label}")
 
         if total_pages > 1:
-            print("\nN. Próxima página | P. Página anterior")
+            print(
+                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
+                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
+            )
         print("0. Voltar")
-        choice = input("Escolha uma pool: ").strip()
+        choice = _read_choice("Escolha uma pool: ", total_pages)
         if choice == "0":
             return
 
-        lowered = choice.lower()
-        if lowered == "n" and total_pages > 1:
-            page += 1
-            continue
-        if lowered == "p" and total_pages > 1:
-            page -= 1
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
             continue
 
         if not choice.isdigit():
-            print("Entrada inválida.")
+            print("Entrada invalida.")
             input("\nEnter para voltar.")
             continue
 
         idx = int(choice)
         if not (1 <= idx <= len(page_items)):
-            print("Número fora do intervalo.")
+            print("Numero fora do intervalo.")
             input("\nEnter para voltar.")
             continue
 
@@ -852,7 +846,7 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
 
         clear_screen()
         print(f"=== {pool.name} ===")
-        print(f"Descrição: {pool.description or '-'}")
+        print(f"Descricao: {pool.description or '-'}")
         if not _pool_counts_for_completion(pool):
             print("Esta pool nao conta para a complecao do bestiario.")
         input("\nEnter para voltar.")

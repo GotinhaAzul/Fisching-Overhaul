@@ -4,7 +4,7 @@
   "description": "Venda alguns peixes no mercado.",
   "requirements": [
     {
-      "type": "deliver_fish",
+      "type": "sell_fish",
       "count": 3
     }
   ],
@@ -12,6 +12,10 @@
     {
       "type": "money",
       "amount": 80
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["unlock_mushgrove"]
     },
     {
       "type": "unlock_rods",

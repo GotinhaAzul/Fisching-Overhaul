@@ -1,0 +1,10 @@
+{
+  "name": "Amia",
+  "rarity": "Incomum",
+  "description": "O peixe-lama, também conhecido como amia, é uma espécie de peixe antiga e resistente, conhecida por sua capacidade de sobreviver em ambientes hostis e com pouco oxigênio, como pântanos e águas lamacentas. Eles podem ser encontrados por todo o Pântano de Mushgrove, especialmente escondidos na vegetação densa e durante a noite..",
+  "kg_min": 0.8,
+  "kg_max": 2.5,
+  "base_value": 14,
+  "sequence_len": 4,
+  "reaction_time_s": 2.4
+}

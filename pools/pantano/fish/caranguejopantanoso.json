@@ -1,0 +1,10 @@
+{
+  "name": "Caranguejo Pantanoso",
+  "rarity": "Raro",
+  "description": "O caranguejo pantanoso é uma espécie rara de caranguejo. Ele se adaptou completamente ao pântano de Mushgrove e se alimenta principalmente da enorme quantidade de fungos que tomou conta do local.",
+  "kg_min": 0.4,
+  "kg_max": 1.2,
+  "base_value": 35,
+  "sequence_len": 5,
+  "reaction_time_s": 1.8
+}

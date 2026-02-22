@@ -8,6 +8,7 @@ import signal
 import sys
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -20,6 +21,7 @@ from utils.bestiary import show_bestiary
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
+from utils.menu_input import read_menu_choice
 from utils.market import (
     restore_pool_market_orders,
     serialize_pool_market_orders,
@@ -42,6 +44,12 @@ from utils.modern_ui import (
     print_menu_panel,
     render_fishing_hud_line,
     use_modern_ui,
+)
+from utils.pagination import (
+    PAGE_NEXT_KEY,
+    PAGE_PREV_KEY,
+    apply_page_hotkey,
+    get_page_slice,
 )
 from utils.missions import (
     MissionDefinition,
@@ -88,6 +96,10 @@ from utils.ui import clear_screen
 # -----------------------------
 
 VALID_KEYS = ["w", "a", "s", "d"]
+PACE_WINDOW_S = 1.5
+PACE_TRIGGER_CATCHES = 2
+PACE_STEP_MULTIPLIER = 0.85
+PACE_MIN_TIME_MULTIPLIER = 0.55
 
 
 def flush_input_buffer() -> None:
@@ -102,6 +114,15 @@ def flush_input_buffer() -> None:
         termios = importlib.import_module("termios")
         if sys.stdin.isatty():
             termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+
+
+def _reel_time_multiplier_from_pace(recent_catch_count: int) -> float:
+    if recent_catch_count < PACE_TRIGGER_CATCHES:
+        return 1.0
+
+    stacks = recent_catch_count - PACE_TRIGGER_CATCHES + 1
+    multiplier = PACE_STEP_MULTIPLIER ** stacks
+    return max(PACE_MIN_TIME_MULTIPLIER, multiplier)
 
 
 @dataclass(frozen=True)
@@ -307,8 +328,15 @@ def load_fish_profiles_from_dir(fish_dir: Path) -> List[FishProfile]:
 
     fish_profiles: List[FishProfile] = []
     for fish_path in sorted(fish_dir.glob("*.json")):
-        with fish_path.open("r", encoding="utf-8") as handle:
-            fish_data = json.load(handle)
+        try:
+            with fish_path.open("r", encoding="utf-8") as handle:
+                fish_data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: peixe ignorado ({fish_path}): {exc}")
+            continue
+        if not isinstance(fish_data, dict):
+            print(f"Aviso: peixe ignorado ({fish_path}): formato invalido.")
+            continue
 
         name = fish_data.get("name")
         if not name:
@@ -349,8 +377,15 @@ def load_events(base_dir: Path) -> List[EventDefinition]:
         if not config_path.exists():
             continue
 
-        with config_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
+        try:
+            with config_path.open("r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: evento ignorado ({config_path}): {exc}")
+            continue
+        if not isinstance(data, dict):
+            print(f"Aviso: evento ignorado ({config_path}): formato invalido.")
+            continue
 
         name = data.get("name")
         if not name:
@@ -405,9 +440,11 @@ def load_hunts(
         try:
             with config_path.open("r", encoding="utf-8") as handle:
                 data = json.load(handle)
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: hunt ignorada ({config_path}): {exc}")
             continue
         if not isinstance(data, dict):
+            print(f"Aviso: hunt ignorada ({config_path}): formato invalido.")
             continue
 
         name = data.get("name")
@@ -473,8 +510,15 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
         if not config_path.exists():
             continue
 
-        with config_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
+        try:
+            with config_path.open("r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: pool ignorada ({config_path}): {exc}")
+            continue
+        if not isinstance(data, dict):
+            print(f"Aviso: pool ignorada ({config_path}): formato invalido.")
+            continue
 
         fish_profiles = load_fish_profiles_from_dir(pool_dir / "fish")
 
@@ -1584,10 +1628,41 @@ def show_inventory(
     equipped_rod: Rod,
     hunt_fish_names: Optional[set[str]] = None,
 ) -> Rod:
+    page_size = 12
+    page = 0
+
+    def get_page_bounds() -> tuple[int, int, int]:
+        nonlocal page
+        page_slice = get_page_slice(len(inventory), page, page_size)
+        page = page_slice.page
+        return page_slice.start, page_slice.end, page_slice.total_pages
+
     if use_modern_ui():
         while True:
             clear_screen()
+            start, end, total_pages = get_page_bounds()
             total_kg = sum(entry.kg for entry in inventory)
+            options = [
+                MenuOption("1", "Equipar vara", "Selecionar outra vara"),
+            ]
+            if total_pages > 1:
+                options.extend(
+                    [
+                        MenuOption(
+                            PAGE_NEXT_KEY.upper(),
+                            "Proxima pagina",
+                            f"Peixes {page + 1}/{total_pages}",
+                            enabled=page < total_pages - 1,
+                        ),
+                        MenuOption(
+                            PAGE_PREV_KEY.upper(),
+                            "Pagina anterior",
+                            f"Peixes {page + 1}/{total_pages}",
+                            enabled=page > 0,
+                        ),
+                    ]
+                )
+            options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "INVENTARIO",
                 subtitle="Peixes e equipamento",
@@ -1596,24 +1671,32 @@ def show_inventory(
                     f"Vara equipada: {equipped_rod.name}",
                     f"Stats: {format_rod_stats(equipped_rod)}",
                 ],
-                options=[
-                    MenuOption("1", "Equipar vara", "Selecionar outra vara"),
-                    MenuOption("0", "Voltar"),
-                ],
+                options=options,
                 prompt="Escolha uma opcao:",
                 show_badge=False,
             )
             if inventory:
                 print("")
+                print(f"Peixes [{page + 1}/{total_pages}]")
                 render_inventory(
-                    inventory,
+                    inventory[start:end],
                     show_title=False,
                     hunt_fish_names=hunt_fish_names,
+                    start_index=start + 1,
                 )
+                if total_pages > 1:
+                    print(f"Mostrando {start + 1}-{end} de {len(inventory)}.")
 
-            choice = input("> ").strip()
+            choice = read_menu_choice(
+                "> ",
+                instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set(),
+            ).lower()
             if choice == "0":
                 return equipped_rod
+
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
+                continue
 
             if choice == "1":
                 while True:
@@ -1656,21 +1739,36 @@ def show_inventory(
 
     while True:
         clear_screen()
-        print("=== InventÃ¡rio ===")
-        print("\nPeixes:")
-        render_inventory(
-            inventory,
-            show_title=False,
-            hunt_fish_names=hunt_fish_names,
-        )
+        start, end, total_pages = get_page_bounds()
+        print("=== Inventario ===")
         print("\nVara equipada:")
         print(f"- {equipped_rod.name} ({format_rod_stats(equipped_rod)})")
         print("\n1. Equipar vara")
+        if total_pages > 1:
+            print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina de peixes ({page + 1}/{total_pages})")
+            print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior de peixes ({page + 1}/{total_pages})")
         print("0. Voltar")
 
-        choice = input("Escolha uma opÃ§Ã£o: ").strip()
+        print("\nPeixes:")
+        render_inventory(
+            inventory[start:end],
+            show_title=False,
+            hunt_fish_names=hunt_fish_names,
+            start_index=start + 1,
+        )
+        if total_pages > 1:
+            print(f"Mostrando {start + 1}-{end} de {len(inventory)}.")
+
+        choice = read_menu_choice(
+            "Escolha uma opcao: ",
+            instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set(),
+        ).lower()
         if choice == "0":
             return equipped_rod
+
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
+            continue
 
         if choice == "1":
             clear_screen()
@@ -1680,15 +1778,15 @@ def show_inventory(
                 print(f"{idx}. {rod.name} - {format_rod_stats(rod)}{selected_marker}")
                 print(f"   {rod.description}")
 
-            selection = input("Digite o nÃºmero da vara: ").strip()
+            selection = input("Digite o numero da vara: ").strip()
             if not selection.isdigit():
-                print("Entrada invÃ¡lida.")
+                print("Entrada invalida.")
                 input("\nEnter para voltar.")
                 continue
 
             idx = int(selection)
             if not (1 <= idx <= len(owned_rods)):
-                print("NÃºmero fora do intervalo.")
+                print("Numero fora do intervalo.")
                 input("\nEnter para voltar.")
                 continue
 
@@ -1697,7 +1795,7 @@ def show_inventory(
             input("\nEnter para voltar.")
             continue
 
-        print("OpÃ§Ã£o invÃ¡lida.")
+        print("Opcao invalida.")
         input("\nEnter para voltar.")
 
 
@@ -1713,6 +1811,12 @@ def run_fishing_round(
     hunt_manager: Optional[HuntManager],
     on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation]], None]] = None,
 ):
+    recent_catch_times: deque[float] = deque()
+
+    def prune_recent_catch_times(now_s: float) -> None:
+        while recent_catch_times and now_s - recent_catch_times[0] > PACE_WINDOW_S:
+            recent_catch_times.popleft()
+
     def flush_runtime_notifications() -> None:
         if event_manager:
             event_manager.suppress_notifications(False)
@@ -1793,9 +1897,13 @@ def run_fishing_round(
         )
         is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
         attempt = fish.generate_attempt()
+        now_s = time.monotonic()
+        prune_recent_catch_times(now_s)
+        pace_multiplier = _reel_time_multiplier_from_pace(len(recent_catch_times))
+        base_time_limit_s = max(0.5, attempt.time_limit_s + equipped_rod.control)
         attempt = FishingAttempt(
             sequence=attempt.sequence,
-            time_limit_s=max(0.5, attempt.time_limit_s + equipped_rod.control),
+            time_limit_s=max(0.5, base_time_limit_s * pace_multiplier),
             allowed_keys=attempt.allowed_keys,
         )
         game = FishingMiniGame(
@@ -1809,6 +1917,12 @@ def run_fishing_round(
         game.begin()
 
         print("\n🐟 O peixe mordeu! Complete a sequência:")
+
+        if pace_multiplier < 1.0:
+            print(
+                "Pace penalty active: reaction window at "
+                f"{pace_multiplier * 100:0.0f}%."
+            )
 
         result: Optional[FishingResult] = None
 
@@ -1842,6 +1956,9 @@ def run_fishing_round(
         ks.stop()
 
         if result.success:
+            catch_time_s = time.monotonic()
+            recent_catch_times.append(catch_time_s)
+            prune_recent_catch_times(catch_time_s)
             first_catch = fish.name not in discovered_fish
             caught_kg = random.uniform(fish.kg_min, fish.kg_max)
             if caught_kg > equipped_rod.kg_max:
@@ -2215,6 +2332,7 @@ def main(dev_mode: bool = False):
                     unlocked_rods=unlocked_rods,
                     unlocked_pools=unlocked_pool_market_keys,
                     on_money_earned=mission_progress.record_money_earned,
+                    on_fish_sold=lambda entry: mission_progress.record_fish_sold(entry.name),
                     on_appraise_completed=on_market_appraise_completed,
                 )
                 mark_inventory_fish_counts_dirty()

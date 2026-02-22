@@ -28,6 +28,7 @@ Cada missão fica em uma pasta com um `mission.json`. Isso facilita adicionar, r
 | `level` | `level` | Alcançar um nível mínimo. |
 | `catch_fish` | `count`, `fish_name?` | Capturar peixes (geral ou específico). |
 | `deliver_fish` | `count`, `fish_name?` | Entregar peixes para missão (geral ou específico). |
+| `sell_fish` | `count`, `fish_name?` | Vender peixes no mercado (geral ou específico). |
 | `catch_mutation` | `count`, `mutation_name?` | Capturar peixes com mutação (geral ou específica). |
 | `deliver_mutation` | `count`, `mutation_name?` | Entregar peixes com mutação para missão. |
 | `catch_fish_with_mutation` | `count`, `fish_name?` | Capturar peixe com mutação. |

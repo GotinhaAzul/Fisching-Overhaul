@@ -1,0 +1,10 @@
+{
+  "name": "Jacare",
+  "rarity": "Epico",
+  "description": "O jacaré é um réptil enorme e temível, conhecido por sua mordida poderosa e corpo blindado. Encontrado no pântano de Mushgrove, o jacaré é o predador de topo da cadeia alimentar, com um estilo de caça furtivo e baseado em emboscadas.",
+  "kg_min": 2.5,
+  "kg_max": 7.0,
+  "base_value": 85,
+  "sequence_len": 8,
+  "reaction_time_s": 3.5
+}

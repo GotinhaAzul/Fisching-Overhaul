@@ -1,0 +1,10 @@
+{
+  "name": "Vieira-Lama",
+  "rarity": "Comum",
+  "description": "As viera-lama são um tipo especial de vieira com um sabor umami intenso. Elas se formaram a partir do crescimento invasivo da população de vieiras no pântano.",
+  "kg_min": 0.1,
+  "kg_max": 0.5,
+  "base_value": 3,
+  "sequence_len": 4,
+  "reaction_time_s": 3.0
+}

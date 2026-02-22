@@ -35,8 +35,15 @@ def load_mutations(base_dir: Path) -> List[Mutation]:
 
     mutations: List[Mutation] = []
     for mutation_path in sorted(base_dir.glob("*.json")):
-        with mutation_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
+        try:
+            with mutation_path.open("r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: mutacao ignorada ({mutation_path}): {exc}")
+            continue
+        if not isinstance(data, dict):
+            print(f"Aviso: mutacao ignorada ({mutation_path}): formato invalido.")
+            continue
 
         name = data.get("name")
         if not name:
@@ -79,8 +86,15 @@ def load_mutations_optional(base_dir: Path) -> List[Mutation]:
 
     mutations: List[Mutation] = []
     for mutation_path in sorted(base_dir.glob("*.json")):
-        with mutation_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
+        try:
+            with mutation_path.open("r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Aviso: mutacao ignorada ({mutation_path}): {exc}")
+            continue
+        if not isinstance(data, dict):
+            print(f"Aviso: mutacao ignorada ({mutation_path}): formato invalido.")
+            continue
 
         name = data.get("name")
         if not name:

@@ -1,0 +1,10 @@
+{
+  "name": "Peixe-Mao",
+  "rarity": "Lendario",
+  "description": "O peixe-mão é uma espécie única, pequena e extremamente rara, com nadadeiras peitorais que lembram mãos, as quais usa para 'andar' no fundo do oceano em vez de nadar. Eles só podem ser encontrados pisoteando o fundo do Pântano de Mushgrove.",
+  "kg_min": 3.0,
+  "kg_max": 6.0,
+  "base_value": 115,
+  "sequence_len": 6,
+  "reaction_time_s": 1.7
+}

@@ -54,11 +54,12 @@ def render_inventory(
     inventory: List[InventoryEntry],
     show_title: bool = True,
     hunt_fish_names: Optional[set[str]] = None,
+    start_index: int = 1,
 ):
     if show_title:
         print("\nInventário:")
     if not inventory:
         print("- vazio -")
         return
-    for idx, entry in enumerate(inventory, start=1):
+    for idx, entry in enumerate(inventory, start=start_index):
         print(format_inventory_entry(idx, entry, hunt_fish_names=hunt_fish_names))

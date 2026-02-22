@@ -475,6 +475,7 @@ def show_market(
     unlocked_pools: Optional[set[str]] = None,
     on_money_earned=None,
     on_money_spent=None,
+    on_fish_sold=None,
     on_fish_delivered=None,
     on_appraise_completed: Optional[Callable[[InventoryEntry], Optional[List[str]]]] = None,
 ) -> tuple[float, int, int]:
@@ -642,6 +643,8 @@ def show_market(
                 balance += value
                 if on_money_earned:
                     on_money_earned(value)
+                if on_fish_sold:
+                    on_fish_sold(entry)
                 if on_fish_delivered:
                     on_fish_delivered(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
@@ -655,9 +658,12 @@ def show_market(
             if sell_choice == "2":
                 clear_screen()
                 total = sum(calculate_entry_value(entry) for entry in inventory)
-                if on_fish_delivered:
+                if on_fish_sold or on_fish_delivered:
                     for entry in inventory:
-                        on_fish_delivered(entry)
+                        if on_fish_sold:
+                            on_fish_sold(entry)
+                        if on_fish_delivered:
+                            on_fish_delivered(entry)
                 inventory.clear()
                 _mark_inventory_fish_counts_dirty()
                 balance += total
@@ -765,6 +771,8 @@ def show_market(
             for entry in inventory:
                 if entry.name == order.fish_name and delivered < order.required_count:
                     delivered += 1
+                    if on_fish_sold:
+                        on_fish_sold(entry)
                     if on_fish_delivered:
                         on_fish_delivered(entry)
                     continue
