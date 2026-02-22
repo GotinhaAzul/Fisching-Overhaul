@@ -1,0 +1,11 @@
+{
+  "name": "Caixa de Isca Premium",
+  "price": 950.0,
+  "roll_min": 3,
+  "roll_max": 7,
+  "rarity_chances": {
+    "Raro": 58,
+    "Epico": 32,
+    "Lendario": 10
+  }
+}

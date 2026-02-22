@@ -6,10 +6,11 @@ from utils.inventory import InventoryEntry
 from utils.rods import Rod
 
 if TYPE_CHECKING:
+    from utils.baits import BaitDefinition
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 7
+SAVE_VERSION = 8
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -33,6 +34,20 @@ def serialize_inventory(inventory: Sequence[InventoryEntry]) -> List[Dict[str, o
     ]
 
 
+def serialize_bait_inventory(bait_inventory: Dict[str, int]) -> Dict[str, int]:
+    serialized: Dict[str, int] = {}
+    for bait_id, quantity in bait_inventory.items():
+        if not isinstance(bait_id, str) or not bait_id:
+            continue
+        try:
+            quantity_int = int(quantity)
+        except (TypeError, ValueError):
+            continue
+        if quantity_int > 0:
+            serialized[bait_id] = quantity_int
+    return serialized
+
+
 def save_game(
     save_path: Path,
     *,
@@ -52,6 +67,8 @@ def save_game(
     hunt_state: Optional[Dict[str, object]] = None,
     crafting_state: Optional[Dict[str, object]] = None,
     crafting_progress: Optional[Dict[str, object]] = None,
+    bait_inventory: Optional[Dict[str, int]] = None,
+    equipped_bait: Optional[str] = None,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -71,6 +88,12 @@ def save_game(
         "hunt_state": hunt_state or {},
         "crafting_state": crafting_state or {},
         "crafting_progress": crafting_progress or {},
+        "bait_inventory": serialize_bait_inventory(bait_inventory or {}),
+        "equipped_bait": (
+            equipped_bait
+            if isinstance(equipped_bait, str) and equipped_bait
+            else None
+        ),
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
@@ -198,6 +221,43 @@ def restore_equipped_rod(
             if rod.name == raw_equipped:
                 return rod
     return starter_rod
+
+
+def restore_bait_inventory(
+    raw_bait_inventory: object,
+    available_baits: Optional[Dict[str, "BaitDefinition"]] = None,
+) -> Dict[str, int]:
+    if not isinstance(raw_bait_inventory, dict):
+        return {}
+
+    allowed_bait_ids = set(available_baits.keys()) if available_baits is not None else None
+    restored: Dict[str, int] = {}
+    for bait_id, raw_quantity in raw_bait_inventory.items():
+        if not isinstance(bait_id, str) or not bait_id:
+            continue
+        if allowed_bait_ids is not None and bait_id not in allowed_bait_ids:
+            continue
+        try:
+            quantity = int(raw_quantity)
+        except (TypeError, ValueError):
+            continue
+        if quantity > 0:
+            restored[bait_id] = quantity
+    return restored
+
+
+def restore_equipped_bait(
+    raw_equipped_bait: object,
+    bait_inventory: Dict[str, int],
+    available_baits: Optional[Dict[str, "BaitDefinition"]] = None,
+) -> Optional[str]:
+    if not isinstance(raw_equipped_bait, str) or not raw_equipped_bait:
+        return None
+    if available_baits is not None and raw_equipped_bait not in available_baits:
+        return None
+    if bait_inventory.get(raw_equipped_bait, 0) <= 0:
+        return None
+    return raw_equipped_bait
 
 
 def restore_discovered_fish(

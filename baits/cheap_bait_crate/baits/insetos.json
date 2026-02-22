@@ -1,0 +1,8 @@
+{
+  "id": "insetos",
+  "name": "Insetos",
+  "control": 0.08,
+  "luck": 0.03,
+  "kg_plus": 1.5,
+  "rarity": "Comum"
+}

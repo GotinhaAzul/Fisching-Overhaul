@@ -1,0 +1,8 @@
+{
+  "id": "algas",
+  "name": "Algas",
+  "control": 0.05,
+  "luck": 0.09,
+  "kg_plus": 2.7,
+  "rarity": "Incomum"
+}

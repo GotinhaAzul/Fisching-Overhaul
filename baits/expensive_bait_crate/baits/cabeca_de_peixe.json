@@ -1,0 +1,8 @@
+{
+  "id": "cabeca_de_peixe",
+  "name": "Cabeca de Peixe",
+  "control": 0.04,
+  "luck": 0.03,
+  "kg_plus": 6.8,
+  "rarity": "Raro"
+}

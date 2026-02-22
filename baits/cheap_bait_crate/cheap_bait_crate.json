@@ -1,0 +1,10 @@
+{
+  "name": "Caixa de Isca Simples",
+  "price": 120.0,
+  "roll_min": 3,
+  "roll_max": 7,
+  "rarity_chances": {
+    "Comum": 72,
+    "Incomum": 28
+  }
+}

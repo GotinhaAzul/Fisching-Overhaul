@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
 
+from utils.baits import BaitCrateDefinition, BaitDefinition
 from utils.crafting import (
     CraftingDefinition,
     CraftingProgress,
@@ -470,6 +471,9 @@ def show_market(
     crafting_definitions: Optional[Sequence[CraftingDefinition]] = None,
     crafting_state: Optional[CraftingState] = None,
     crafting_progress: Optional[CraftingProgress] = None,
+    bait_crates: Optional[Sequence[BaitCrateDefinition]] = None,
+    bait_inventory: Optional[Dict[str, int]] = None,
+    bait_by_id: Optional[Dict[str, BaitDefinition]] = None,
     pool_orders: Optional[Dict[str, PoolMarketOrder]] = None,
     unlocked_rods: Optional[set[str]] = None,
     unlocked_pools: Optional[set[str]] = None,
@@ -481,6 +485,12 @@ def show_market(
 ) -> tuple[float, int, int]:
     pool_orders = pool_orders if pool_orders is not None else {}
     resolved_pools = list(pools) if pools is not None else []
+    resolved_bait_crates = list(bait_crates) if bait_crates is not None else []
+    resolved_bait_inventory = bait_inventory if bait_inventory is not None else {}
+    resolved_bait_by_id = dict(bait_by_id) if bait_by_id is not None else {}
+    for crate in resolved_bait_crates:
+        for bait in crate.baits:
+            resolved_bait_by_id.setdefault(bait.bait_id, bait)
     resolved_discovered_fish = discovered_fish if discovered_fish is not None else set()
     resolved_unlocked_rods = unlocked_rods if unlocked_rods is not None else set()
     resolved_unlocked_pools = unlocked_pools if unlocked_pools is not None else set()
@@ -549,6 +559,137 @@ def show_market(
             return False, "Crafting bloqueado: complete 100% do bestiario em ao menos uma pool."
         return True, ""
 
+    def _format_bait_stats(bait: BaitDefinition) -> str:
+        return (
+            f"Sorte: {bait.luck:+.0%} | KG+: {bait.kg_plus:+g} | "
+            f"Controle: {bait.control:+.1f}s"
+        )
+
+    def _format_rarity_distribution(crate: BaitCrateDefinition) -> str:
+        if not crate.rarity_chances:
+            return "Distribuicao: uniforme"
+        total_weight = sum(crate.rarity_chances.values())
+        if total_weight <= 0:
+            return "Distribuicao: uniforme"
+        sorted_weights = sorted(
+            crate.rarity_chances.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        labels = [
+            f"{rarity}:{(weight / total_weight) * 100:0.0f}%"
+            for rarity, weight in sorted_weights
+        ]
+        return "Distribuicao: " + " | ".join(labels)
+
+    def _show_bait_crates_menu(current_balance: float) -> float:
+        balance_local = current_balance
+        while True:
+            clear_screen()
+            if not resolved_bait_crates:
+                print("Nenhuma caixa de isca disponivel.")
+                input("\nEnter para voltar.")
+                return balance_local
+
+            print_spaced_lines([
+                "=== Caixas de Isca ===",
+                f"Saldo atual: {format_currency(balance_local)}",
+                "Cada caixa abre com quantidade aleatoria de iscas.",
+            ])
+            for index, crate in enumerate(resolved_bait_crates, start=1):
+                print(
+                    f"{index}. {crate.name} - {format_currency(crate.price)} | "
+                    f"Roll: {crate.roll_min}-{crate.roll_max} "
+                    f"(media {crate.expected_rolls():0.1f})"
+                )
+                print(f"   {_format_rarity_distribution(crate)}")
+                print()
+            print("0. Voltar")
+
+            selection = input("Escolha uma caixa: ").strip()
+            if selection == "0":
+                return balance_local
+            if not selection.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            selected_index = int(selection)
+            if not (1 <= selected_index <= len(resolved_bait_crates)):
+                print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            crate = resolved_bait_crates[selected_index - 1]
+            raw_quantity = input("Quantidade de caixas para abrir: ").strip()
+            if not raw_quantity.isdigit():
+                print("Quantidade invalida.")
+                input("\nEnter para voltar.")
+                continue
+            crate_quantity = int(raw_quantity)
+            if crate_quantity <= 0:
+                print("A quantidade deve ser maior que zero.")
+                input("\nEnter para voltar.")
+                continue
+
+            total_cost = crate.price * crate_quantity
+            if balance_local < total_cost:
+                print("Saldo insuficiente.")
+                input("\nEnter para voltar.")
+                continue
+
+            confirm = input(
+                f"Confirmar compra de {crate_quantity}x {crate.name} "
+                f"por {format_currency(total_cost)}? (s/n): "
+            ).strip().lower()
+            if confirm != "s":
+                continue
+
+            balance_local -= total_cost
+            if on_money_spent:
+                on_money_spent(total_cost)
+
+            dropped_by_bait_id: Dict[str, int] = {}
+            for _ in range(crate_quantity):
+                for dropped_bait in crate.open_crate():
+                    dropped_by_bait_id[dropped_bait.bait_id] = (
+                        dropped_by_bait_id.get(dropped_bait.bait_id, 0) + 1
+                    )
+                    resolved_bait_inventory[dropped_bait.bait_id] = (
+                        resolved_bait_inventory.get(dropped_bait.bait_id, 0) + 1
+                    )
+
+            if not dropped_by_bait_id:
+                print("Nenhuma isca foi recebida desta abertura.")
+                input("\nEnter para voltar.")
+                continue
+
+            clear_screen()
+            print_spaced_lines([
+                "=== Abertura concluida ===",
+                f"Caixa: {crate.name}",
+                f"Quantidade: {crate_quantity}",
+                f"Custo: {format_currency(total_cost)}",
+            ])
+            print("Iscas obtidas:")
+            for bait_id, quantity in sorted(
+                dropped_by_bait_id.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            ):
+                bait = resolved_bait_by_id.get(bait_id)
+                bait_name = bait.name if bait else bait_id
+                total_owned = resolved_bait_inventory.get(bait_id, 0)
+                rarity_label = f"[{bait.rarity}] " if bait else ""
+                stats_label = _format_bait_stats(bait) if bait else ""
+                print(
+                    f"- {rarity_label}{bait_name} x{quantity} "
+                    f"(total: {total_owned})"
+                )
+                if stats_label:
+                    print(f"  {stats_label}")
+            input("\nEnter para continuar.")
+
     while True:
         _refresh_crafting_unlocks()
         clear_screen()
@@ -565,7 +706,7 @@ def show_market(
             )
 
         crafting_gate_open, crafting_gate_reason = _crafting_gate_status()
-        crafting_line = "5. Crafting de varas"
+        crafting_line = "6. Crafting de varas"
         if not (crafting_definitions and crafting_state and crafting_progress):
             crafting_line += " (indisponivel)"
         elif not crafting_gate_open:
@@ -586,6 +727,7 @@ def show_market(
                 "2. Comprar vara",
                 order_line,
                 "4. Appraise - rerolar kg + mutacao",
+                "5. Caixas de isca",
                 crafting_line,
                 "0. Voltar",
             ]
@@ -891,6 +1033,10 @@ def show_market(
             continue
 
         if choice == "5":
+            balance = _show_bait_crates_menu(balance)
+            continue
+
+        if choice == "6":
             if not (crafting_definitions and crafting_state and crafting_progress):
                 print("Sistema de crafting indisponivel no momento.")
                 input("\nEnter para voltar.")

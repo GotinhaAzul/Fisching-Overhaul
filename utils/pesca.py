@@ -17,6 +17,7 @@ from colorama import Fore, Style
 from colorama import init as colorama_init
 from pynput import keyboard
 
+from utils.baits import BaitDefinition, build_bait_lookup, load_bait_crates
 from utils.bestiary import show_bestiary
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
@@ -78,7 +79,9 @@ from utils.save_system import (
     get_default_save_path,
     load_game,
     restore_balance,
+    restore_bait_inventory,
     restore_discovered_fish,
+    restore_equipped_bait,
     restore_equipped_rod,
     restore_hunt_state,
     restore_inventory,
@@ -1002,6 +1005,9 @@ def show_dev_save_editor(
     unlocked_rods: set[str],
     discovered_fish: set[str],
     inventory: List[InventoryEntry],
+    bait_by_id: Dict[str, BaitDefinition],
+    bait_inventory: Dict[str, int],
+    equipped_bait_id: Optional[str],
     fish_by_name: Dict[str, FishProfile],
     available_mutations: List[Mutation],
     missions: List[MissionDefinition],
@@ -1009,8 +1015,20 @@ def show_dev_save_editor(
     mission_progress: MissionProgress,
     event_manager: EventManager,
     hunt_manager: HuntManager,
-) -> tuple[float, int, int, FishingPool, Rod]:
+) -> tuple[float, int, int, FishingPool, Rod, Optional[str]]:
     while True:
+        if equipped_bait_id and (
+            equipped_bait_id not in bait_by_id
+            or bait_inventory.get(equipped_bait_id, 0) <= 0
+        ):
+            equipped_bait_id = None
+        equipped_bait_name = (
+            bait_by_id[equipped_bait_id].name
+            if equipped_bait_id and equipped_bait_id in bait_by_id
+            else "Nenhuma"
+        )
+        total_bait_units = sum(quantity for quantity in bait_inventory.values() if quantity > 0)
+
         if use_modern_ui():
             clear_screen()
             print_menu_panel(
@@ -1022,6 +1040,8 @@ def show_dev_save_editor(
                     f"Pools desbloqueadas: {len(unlocked_pools)}/{len(pools)}",
                     f"Varas desbloqueadas: {len(unlocked_rods)}/{len(available_rods)}",
                     f"Vara equipada: {equipped_rod.name}",
+                    f"Isca equipada: {equipped_bait_name}",
+                    f"Unidades de isca: {total_bait_units}",
                     f"Pool atual: {selected_pool.name}",
                 ],
                 options=[
@@ -1040,6 +1060,7 @@ def show_dev_save_editor(
                     MenuOption("13", "Add fish + mutation", "Adiciona peixe com mutacao"),
                     MenuOption("14", "Force hunt", "Inicia uma hunt manualmente"),
                     MenuOption("15", "Force event", "Inicia um evento manualmente"),
+                    MenuOption("16", "Add bait", "Adiciona isca ao inventario"),
                     MenuOption("0", "Voltar", "Retorna ao menu principal"),
                 ],
                 prompt="Escolha uma opcao:",
@@ -1053,6 +1074,8 @@ def show_dev_save_editor(
             print(f"Pools desbloqueadas: {len(unlocked_pools)}/{len(pools)}")
             print(f"Varas desbloqueadas: {len(unlocked_rods)}/{len(available_rods)}")
             print(f"Vara equipada: {equipped_rod.name}")
+            print(f"Isca equipada: {equipped_bait_name}")
+            print(f"Unidades de isca: {total_bait_units}")
             print(f"Pool atual: {selected_pool.name}")
             print("\n1. Set saldo")
             print("2. Set nivel")
@@ -1069,11 +1092,12 @@ def show_dev_save_editor(
             print("13. Add fish + mutation")
             print("14. Force hunt")
             print("15. Force event")
+            print("16. Add bait")
             print("0. Voltar")
             choice = input("Escolha uma opcao: ").strip()
 
         if choice == "0":
-            return balance, level, xp, selected_pool, equipped_rod
+            return balance, level, xp, selected_pool, equipped_rod, equipped_bait_id
 
         if choice == "1":
             raw_value = input("Novo saldo: ").strip().replace(",", ".")
@@ -1584,6 +1608,58 @@ def show_dev_save_editor(
             time.sleep(1)
             continue
 
+        if choice == "16":
+            available_baits = sorted(bait_by_id.values(), key=lambda bait: bait.name)
+            if not available_baits:
+                print("Nao ha iscas carregadas.")
+                time.sleep(1)
+                continue
+
+            clear_screen()
+            print("=== Add bait ===")
+            for index, bait in enumerate(available_baits, start=1):
+                quantity = bait_inventory.get(bait.bait_id, 0)
+                marker = " (equipada)" if bait.bait_id == equipped_bait_id else ""
+                print(
+                    f"{index}. [{bait.rarity}] {bait.name} x{quantity}{marker} "
+                    f"- {format_bait_stats(bait)}"
+                )
+            selected = input("Escolha o numero da isca (Enter cancela): ").strip()
+            if not selected:
+                continue
+            try:
+                selected_index = int(selected)
+            except ValueError:
+                print("Opcao invalida.")
+                time.sleep(1)
+                continue
+            if not (1 <= selected_index <= len(available_baits)):
+                print("Opcao invalida.")
+                time.sleep(1)
+                continue
+
+            selected_bait = available_baits[selected_index - 1]
+            raw_quantity = input("Quantidade para adicionar (padrao 1): ").strip()
+            if raw_quantity:
+                try:
+                    quantity_to_add = max(1, int(raw_quantity))
+                except ValueError:
+                    print("Quantidade invalida.")
+                    time.sleep(1)
+                    continue
+            else:
+                quantity_to_add = 1
+
+            bait_inventory[selected_bait.bait_id] = (
+                bait_inventory.get(selected_bait.bait_id, 0) + quantity_to_add
+            )
+            equip_now = input("Equipar essa isca agora? (s/n): ").strip().lower()
+            if equip_now == "s":
+                equipped_bait_id = selected_bait.bait_id
+            print(f"Isca adicionada: {quantity_to_add}x {selected_bait.name}.")
+            time.sleep(1)
+            continue
+
         print("Opcao invalida.")
         time.sleep(1)
 
@@ -1592,8 +1668,10 @@ def autosave_state(
     save_path: Path,
     balance: float,
     inventory: List[InventoryEntry],
+    bait_inventory: Dict[str, int],
     owned_rods: List[Rod],
     equipped_rod: Rod,
+    equipped_bait_id: Optional[str],
     selected_pool: FishingPool,
     unlocked_pools: set[str],
     unlocked_rods: set[str],
@@ -1625,6 +1703,8 @@ def autosave_state(
         crafting_progress=serialize_crafting_progress(crafting_progress),
         pool_market_orders=serialize_pool_market_orders(pool_market_orders),
         hunt_state=hunt_manager.serialize_state() if hunt_manager else {},
+        bait_inventory=bait_inventory,
+        equipped_bait=equipped_bait_id,
     )
 
 
@@ -1635,16 +1715,57 @@ def format_rod_stats(rod: Rod) -> str:
     )
 
 
+def format_bait_stats(bait: BaitDefinition) -> str:
+    return (
+        f"Sorte: {bait.luck:+.0%} | KG+: {bait.kg_plus:+g} | "
+        f"Controle: {bait.control:+.1f}s"
+    )
+
+
 
 
 def show_inventory(
     inventory: List[InventoryEntry],
     owned_rods: List[Rod],
     equipped_rod: Rod,
+    bait_inventory: Dict[str, int],
+    bait_by_id: Dict[str, BaitDefinition],
+    equipped_bait_id: Optional[str],
     hunt_fish_names: Optional[set[str]] = None,
-) -> Rod:
+) -> tuple[Rod, Optional[str]]:
     page_size = 12
     page = 0
+
+    def sanitize_equipped_bait() -> None:
+        nonlocal equipped_bait_id
+        if not equipped_bait_id:
+            return
+        if equipped_bait_id not in bait_by_id:
+            equipped_bait_id = None
+            return
+        if bait_inventory.get(equipped_bait_id, 0) <= 0:
+            equipped_bait_id = None
+
+    def list_owned_baits() -> List[tuple[str, BaitDefinition, int]]:
+        owned: List[tuple[str, BaitDefinition, int]] = []
+        for bait_id, quantity in bait_inventory.items():
+            if quantity <= 0:
+                continue
+            bait = bait_by_id.get(bait_id)
+            if bait is None:
+                continue
+            owned.append((bait_id, bait, quantity))
+        owned.sort(key=lambda item: item[1].name)
+        return owned
+
+    def active_bait_summary() -> tuple[str, str]:
+        if not equipped_bait_id:
+            return "Nenhuma", ""
+        bait = bait_by_id.get(equipped_bait_id)
+        quantity = bait_inventory.get(equipped_bait_id, 0)
+        if bait is None or quantity <= 0:
+            return "Nenhuma", ""
+        return f"{bait.name} x{quantity}", format_bait_stats(bait)
 
     def get_page_bounds() -> tuple[int, int, int]:
         nonlocal page
@@ -1652,14 +1773,27 @@ def show_inventory(
         page = page_slice.page
         return page_slice.start, page_slice.end, page_slice.total_pages
 
+    sanitize_equipped_bait()
+
     if use_modern_ui():
         while True:
             clear_screen()
+            sanitize_equipped_bait()
+            owned_baits = list_owned_baits()
             start, end, total_pages = get_page_bounds()
             total_kg = sum(entry.kg for entry in inventory)
+            active_bait_label, active_bait_stats = active_bait_summary()
             options = [
                 MenuOption("1", "Equipar vara", "Selecionar outra vara"),
+                MenuOption(
+                    "2",
+                    "Equipar isca",
+                    "Selecionar isca ativa",
+                    enabled=bool(owned_baits),
+                ),
             ]
+            if equipped_bait_id:
+                options.append(MenuOption("3", "Desequipar isca", "Remover isca ativa"))
             if total_pages > 1:
                 options.extend(
                     [
@@ -1685,6 +1819,8 @@ def show_inventory(
                     f"Peixes: {len(inventory)} | Peso total: {total_kg:0.2f}kg",
                     f"Vara equipada: {equipped_rod.name}",
                     f"Stats: {format_rod_stats(equipped_rod)}",
+                    f"Isca ativa: {active_bait_label}",
+                    active_bait_stats if active_bait_stats else "Buff de isca: -",
                 ],
                 options=options,
                 prompt="Escolha uma opcao:",
@@ -1707,7 +1843,7 @@ def show_inventory(
                 instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set(),
             ).lower()
             if choice == "0":
-                return equipped_rod
+                return equipped_rod, equipped_bait_id
 
             page, moved = apply_page_hotkey(choice, page, total_pages)
             if moved:
@@ -1749,16 +1885,74 @@ def show_inventory(
                     break
                 continue
 
+            if choice == "2":
+                if not owned_baits:
+                    print("Voce nao possui iscas.")
+                    input("\nEnter para voltar.")
+                    continue
+                while True:
+                    clear_screen()
+                    print_menu_panel(
+                        "EQUIPAR ISCA",
+                        subtitle=f"Atual: {active_bait_label}",
+                        options=[
+                            MenuOption(
+                                str(idx),
+                                bait.name,
+                                f"x{quantity} | {format_bait_stats(bait)}",
+                                status="equipada" if bait_id == equipped_bait_id else "",
+                            )
+                            for idx, (bait_id, bait, quantity) in enumerate(owned_baits, start=1)
+                        ],
+                        prompt="Digite o numero da isca:",
+                        show_badge=False,
+                    )
+                    selection = input("> ").strip()
+                    if not selection.isdigit():
+                        print("Entrada invalida.")
+                        input("\nEnter para voltar.")
+                        continue
+                    idx = int(selection)
+                    if not (1 <= idx <= len(owned_baits)):
+                        print("Numero fora do intervalo.")
+                        input("\nEnter para voltar.")
+                        continue
+                    selected_bait_id, selected_bait, _ = owned_baits[idx - 1]
+                    equipped_bait_id = selected_bait_id
+                    print(f"Isca equipada: {selected_bait.name}.")
+                    input("\nEnter para voltar.")
+                    break
+                continue
+
+            if choice == "3":
+                if not equipped_bait_id:
+                    print("Nenhuma isca equipada.")
+                else:
+                    equipped_bait_id = None
+                    print("Isca desequipada.")
+                input("\nEnter para voltar.")
+                continue
+
             print("Opcao invalida.")
             input("\nEnter para voltar.")
 
     while True:
         clear_screen()
+        sanitize_equipped_bait()
+        owned_baits = list_owned_baits()
+        active_bait_label, active_bait_stats = active_bait_summary()
         start, end, total_pages = get_page_bounds()
         print("=== Inventario ===")
         print("\nVara equipada:")
         print(f"- {equipped_rod.name} ({format_rod_stats(equipped_rod)})")
+        print("\nIsca ativa:")
+        print(f"- {active_bait_label}")
+        if active_bait_stats:
+            print(f"  {active_bait_stats}")
         print("\n1. Equipar vara")
+        print("2. Equipar isca")
+        if equipped_bait_id:
+            print("3. Desequipar isca")
         if total_pages > 1:
             print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina de peixes ({page + 1}/{total_pages})")
             print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior de peixes ({page + 1}/{total_pages})")
@@ -1779,7 +1973,7 @@ def show_inventory(
             instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set(),
         ).lower()
         if choice == "0":
-            return equipped_rod
+            return equipped_rod, equipped_bait_id
 
         page, moved = apply_page_hotkey(choice, page, total_pages)
         if moved:
@@ -1810,6 +2004,47 @@ def show_inventory(
             input("\nEnter para voltar.")
             continue
 
+        if choice == "2":
+            if not owned_baits:
+                print("Voce nao possui iscas.")
+                input("\nEnter para voltar.")
+                continue
+            clear_screen()
+            print("Escolha a isca para equipar:")
+            for idx, (bait_id, bait, quantity) in enumerate(owned_baits, start=1):
+                selected_marker = " (equipada)" if bait_id == equipped_bait_id else ""
+                print(
+                    f"{idx}. [{bait.rarity}] {bait.name} x{quantity}{selected_marker} - "
+                    f"{format_bait_stats(bait)}"
+                )
+
+            selection = input("Digite o numero da isca: ").strip()
+            if not selection.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            idx = int(selection)
+            if not (1 <= idx <= len(owned_baits)):
+                print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            selected_bait_id, selected_bait, _ = owned_baits[idx - 1]
+            equipped_bait_id = selected_bait_id
+            print(f"Isca equipada: {selected_bait.name}.")
+            input("\nEnter para voltar.")
+            continue
+
+        if choice == "3":
+            if not equipped_bait_id:
+                print("Nenhuma isca equipada.")
+            else:
+                equipped_bait_id = None
+                print("Isca desequipada.")
+            input("\nEnter para voltar.")
+            continue
+
         print("Opcao invalida.")
         input("\nEnter para voltar.")
 
@@ -1819,13 +2054,16 @@ def run_fishing_round(
     inventory: List[InventoryEntry],
     discovered_fish: set[str],
     equipped_rod: Rod,
+    bait_inventory: Dict[str, int],
+    bait_by_id: Dict[str, BaitDefinition],
+    equipped_bait_id: Optional[str],
     mutations: List[Mutation],
     level: int,
     xp: int,
     event_manager: Optional[EventManager],
     hunt_manager: Optional[HuntManager],
     on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation]], None]] = None,
-):
+) -> tuple[int, int, Optional[str]]:
     recent_catch_times: deque[float] = deque()
 
     def prune_recent_catch_times(now_s: float) -> None:
@@ -1848,9 +2086,28 @@ def run_fishing_round(
         if hunt_manager:
             hunt_manager.suppress_notifications(True)
         clear_screen()
+        if equipped_bait_id and (
+            equipped_bait_id not in bait_by_id
+            or bait_inventory.get(equipped_bait_id, 0) <= 0
+        ):
+            bait_inventory.pop(equipped_bait_id, None)
+            equipped_bait_id = None
+        active_bait = bait_by_id.get(equipped_bait_id) if equipped_bait_id else None
+        active_bait_quantity = bait_inventory.get(equipped_bait_id, 0) if equipped_bait_id else 0
+        bait_control = active_bait.control if active_bait else 0.0
+        bait_luck = active_bait.luck if active_bait else 0.0
+        bait_kg_plus = active_bait.kg_plus if active_bait else 0.0
+        effective_control = equipped_rod.control + bait_control
+        effective_luck = equipped_rod.luck + bait_luck
+        effective_kg_max = max(0.01, equipped_rod.kg_max + bait_kg_plus)
         print("=== Pesca (WASD em tempo real) ===")
         print(f"Pool selecionada: {selected_pool.name}")
         print(f"Vara equipada: {equipped_rod.name}")
+        if active_bait:
+            print(f"Isca ativa: {active_bait.name} x{active_bait_quantity}")
+            print(f"Buff da isca: {format_bait_stats(active_bait)}")
+        else:
+            print("Isca ativa: Nenhuma")
         print()
 
         ks = KeyStream()
@@ -1872,15 +2129,15 @@ def run_fishing_round(
             + list(hunt_fish)
         )
         eligible_fish = [
-            fish for fish in combined_fish if fish.kg_min <= equipped_rod.kg_max
+            fish for fish in combined_fish if fish.kg_min <= effective_kg_max
         ]
         if not eligible_fish:
             ks.stop()
-            print("Nenhum peixe desta pool pode ser fisgado com a vara equipada.")
+            print("Nenhum peixe desta pool pode ser fisgado com o setup atual.")
             flush_input_buffer()
             flush_runtime_notifications()
             input("\nEnter para voltar ao menu.")
-            return level, xp
+            return level, xp, equipped_bait_id
 
         if event_def or hunt_def:
             combined_rarities = sorted({fish.rarity for fish in eligible_fish})
@@ -1903,7 +2160,7 @@ def run_fishing_round(
         else:
             combined_weights = selected_pool.rarity_weights
 
-        rod_luck = equipped_rod.luck * (event_def.luck_multiplier if event_def else 1.0)
+        rod_luck = effective_luck * (event_def.luck_multiplier if event_def else 1.0)
         fish = selected_pool.choose_fish(
             eligible_fish,
             rod_luck,
@@ -1914,7 +2171,7 @@ def run_fishing_round(
         now_s = time.monotonic()
         prune_recent_catch_times(now_s)
         pace_multiplier = _reel_time_multiplier_from_pace(len(recent_catch_times))
-        base_time_limit_s = max(0.5, attempt.time_limit_s + equipped_rod.control)
+        base_time_limit_s = max(0.5, attempt.time_limit_s + effective_control)
         attempt = FishingAttempt(
             sequence=attempt.sequence,
             time_limit_s=max(0.5, base_time_limit_s * pace_multiplier),
@@ -1931,7 +2188,24 @@ def run_fishing_round(
         )
         game.begin()
 
+        consumed_bait_name: Optional[str] = None
+        consumed_bait_remaining = 0
+        if active_bait and equipped_bait_id:
+            consumed_bait_name = active_bait.name
+            consumed_bait_remaining = max(0, bait_inventory.get(equipped_bait_id, 0) - 1)
+            if consumed_bait_remaining <= 0:
+                bait_inventory.pop(equipped_bait_id, None)
+                equipped_bait_id = None
+            else:
+                bait_inventory[equipped_bait_id] = consumed_bait_remaining
+
         print("\n🐟 O peixe mordeu! Complete a sequência:")
+
+        if consumed_bait_name is not None:
+            print(
+                f"Isca consumida: {consumed_bait_name} "
+                f"(restante: {consumed_bait_remaining})"
+            )
 
         if pace_multiplier < 1.0:
             print(
@@ -1976,8 +2250,8 @@ def run_fishing_round(
             prune_recent_catch_times(catch_time_s)
             first_catch = fish.name not in discovered_fish
             caught_kg = random.uniform(fish.kg_min, fish.kg_max)
-            if caught_kg > equipped_rod.kg_max:
-                caught_kg = equipped_rod.kg_max
+            if caught_kg > effective_kg_max:
+                caught_kg = effective_kg_max
             event_mutations = event_def.mutations if event_def else []
             eligible_mutations = filter_mutations_for_rod(
                 list(mutations) + list(event_mutations),
@@ -2047,10 +2321,10 @@ def run_fishing_round(
                     hunt_manager.suppress_notifications(True)
                 break
             if choice == "0" or choice == "":
-                return level, xp
+                return level, xp, equipped_bait_id
             print("Opção inválida.")
 
-    return level, xp
+    return level, xp, equipped_bait_id
 
 
 
@@ -2077,6 +2351,9 @@ def main(dev_mode: bool = False):
     available_rods = load_rods(rods_dir)
     mutations_dir = Path(__file__).resolve().parent.parent / "mutations"
     available_mutations = load_mutations(mutations_dir)
+    baits_dir = Path(__file__).resolve().parent.parent / "baits"
+    bait_crates = load_bait_crates(baits_dir)
+    bait_by_id = build_bait_lookup(bait_crates)
     starter_rod = min(available_rods, key=lambda rod: rod.price)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
@@ -2102,6 +2379,8 @@ def main(dev_mode: bool = False):
     crafting_state = restore_crafting_state(None, crafting_definitions)
     crafting_progress = CraftingProgress()
     inventory: List[InventoryEntry] = []
+    bait_inventory: Dict[str, int] = {}
+    equipped_bait_id: Optional[str] = None
     discovered_fish: set[str] = set()
     balance = 0.0
     level = 1
@@ -2147,6 +2426,12 @@ def main(dev_mode: bool = False):
         crafting_state = restore_crafting_state(save_data.get("crafting_state"), crafting_definitions)
         crafting_progress = restore_crafting_progress(save_data.get("crafting_progress"))
         pool_market_orders = restore_pool_market_orders(save_data.get("pool_market_orders"))
+        bait_inventory = restore_bait_inventory(save_data.get("bait_inventory"), bait_by_id)
+        equipped_bait_id = restore_equipped_bait(
+            save_data.get("equipped_bait"),
+            bait_inventory,
+            bait_by_id,
+        )
         hunt_manager.restore_state(restore_hunt_state(save_data.get("hunt_state")))
         print("Save carregado com sucesso!")
         time.sleep(1)
@@ -2292,11 +2577,14 @@ def main(dev_mode: bool = False):
                 dev_mode=dev_mode,
             )
             if choice == "1":
-                level, xp = run_fishing_round(
+                level, xp, equipped_bait_id = run_fishing_round(
                     selected_pool,
                     inventory,
                     discovered_fish,
                     equipped_rod,
+                    bait_inventory,
+                    bait_by_id,
+                    equipped_bait_id,
                     available_mutations,
                     level,
                     xp,
@@ -2309,10 +2597,13 @@ def main(dev_mode: bool = False):
                 clear_screen()
                 selected_pool = select_pool(pools, unlocked_pools)
             elif choice == "3":
-                equipped_rod = show_inventory(
+                equipped_rod, equipped_bait_id = show_inventory(
                     inventory,
                     owned_rods,
                     equipped_rod,
+                    bait_inventory,
+                    bait_by_id,
+                    equipped_bait_id,
                     hunt_fish_names=hunt_fish_names,
                 )
             elif choice == "4":
@@ -2343,10 +2634,14 @@ def main(dev_mode: bool = False):
                     crafting_definitions=crafting_definitions,
                     crafting_state=crafting_state,
                     crafting_progress=crafting_progress,
+                    bait_crates=bait_crates,
+                    bait_inventory=bait_inventory,
+                    bait_by_id=bait_by_id,
                     pool_orders=pool_market_orders,
                     unlocked_rods=unlocked_rods,
                     unlocked_pools=unlocked_pool_market_keys,
                     on_money_earned=mission_progress.record_money_earned,
+                    on_money_spent=mission_progress.record_money_spent,
                     on_fish_sold=lambda entry: mission_progress.record_fish_sold(entry.name),
                     on_appraise_completed=on_market_appraise_completed,
                 )
@@ -2385,6 +2680,7 @@ def main(dev_mode: bool = False):
                     xp,
                     selected_pool,
                     equipped_rod,
+                    equipped_bait_id,
                 ) = show_dev_save_editor(
                     balance=balance,
                     level=level,
@@ -2398,6 +2694,9 @@ def main(dev_mode: bool = False):
                     unlocked_rods=unlocked_rods,
                     discovered_fish=discovered_fish,
                     inventory=inventory,
+                    bait_by_id=bait_by_id,
+                    bait_inventory=bait_inventory,
+                    equipped_bait_id=equipped_bait_id,
                     fish_by_name=fish_by_name,
                     available_mutations=available_mutations,
                     missions=missions,
@@ -2423,8 +2722,10 @@ def main(dev_mode: bool = False):
                     save_path,
                     balance,
                     inventory,
+                    bait_inventory,
                     owned_rods,
                     equipped_rod,
+                    equipped_bait_id,
                     selected_pool,
                     unlocked_pools,
                     unlocked_rods,
@@ -2479,8 +2780,10 @@ def main(dev_mode: bool = False):
                 save_path,
                 balance,
                 inventory,
+                bait_inventory,
                 owned_rods,
                 equipped_rod,
+                equipped_bait_id,
                 selected_pool,
                 unlocked_pools,
                 unlocked_rods,
