@@ -4,7 +4,7 @@
   "kg_max": 40.0,
   "control": -0.8,
   "description": "... Porque tem uma sniper no jogo?",
-  "price": 0,
+  "price": 1,
   "unlocked_default": false,
   "counts_for_bestiary_completion": false,
   "can_slash": true,

@@ -2354,7 +2354,17 @@ def main(dev_mode: bool = False):
     baits_dir = Path(__file__).resolve().parent.parent / "baits"
     bait_crates = load_bait_crates(baits_dir)
     bait_by_id = build_bait_lookup(bait_crates)
-    starter_rod = min(available_rods, key=lambda rod: rod.price)
+    starter_rod = next(
+        (
+            rod
+            for rod in available_rods
+            if rod.name.strip().lower() in {"vara de bambu", "vara bambu"}
+        ),
+        None,
+    )
+    if starter_rod is None:
+        default_rods = [rod for rod in available_rods if rod.unlocked_default]
+        starter_rod = min(default_rods or available_rods, key=lambda rod: rod.price)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
     unlocked_rods = {
