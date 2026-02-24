@@ -1,0 +1,14 @@
+{
+  "id": "cosmetic_icon_pools_100",
+  "name": "Mascote Aquatico",
+  "trigger": {
+    "type": "pools_bestiary",
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "ui_icon",
+      "icon_id": "fish"
+    }
+  ]
+}

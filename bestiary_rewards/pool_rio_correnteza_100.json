@@ -1,0 +1,34 @@
+{
+    "id":  "pool_rio_correnteza_100",
+    "name":  "Domador do Rio Correnteza",
+    "trigger":  {
+                    "type":  "fish_bestiary",
+                    "target":  {
+                                   "pool":  "Rio Correnteza"
+                               },
+                    "threshold_percent":  100
+                },
+    "rewards":  [
+                    {
+                        "type":  "ui_color",
+                        "color_id":  "river_azure"
+                    },
+                    {
+                        "type":  "ui_icon",
+                        "icon_id":  "pool_rio"
+                    },
+                    {
+                        "type":  "money",
+                        "amount":  2000
+                    },
+                    {
+                        "type":  "xp",
+                        "amount":  500
+                    },
+                    {
+                        "type":  "bait",
+                        "bait_id":  "cheap_bait_crate/insetos",
+                        "amount":  8
+                    }
+                ]
+}

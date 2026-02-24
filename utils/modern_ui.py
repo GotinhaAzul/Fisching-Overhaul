@@ -16,6 +16,13 @@ UI_THEME_LEGACY = "legacy"
 DEFAULT_PANEL_WIDTH = 64
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+_DEFAULT_BADGE = (
+    "  /\\_/\\  ",
+    " ( o.o ) ",
+    "  > ^ <  ",
+)
+_active_accent_color = Fore.CYAN
+_active_badge_lines: Sequence[str] = _DEFAULT_BADGE
 
 
 @dataclass(frozen=True)
@@ -77,11 +84,27 @@ def _frame_block(lines: Iterable[str], width: int) -> List[str]:
 
 
 def _ascii_badge() -> List[str]:
-    return [
-        "  /\\_/\\  ",
-        " ( o.o ) ",
-        "  > ^ <  ",
-    ]
+    return list(_active_badge_lines)
+
+
+def set_ui_cosmetics(
+    *,
+    accent_color: Optional[str] = None,
+    badge_lines: Optional[Sequence[str]] = None,
+) -> None:
+    global _active_accent_color, _active_badge_lines
+
+    if isinstance(accent_color, str) and accent_color:
+        _active_accent_color = accent_color
+    else:
+        _active_accent_color = Fore.CYAN
+
+    normalized_badge: List[str] = []
+    if badge_lines:
+        for line in badge_lines:
+            if isinstance(line, str):
+                normalized_badge.append(line[:40])
+    _active_badge_lines = tuple(normalized_badge) if normalized_badge else _DEFAULT_BADGE
 
 
 def _merge_badge(
@@ -132,7 +155,7 @@ def render_menu_panel(
     show_divider: bool = True,
 ) -> List[str]:
     lines: List[str] = []
-    title_line = f"{Style.BRIGHT}{Fore.CYAN}{title}{Style.RESET_ALL}"
+    title_line = f"{Style.BRIGHT}{_active_accent_color}{title}{Style.RESET_ALL}"
     if subtitle:
         title_line = (
             f"{title_line}  "
@@ -155,7 +178,7 @@ def render_menu_panel(
 
     if prompt:
         lines.append("")
-        lines.append(f"{Fore.CYAN}{prompt}{Style.RESET_ALL}")
+        lines.append(f"{_active_accent_color}{prompt}{Style.RESET_ALL}")
 
     panel_block = _frame_block(lines, width)
     if not show_badge:
@@ -205,7 +228,7 @@ def render_fishing_hud_line(
 
     return (
         "\r"
-        f"{Style.BRIGHT}{Fore.CYAN}HUD{Style.RESET_ALL} "
+        f"{Style.BRIGHT}{_active_accent_color}HUD{Style.RESET_ALL} "
         f"| Seq: {seq_str:<26} "
         f"| Time: {bar_color}[{bar}]{Style.RESET_ALL} {time_left:0.2f}s "
         f"| Hits: {typed_count}/{len(seq)} "

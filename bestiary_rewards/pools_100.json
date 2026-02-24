@@ -1,0 +1,19 @@
+{
+  "id": "pools_100",
+  "name": "Explorador de Aguas",
+  "trigger": {
+    "type": "pools_bestiary",
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "bait",
+      "bait_id": "expensive_bait_crate/minhoca_de_trufa",
+      "amount": 8
+    },
+    {
+      "type": "xp",
+      "amount": 400
+    }
+  ]
+}

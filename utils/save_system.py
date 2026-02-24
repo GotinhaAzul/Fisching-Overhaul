@@ -69,6 +69,8 @@ def save_game(
     crafting_progress: Optional[Dict[str, object]] = None,
     bait_inventory: Optional[Dict[str, int]] = None,
     equipped_bait: Optional[str] = None,
+    bestiary_reward_state: Optional[Dict[str, object]] = None,
+    cosmetics_state: Optional[Dict[str, object]] = None,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -93,6 +95,16 @@ def save_game(
             equipped_bait
             if isinstance(equipped_bait, str) and equipped_bait
             else None
+        ),
+        "bestiary_reward_state": (
+            bestiary_reward_state
+            if isinstance(bestiary_reward_state, dict)
+            else {}
+        ),
+        "cosmetics_state": (
+            cosmetics_state
+            if isinstance(cosmetics_state, dict)
+            else {}
         ),
     }
     save_path.write_text(

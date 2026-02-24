@@ -19,6 +19,27 @@ from pynput import keyboard
 
 from utils.baits import BaitDefinition, build_bait_lookup, load_bait_crates
 from utils.bestiary import show_bestiary
+from utils.bestiary_rewards import (
+    BestiaryRewardDefinition,
+    BestiaryRewardState,
+    load_bestiary_rewards,
+    restore_bestiary_reward_state,
+    serialize_bestiary_reward_state,
+)
+from utils.cosmetics import (
+    PlayerCosmeticsState,
+    UI_COLOR_DEFINITIONS,
+    UI_ICON_DEFINITIONS,
+    create_default_cosmetics_state,
+    equip_ui_color,
+    equip_ui_icon,
+    list_unlocked_ui_colors,
+    list_unlocked_ui_icons,
+    restore_cosmetics_state,
+    serialize_cosmetics_state,
+    unlock_ui_color,
+    unlock_ui_icon,
+)
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
@@ -44,6 +65,7 @@ from utils.modern_ui import (
     MenuOption,
     print_menu_panel,
     render_fishing_hud_line,
+    set_ui_cosmetics,
     use_modern_ui,
 )
 from utils.pagination import (
@@ -132,7 +154,7 @@ def _reel_time_multiplier_from_pace(recent_catch_count: int) -> float:
 class FishingAttempt:
     """Descreve uma tentativa de pesca (o 'quick time event')."""
     sequence: List[str]
-    time_limit_s: float  # tempo TOTAL para completar a sequÃªncia
+    time_limit_s: float  # tempo TOTAL para completar a sequÃƒÂªncia
     allowed_keys: List[str]
 
 
@@ -147,8 +169,8 @@ class FishingResult:
 
 class FishProfile:
     """
-    Perfil de peixe: define como gerar a tentativa (sequÃªncia + tempo).
-    Isso deixa a lÃ³gica expansÃ­vel: cada peixe pode ter seu comportamento.
+    Perfil de peixe: define como gerar a tentativa (sequÃƒÂªncia + tempo).
+    Isso deixa a lÃƒÂ³gica expansÃƒÂ­vel: cada peixe pode ter seu comportamento.
     """
     def __init__(
         self,
@@ -221,7 +243,7 @@ class FishingPool:
 
         available_rarities = list(fish_by_rarity.keys())
         if not available_rarities:
-            raise RuntimeError("Pool sem peixes disponÃ­veis.")
+            raise RuntimeError("Pool sem peixes disponÃƒÂ­veis.")
 
         base_weights = rarity_weights_override or self.rarity_weights
         weights_by_rarity = _apply_luck_to_weights(
@@ -509,7 +531,7 @@ def load_hunts(
 
 def load_pools(base_dir: Path) -> List[FishingPool]:
     if not base_dir.exists():
-        raise FileNotFoundError(f"DiretÃ³rio de pools nÃ£o encontrado: {base_dir}")
+        raise FileNotFoundError(f"DiretÃƒÂ³rio de pools nÃƒÂ£o encontrado: {base_dir}")
 
     pools: List[FishingPool] = []
     for pool_dir in sorted(p for p in base_dir.iterdir() if p.is_dir()):
@@ -707,13 +729,13 @@ class KeyStream:
 
 
 # -----------------------------
-# LÃ³gica da Pesca (flexÃ­vel)
+# LÃƒÂ³gica da Pesca (flexÃƒÂ­vel)
 # -----------------------------
 
 class FishingMiniGame:
     """
     Controla uma tentativa (um peixe).
-    MantÃ©m estado mÃ­nimo e retorna um FishingResult no final.
+    MantÃƒÂ©m estado mÃƒÂ­nimo e retorna um FishingResult no final.
     """
     def __init__(
         self,
@@ -759,9 +781,9 @@ class FishingMiniGame:
     def handle_key(self, key: str) -> Optional[FishingResult]:
         """
         Processa uma tecla. Retorna FishingResult se terminou (sucesso/erro),
-        ou None se ainda estÃ¡ em andamento.
+        ou None se ainda estÃƒÂ¡ em andamento.
         """
-        # sÃ³ considera teclas permitidas
+        # sÃƒÂ³ considera teclas permitidas
         if key not in self.attempt.allowed_keys:
             return None
 
@@ -794,7 +816,7 @@ class FishingMiniGame:
 
         expected = self.expected_key()
         if expected is None:
-            # jÃ¡ terminou, ignora
+            # jÃƒÂ¡ terminou, ignora
             return None
 
         self.typed.append(key)
@@ -871,14 +893,14 @@ def render(
 
     # Mostra apenas as teclas restantes
     remaining = seq[idx:]
-    seq_str = " ".join(k.upper() for k in remaining) if remaining else "âœ”"
+    seq_str = " ".join(k.upper() for k in remaining) if remaining else "Ã¢Å“â€"
 
     # Barra de tempo
     total = max(0.001, total_time_s if total_time_s is not None else attempt.time_limit_s)
     ratio = max(0.0, min(1.0, time_left / total))
     bar_len = 20
     filled = int(bar_len * ratio)
-    bar = "â–ˆ" * filled + " " * (bar_len - filled)
+    bar = "Ã¢â€“Ë†" * filled + " " * (bar_len - filled)
 
     line = (
         f"Seq: {seq_str:<15} "
@@ -1683,6 +1705,8 @@ def autosave_state(
     crafting_state: CraftingState,
     crafting_progress: CraftingProgress,
     pool_market_orders,
+    bestiary_reward_state: BestiaryRewardState,
+    cosmetics_state: PlayerCosmeticsState,
     hunt_manager: Optional[HuntManager],
 ) -> None:
     save_game(
@@ -1705,6 +1729,8 @@ def autosave_state(
         hunt_state=hunt_manager.serialize_state() if hunt_manager else {},
         bait_inventory=bait_inventory,
         equipped_bait=equipped_bait_id,
+        bestiary_reward_state=serialize_bestiary_reward_state(bestiary_reward_state),
+        cosmetics_state=serialize_cosmetics_state(cosmetics_state),
     )
 
 
@@ -1731,6 +1757,8 @@ def show_inventory(
     bait_inventory: Dict[str, int],
     bait_by_id: Dict[str, BaitDefinition],
     equipped_bait_id: Optional[str],
+    cosmetics_state: PlayerCosmeticsState,
+    on_cosmetics_changed: Optional[Callable[[], None]] = None,
     hunt_fish_names: Optional[set[str]] = None,
 ) -> tuple[Rod, Optional[str]]:
     page_size = 12
@@ -1767,6 +1795,124 @@ def show_inventory(
             return "Nenhuma", ""
         return f"{bait.name} x{quantity}", format_bait_stats(bait)
 
+    def active_cosmetics_summary() -> tuple[str, str]:
+        color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_ui_color)
+        icon_def = UI_ICON_DEFINITIONS.get(cosmetics_state.equipped_ui_icon)
+        color_label = color_def.name if color_def is not None else cosmetics_state.equipped_ui_color
+        icon_label = icon_def.name if icon_def is not None else cosmetics_state.equipped_ui_icon
+        return color_label, icon_label
+
+    def open_cosmetics_menu() -> None:
+        while True:
+            clear_screen()
+            active_color, active_icon = active_cosmetics_summary()
+            print_menu_panel(
+                "COSMETICOS",
+                subtitle="Visual da interface",
+                header_lines=[
+                    f"Cor ativa: {active_color}",
+                    f"Icone ativo: {active_icon}",
+                    f"Cores desbloqueadas: {len(cosmetics_state.unlocked_ui_colors)}",
+                    f"Icones desbloqueados: {len(cosmetics_state.unlocked_ui_icons)}",
+                ],
+                options=[
+                    MenuOption("1", "Equipar cor"),
+                    MenuOption("2", "Equipar icone"),
+                    MenuOption("0", "Voltar"),
+                ],
+                prompt="Escolha uma opcao:",
+                show_badge=False,
+            )
+            choice = input("> ").strip()
+            if choice == "0":
+                return
+            if choice == "1":
+                unlocked_colors = list_unlocked_ui_colors(cosmetics_state)
+                if not unlocked_colors:
+                    print("Nenhuma cor desbloqueada.")
+                    input("\nEnter para voltar.")
+                    continue
+                clear_screen()
+                print_menu_panel(
+                    "EQUIPAR COR",
+                    subtitle=f"Atual: {active_color}",
+                    options=[
+                        MenuOption(
+                            str(idx),
+                            color.name,
+                            status="equipada"
+                            if color.color_id == cosmetics_state.equipped_ui_color
+                            else "",
+                        )
+                        for idx, color in enumerate(unlocked_colors, start=1)
+                    ],
+                    prompt="Digite o numero da cor:",
+                    show_badge=False,
+                )
+                selection = input("> ").strip()
+                if not selection.isdigit():
+                    print("Entrada invalida.")
+                    input("\nEnter para voltar.")
+                    continue
+                idx = int(selection)
+                if not (1 <= idx <= len(unlocked_colors)):
+                    print("Numero fora do intervalo.")
+                    input("\nEnter para voltar.")
+                    continue
+                selected = unlocked_colors[idx - 1]
+                if equip_ui_color(cosmetics_state, selected.color_id):
+                    if on_cosmetics_changed is not None:
+                        on_cosmetics_changed()
+                    print(f"Cor equipada: {selected.name}.")
+                else:
+                    print("Nao foi possivel equipar essa cor.")
+                input("\nEnter para voltar.")
+                continue
+            if choice == "2":
+                unlocked_icons = list_unlocked_ui_icons(cosmetics_state)
+                if not unlocked_icons:
+                    print("Nenhum icone desbloqueado.")
+                    input("\nEnter para voltar.")
+                    continue
+                clear_screen()
+                print_menu_panel(
+                    "EQUIPAR ICONE",
+                    subtitle=f"Atual: {active_icon}",
+                    options=[
+                        MenuOption(
+                            str(idx),
+                            icon.name,
+                            status="equipado"
+                            if icon.icon_id == cosmetics_state.equipped_ui_icon
+                            else "",
+                        )
+                        for idx, icon in enumerate(unlocked_icons, start=1)
+                    ],
+                    prompt="Digite o numero do icone:",
+                    show_badge=False,
+                )
+                selection = input("> ").strip()
+                if not selection.isdigit():
+                    print("Entrada invalida.")
+                    input("\nEnter para voltar.")
+                    continue
+                idx = int(selection)
+                if not (1 <= idx <= len(unlocked_icons)):
+                    print("Numero fora do intervalo.")
+                    input("\nEnter para voltar.")
+                    continue
+                selected = unlocked_icons[idx - 1]
+                if equip_ui_icon(cosmetics_state, selected.icon_id):
+                    if on_cosmetics_changed is not None:
+                        on_cosmetics_changed()
+                    print(f"Icone equipado: {selected.name}.")
+                else:
+                    print("Nao foi possivel equipar esse icone.")
+                input("\nEnter para voltar.")
+                continue
+            print("Opcao invalida.")
+            input("\nEnter para voltar.")
+
     def get_page_bounds() -> tuple[int, int, int]:
         nonlocal page
         page_slice = get_page_slice(len(inventory), page, page_size)
@@ -1783,6 +1929,7 @@ def show_inventory(
             start, end, total_pages = get_page_bounds()
             total_kg = sum(entry.kg for entry in inventory)
             active_bait_label, active_bait_stats = active_bait_summary()
+            cosmetics_option_key = "4" if equipped_bait_id else "3"
             options = [
                 MenuOption("1", "Equipar vara", "Selecionar outra vara"),
                 MenuOption(
@@ -1794,6 +1941,9 @@ def show_inventory(
             ]
             if equipped_bait_id:
                 options.append(MenuOption("3", "Desequipar isca", "Remover isca ativa"))
+            options.append(
+                MenuOption(cosmetics_option_key, "Cosmeticos", "Cor da interface e icone")
+            )
             if total_pages > 1:
                 options.extend(
                     [
@@ -1924,13 +2074,14 @@ def show_inventory(
                     break
                 continue
 
-            if choice == "3":
-                if not equipped_bait_id:
-                    print("Nenhuma isca equipada.")
-                else:
-                    equipped_bait_id = None
-                    print("Isca desequipada.")
+            if equipped_bait_id and choice == "3":
+                equipped_bait_id = None
+                print("Isca desequipada.")
                 input("\nEnter para voltar.")
+                continue
+
+            if choice == cosmetics_option_key:
+                open_cosmetics_menu()
                 continue
 
             print("Opcao invalida.")
@@ -1949,10 +2100,12 @@ def show_inventory(
         print(f"- {active_bait_label}")
         if active_bait_stats:
             print(f"  {active_bait_stats}")
+        cosmetics_option_key = "4" if equipped_bait_id else "3"
         print("\n1. Equipar vara")
         print("2. Equipar isca")
         if equipped_bait_id:
             print("3. Desequipar isca")
+        print(f"{cosmetics_option_key}. Cosmeticos")
         if total_pages > 1:
             print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina de peixes ({page + 1}/{total_pages})")
             print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior de peixes ({page + 1}/{total_pages})")
@@ -2036,13 +2189,14 @@ def show_inventory(
             input("\nEnter para voltar.")
             continue
 
-        if choice == "3":
-            if not equipped_bait_id:
-                print("Nenhuma isca equipada.")
-            else:
-                equipped_bait_id = None
-                print("Isca desequipada.")
+        if equipped_bait_id and choice == "3":
+            equipped_bait_id = None
+            print("Isca desequipada.")
             input("\nEnter para voltar.")
+            continue
+
+        if choice == cosmetics_option_key:
+            open_cosmetics_menu()
             continue
 
         print("Opcao invalida.")
@@ -2074,11 +2228,11 @@ def run_fishing_round(
         if event_manager:
             event_manager.suppress_notifications(False)
             for note in event_manager.pop_notifications():
-                print(f"\n🔔 {note}")
+                print(f"\nðŸ”” {note}")
         if hunt_manager:
             hunt_manager.suppress_notifications(False)
             for note in hunt_manager.pop_notifications():
-                print(f"\n🔔 {note}")
+                print(f"\nðŸ”” {note}")
 
     while True:
         if event_manager:
@@ -2199,7 +2353,7 @@ def run_fishing_round(
             else:
                 bait_inventory[equipped_bait_id] = consumed_bait_remaining
 
-        print("\n🐟 O peixe mordeu! Complete a sequência:")
+        print("\nðŸŸ O peixe mordeu! Complete a sequÃªncia:")
 
         if consumed_bait_name is not None:
             print(
@@ -2290,30 +2444,30 @@ def run_fishing_round(
                 if is_hunt_fish
                 else fish.name
             )
-            print(f"🎣 Você pescou: {fish_name_label} [{fish.rarity}] - {caught_kg:0.2f}kg")
+            print(f"ðŸŽ£ VocÃª pescou: {fish_name_label} [{fish.rarity}] - {caught_kg:0.2f}kg")
             if first_catch:
-                print(f"📘 Primeira captura registrada no bestiário: {fish_name_label}!")
+                print(f"ðŸ“˜ Primeira captura registrada no bestiÃ¡rio: {fish_name_label}!")
             if mutation:
                 print(
-                    "🧬 Mutação: "
+                    "ðŸ§¬ MutaÃ§Ã£o: "
                     f"{mutation.name} (x{mutation_xp_multiplier:0.2f} XP | "
                     f"x{mutation_gold_multiplier:0.2f} Gold)"
                 )
-            print(f"✨ Ganhou {gained_xp} XP.")
+            print(f"âœ¨ Ganhou {gained_xp} XP.")
             if level_ups:
-                print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
+                print(f"â¬†ï¸  Subiu {level_ups} nÃ­vel(is)! Agora estÃ¡ no nÃ­vel {level}.")
         else:
-            print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
-            print(f"Sequência era: {' '.join(attempt.sequence)}")
+            print(f"âŒ {result.reason}  ({result.elapsed_s:0.2f}s)")
+            print(f"SequÃªncia era: {' '.join(attempt.sequence)}")
             if result.typed:
-                print(f"Você digitou:  {' '.join(result.typed)}")
+                print(f"VocÃª digitou:  {' '.join(result.typed)}")
 
         flush_runtime_notifications()
         flush_input_buffer()
         while True:
             print("\n1. Pescar novamente")
             print("0. Voltar ao menu")
-            choice = input("Escolha uma opção: ").strip()
+            choice = input("Escolha uma opÃ§Ã£o: ").strip()
             if choice == "1":
                 if event_manager:
                     event_manager.suppress_notifications(True)
@@ -2322,7 +2476,7 @@ def run_fishing_round(
                 break
             if choice == "0" or choice == "":
                 return level, xp, equipped_bait_id
-            print("Opção inválida.")
+            print("OpÃ§Ã£o invÃ¡lida.")
 
     return level, xp, equipped_bait_id
 
@@ -2381,6 +2535,9 @@ def main(dev_mode: bool = False):
     missions = load_missions(missions_dir)
     mission_state = restore_mission_state(None, missions)
     mission_progress = MissionProgress()
+    bestiary_rewards_dir = Path(__file__).resolve().parent.parent / "bestiary_rewards"
+    bestiary_rewards = load_bestiary_rewards(bestiary_rewards_dir)
+    bestiary_reward_state = BestiaryRewardState()
     crafting_dir = Path(__file__).resolve().parent.parent / "crafting"
     crafting_definitions = load_crafting_definitions(
         crafting_dir,
@@ -2388,6 +2545,7 @@ def main(dev_mode: bool = False):
     )
     crafting_state = restore_crafting_state(None, crafting_definitions)
     crafting_progress = CraftingProgress()
+    cosmetics_state = create_default_cosmetics_state()
     inventory: List[InventoryEntry] = []
     bait_inventory: Dict[str, int] = {}
     equipped_bait_id: Optional[str] = None
@@ -2442,11 +2600,26 @@ def main(dev_mode: bool = False):
             bait_inventory,
             bait_by_id,
         )
+        bestiary_reward_state = restore_bestiary_reward_state(
+            save_data.get("bestiary_reward_state"),
+            bestiary_rewards,
+        )
+        cosmetics_state = restore_cosmetics_state(save_data.get("cosmetics_state"))
         hunt_manager.restore_state(restore_hunt_state(save_data.get("hunt_state")))
         print("Save carregado com sucesso!")
         time.sleep(1)
 
     hunt_manager.start()
+
+    def apply_active_cosmetics() -> None:
+        color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_ui_color)
+        icon_def = UI_ICON_DEFINITIONS.get(cosmetics_state.equipped_ui_icon)
+        set_ui_cosmetics(
+            accent_color=color_def.accent_color if color_def is not None else Fore.CYAN,
+            badge_lines=icon_def.badge_lines if icon_def is not None else None,
+        )
+
+    apply_active_cosmetics()
 
     fish_by_name: Dict[str, FishProfile] = {
         fish.name: fish
@@ -2531,7 +2704,7 @@ def main(dev_mode: bool = False):
         ]
         if print_notifications:
             for note in notes:
-                print(f"\n🔔 {note}")
+                print(f"\nðŸ”” {note}")
         return notes
 
     def on_fish_caught_for_progress(fish: FishProfile, mutation: Optional[Mutation]) -> None:
@@ -2543,6 +2716,84 @@ def main(dev_mode: bool = False):
     def on_market_appraise_completed(entry: InventoryEntry) -> List[str]:
         crafting_progress.record_find(entry.name, entry.mutation_name)
         return refresh_crafting_unlocks(print_notifications=False)
+
+    def apply_bestiary_reward(reward: BestiaryRewardDefinition) -> List[str]:
+        nonlocal balance, level, xp
+        notes: List[str] = []
+        rods_by_name = {rod.name: rod for rod in available_rods}
+        for reward_payload in reward.rewards:
+            reward_type = reward_payload.get("type")
+            if reward_type == "money":
+                try:
+                    amount = float(reward_payload.get("amount", 0.0))
+                except (TypeError, ValueError):
+                    amount = 0.0
+                if amount > 0:
+                    balance += amount
+                    mission_progress.record_money_earned(amount)
+                    notes.append(f"ðŸ’° +R$ {amount:0.2f}")
+                continue
+
+            if reward_type == "xp":
+                try:
+                    amount = int(reward_payload.get("amount", 0))
+                except (TypeError, ValueError):
+                    amount = 0
+                if amount > 0:
+                    level, xp, level_ups = apply_xp_gain(level, xp, amount)
+                    notes.append(f"âœ¨ +{amount} XP")
+                    if level_ups:
+                        notes.append(f"â¬†ï¸ Subiu {level_ups} nivel(is)!")
+                continue
+
+            if reward_type == "bait":
+                bait_id = reward_payload.get("bait_id")
+                try:
+                    amount = int(reward_payload.get("amount", 0))
+                except (TypeError, ValueError):
+                    amount = 0
+                if (
+                    isinstance(bait_id, str)
+                    and bait_id in bait_by_id
+                    and amount > 0
+                ):
+                    bait_inventory[bait_id] = bait_inventory.get(bait_id, 0) + amount
+                    notes.append(f"ðŸª± +{amount}x {bait_by_id[bait_id].name}")
+                continue
+
+            if reward_type == "rod":
+                rod_name = reward_payload.get("rod_name")
+                if not isinstance(rod_name, str):
+                    continue
+                rod = rods_by_name.get(rod_name)
+                if rod is None:
+                    continue
+                was_unlocked = rod.name in unlocked_rods
+                unlocked_rods.add(rod.name)
+                if rod.name not in {owned.name for owned in owned_rods}:
+                    owned_rods.append(rod)
+                    notes.append(f"ðŸª Vara adicionada: {rod.name}")
+                elif not was_unlocked:
+                    notes.append(f"ðŸª Vara desbloqueada: {rod.name}")
+                continue
+
+            if reward_type == "ui_color":
+                color_id = reward_payload.get("color_id")
+                if not isinstance(color_id, str):
+                    continue
+                if unlock_ui_color(cosmetics_state, color_id):
+                    color_def = UI_COLOR_DEFINITIONS[color_id]
+                    notes.append(f"Nova cor desbloqueada: {color_def.name}")
+                continue
+
+            if reward_type == "ui_icon":
+                icon_id = reward_payload.get("icon_id")
+                if not isinstance(icon_id, str):
+                    continue
+                if unlock_ui_icon(cosmetics_state, icon_id):
+                    icon_def = UI_ICON_DEFINITIONS[icon_id]
+                    notes.append(f"Novo icone desbloqueado: {icon_def.name}")
+        return notes
 
     refresh_crafting_unlocks(print_notifications=False)
 
@@ -2614,6 +2865,8 @@ def main(dev_mode: bool = False):
                     bait_inventory,
                     bait_by_id,
                     equipped_bait_id,
+                    cosmetics_state,
+                    on_cosmetics_changed=apply_active_cosmetics,
                     hunt_fish_names=hunt_fish_names,
                 )
             elif choice == "4":
@@ -2665,6 +2918,9 @@ def main(dev_mode: bool = False):
                     discovered_fish,
                     hunt_definitions=hunts,
                     regionless_fish_profiles=event_fish_profiles,
+                    bestiary_rewards=bestiary_rewards,
+                    bestiary_reward_state=bestiary_reward_state,
+                    on_claim_bestiary_reward=apply_bestiary_reward,
                 )
             elif choice == "6":
                 level, xp, balance = show_missions_menu(
@@ -2747,6 +3003,8 @@ def main(dev_mode: bool = False):
                     crafting_state,
                     crafting_progress,
                     pool_market_orders,
+                    bestiary_reward_state,
+                    cosmetics_state,
                     hunt_manager,
                 )
                 autosave_done = True
@@ -2805,6 +3063,8 @@ def main(dev_mode: bool = False):
                 crafting_state,
                 crafting_progress,
                 pool_market_orders,
+                bestiary_reward_state,
+                cosmetics_state,
                 hunt_manager,
             )
         event_manager.stop()
@@ -2813,4 +3073,5 @@ def main(dev_mode: bool = False):
 
 if __name__ == "__main__":
     main()
+
 

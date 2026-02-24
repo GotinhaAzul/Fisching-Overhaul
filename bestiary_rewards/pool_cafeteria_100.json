@@ -1,0 +1,34 @@
+{
+    "id":  "pool_cafeteria_100",
+    "name":  "Barista da Maré",
+    "trigger":  {
+                    "type":  "fish_bestiary",
+                    "target":  {
+                                   "pool":  "Cafeteria"
+                               },
+                    "threshold_percent":  100
+                },
+    "rewards":  [
+                    {
+                        "type":  "ui_color",
+                        "color_id":  "cafeteria_mocha"
+                    },
+                    {
+                        "type":  "ui_icon",
+                        "icon_id":  "pool_cafeteria_coffee"
+                    },
+                    {
+                        "type":  "money",
+                        "amount":  400
+                    },
+                    {
+                        "type":  "xp",
+                        "amount":  120
+                    },
+                    {
+                        "type":  "bait",
+                        "bait_id":  "cheap_bait_crate/flocos",
+                        "amount":  10
+                    }
+                ]
+}

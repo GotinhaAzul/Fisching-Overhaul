@@ -1,0 +1,34 @@
+{
+    "id":  "pool_salmoura_100",
+    "name":  "Sobrevivente da Salmoura",
+    "trigger":  {
+                    "type":  "fish_bestiary",
+                    "target":  {
+                                   "pool":  "Piscina de Salmoura"
+                               },
+                    "threshold_percent":  100
+                },
+    "rewards":  [
+                    {
+                        "type":  "ui_color",
+                        "color_id":  "brine_amber"
+                    },
+                    {
+                        "type":  "ui_icon",
+                        "icon_id":  "pool_brinepool"
+                    },
+                    {
+                        "type":  "money",
+                        "amount":  3500
+                    },
+                    {
+                        "type":  "xp",
+                        "amount":  850
+                    },
+                    {
+                        "type":  "bait",
+                        "bait_id":  "expensive_bait_crate/cabeca_de_peixe",
+                        "amount":  4
+                    }
+                ]
+}

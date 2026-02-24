@@ -1,0 +1,22 @@
+{
+  "id": "fish_all_100",
+  "name": "Enciclopedia Aquatica",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "All"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "money",
+      "amount": 10000
+    },
+    {
+      "type": "bait",
+      "bait_id": "cheap_bait_crate/minhoca",
+      "amount": 25
+    }
+  ]
+}

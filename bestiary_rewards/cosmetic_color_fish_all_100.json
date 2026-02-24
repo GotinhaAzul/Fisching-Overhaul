@@ -1,0 +1,17 @@
+{
+  "id": "cosmetic_color_fish_all_100",
+  "name": "Aura do Por do Sol",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "All"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "ui_color",
+      "color_id": "sunset_orange"
+    }
+  ]
+}

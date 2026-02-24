@@ -1,0 +1,21 @@
+{
+  "id": "fish_mar_100",
+  "name": "Mestre do Mar",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "Mar"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "money",
+      "amount": 2500
+    },
+    {
+      "type": "xp",
+      "amount": 600
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+    "id":  "pool_grande_recife_100",
+    "name":  "Vigia do Grande Recife",
+    "trigger":  {
+                    "type":  "fish_bestiary",
+                    "target":  {
+                                   "pool":  "Grande Recife"
+                               },
+                    "threshold_percent":  100
+                },
+    "rewards":  [
+                    {
+                        "type":  "ui_color",
+                        "color_id":  "reef_coral"
+                    },
+                    {
+                        "type":  "ui_icon",
+                        "icon_id":  "pool_grandreef"
+                    },
+                    {
+                        "type":  "money",
+                        "amount":  2600
+                    },
+                    {
+                        "type":  "xp",
+                        "amount":  650
+                    },
+                    {
+                        "type":  "bait",
+                        "bait_id":  "cheap_bait_crate/coral",
+                        "amount":  10
+                    }
+                ]
+}

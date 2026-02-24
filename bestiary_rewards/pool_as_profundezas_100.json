@@ -1,0 +1,34 @@
+{
+    "id":  "pool_as_profundezas_100",
+    "name":  "Ecos das Profundezas",
+    "trigger":  {
+                    "type":  "fish_bestiary",
+                    "target":  {
+                                   "pool":  "As profundezas"
+                               },
+                    "threshold_percent":  100
+                },
+    "rewards":  [
+                    {
+                        "type":  "ui_color",
+                        "color_id":  "abyss_navy"
+                    },
+                    {
+                        "type":  "ui_icon",
+                        "icon_id":  "pool_thedepths"
+                    },
+                    {
+                        "type":  "money",
+                        "amount":  5500
+                    },
+                    {
+                        "type":  "xp",
+                        "amount":  1250
+                    },
+                    {
+                        "type":  "bait",
+                        "bait_id":  "expensive_bait_crate/cabeca_de_tubarao",
+                        "amount":  4
+                    }
+                ]
+}

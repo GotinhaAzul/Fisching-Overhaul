@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Set, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional, Sequence, Set, TYPE_CHECKING
 
 from colorama import Fore, Style
 
@@ -15,6 +15,12 @@ from utils.pagination import (
 )
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
+from utils.bestiary_rewards import (
+    BestiaryRewardDefinition,
+    BestiaryRewardState,
+    FISH_TARGET_ALL,
+    get_claimable_bestiary_rewards,
+)
 
 if TYPE_CHECKING:
     from utils.hunts import HuntDefinition
@@ -24,10 +30,18 @@ if TYPE_CHECKING:
 REGIONLESS_SECTION_NAME = "Sem regiao"
 
 
-def _read_choice(prompt: str, total_pages: int) -> str:
+def _read_choice(
+    prompt: str,
+    total_pages: int,
+    *,
+    extra_instant_keys: Optional[Set[str]] = None,
+) -> str:
+    instant_keys = set(extra_instant_keys or set())
+    if total_pages > 1:
+        instant_keys.update({PAGE_PREV_KEY, PAGE_NEXT_KEY})
     return read_menu_choice(
         prompt,
-        instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set(),
+        instant_keys=instant_keys,
     ).lower()
 
 
@@ -123,6 +137,59 @@ def _section_completion(
     return unlocked_count, total, completion
 
 
+def _fish_completion_snapshot(
+    sections: Sequence[FishBestiarySection],
+    unlocked_fish: Set[str],
+) -> tuple[float, Dict[str, float]]:
+    completion_fish_names = {
+        fish_name
+        for section in sections
+        if section.counts_for_completion
+        for fish_name in section.completion_fish_names
+    }
+    total_fish = len(completion_fish_names)
+    unlocked_count = sum(
+        1
+        for fish_name in completion_fish_names
+        if fish_name in unlocked_fish
+    )
+    global_percent = (unlocked_count / total_fish * 100) if total_fish else 0.0
+
+    by_pool: Dict[str, float] = {}
+    for section in sections:
+        if not section.counts_for_completion:
+            continue
+        _, _, section_percent = _section_completion(section, unlocked_fish)
+        by_pool[section.title] = section_percent
+    return global_percent, by_pool
+
+
+def _rods_completion_percent(rods: Sequence[Rod], unlocked_rods: Set[str]) -> float:
+    countable_rods = [rod for rod in rods if _rod_counts_for_completion(rod)]
+    total_rods = len(countable_rods)
+    unlocked_count = sum(1 for rod in countable_rods if rod.name in unlocked_rods)
+    return (unlocked_count / total_rods * 100) if total_rods else 0.0
+
+
+def _pools_completion_percent(
+    pools: Sequence["FishingPool"],
+    unlocked_pools: Set[str],
+) -> float:
+    visible_pools = [
+        pool
+        for pool in pools
+        if not (_pool_hidden_until_unlocked(pool) and pool.name not in unlocked_pools)
+    ]
+    countable_pools = [
+        pool
+        for pool in visible_pools
+        if _pool_counts_for_completion(pool)
+    ]
+    total_pools = len(countable_pools)
+    unlocked_count = sum(1 for pool in countable_pools if pool.name in unlocked_pools)
+    return (unlocked_count / total_pools * 100) if total_pools else 0.0
+
+
 def _fish_label(
     fish: "FishProfile",
     unlocked_fish: Set[str],
@@ -133,6 +200,19 @@ def _fish_label(
     if fish.name not in completion_fish_names:
         return f"{fish.name} {Fore.RED}(Hunt){Style.RESET_ALL}"
     return fish.name
+
+
+def _format_reward_status(count: int) -> str:
+    if count > 0:
+        return "(🎁 Recompensa disponivel)"
+    return ""
+
+
+def _print_claim_notes(notes: List[str]) -> None:
+    if notes:
+        print("\n".join(notes))
+    else:
+        print("Recompensa resgatada!")
 
 
 def show_locked_entry():
@@ -293,6 +373,9 @@ def _show_fish_bestiary_flat(
 def _show_fish_bestiary_section(
     section: FishBestiarySection,
     unlocked_fish: Set[str],
+    *,
+    pending_pool_reward_count: Optional[Callable[[str], int]] = None,
+    claim_pool_rewards: Optional[Callable[[str], List[str]]] = None,
 ) -> None:
     ordered_fish = sorted(
         section.fish_profiles,
@@ -311,12 +394,20 @@ def _show_fish_bestiary_section(
             section,
             unlocked_fish,
         )
+        claimable_count = (
+            pending_pool_reward_count(section.title)
+            if pending_pool_reward_count is not None
+            else 0
+        )
+        reward_status = _format_reward_status(claimable_count)
         if section.counts_for_completion:
             print(f"Complecao: {unlocked_count}/{total_fish} ({completion:.0f}%)")
         else:
             print("Esta pool nao conta para a complecao do bestiario.")
         if has_hunt_only_fish:
             print("Peixes [Hunt] nao contam para a complecao da pool.")
+        if reward_status:
+            print(reward_status)
         if not ordered_fish:
             print("Nenhum peixe cadastrado.")
             input("\nEnter para voltar.")
@@ -342,6 +433,8 @@ def _show_fish_bestiary_section(
                 ]
             if has_hunt_only_fish:
                 header_lines.append("Peixes [Hunt] nao contam para a complecao.")
+            if reward_status:
+                header_lines.append(reward_status)
             options = [
                 MenuOption(
                     str(idx),
@@ -352,6 +445,13 @@ def _show_fish_bestiary_section(
             if total_pages > 1:
                 options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
                 options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            if claimable_count > 0 and claim_pool_rewards is not None:
+                options.append(
+                    MenuOption(
+                        "G",
+                        f"Resgatar recompensa da pool ({claimable_count})",
+                    )
+                )
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -361,9 +461,20 @@ def _show_fish_bestiary_section(
                 prompt="Escolha um peixe:",
                 show_badge=False,
             )
-            choice = _read_choice("> ", total_pages)
+            choice = _read_choice(
+                "> ",
+                total_pages,
+                extra_instant_keys={"g"}
+                if claimable_count > 0 and claim_pool_rewards is not None
+                else None,
+            )
             if choice == "0":
                 return
+            if choice == "g" and claimable_count > 0 and claim_pool_rewards is not None:
+                clear_screen()
+                _print_claim_notes(claim_pool_rewards(section.title))
+                input("\nEnter para voltar.")
+                continue
 
             page, moved = apply_page_hotkey(choice, page, total_pages)
             if moved:
@@ -417,10 +528,23 @@ def _show_fish_bestiary_section(
                 f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
                 f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
             )
+        if claimable_count > 0 and claim_pool_rewards is not None:
+            print(f"G. Resgatar recompensa da pool ({claimable_count})")
         print("0. Voltar")
-        choice = _read_choice("Escolha um peixe: ", total_pages)
+        choice = _read_choice(
+            "Escolha um peixe: ",
+            total_pages,
+            extra_instant_keys={"g"}
+            if claimable_count > 0 and claim_pool_rewards is not None
+            else None,
+        )
         if choice == "0":
             return
+        if choice == "g" and claimable_count > 0 and claim_pool_rewards is not None:
+            clear_screen()
+            _print_claim_notes(claim_pool_rewards(section.title))
+            input("\nEnter para voltar.")
+            continue
 
         page, moved = apply_page_hotkey(choice, page, total_pages)
         if moved:
@@ -455,6 +579,11 @@ def _show_fish_bestiary_section(
 def show_fish_bestiary(
     sections: List[FishBestiarySection],
     unlocked_fish: Set[str],
+    *,
+    pending_global_reward_count: Optional[Callable[[], int]] = None,
+    claim_global_rewards: Optional[Callable[[], List[str]]] = None,
+    pending_pool_reward_count: Optional[Callable[[str], int]] = None,
+    claim_pool_rewards: Optional[Callable[[str], List[str]]] = None,
 ):
     page = 0
     page_size = 10
@@ -475,6 +604,14 @@ def show_fish_bestiary(
         )
         completion = (unlocked_count / total_fish * 100) if total_fish else 0
         print(f"Complecao: {unlocked_count}/{total_fish} ({completion:.0f}%)")
+        global_claimable_count = (
+            pending_global_reward_count()
+            if pending_global_reward_count is not None
+            else 0
+        )
+        reward_status = _format_reward_status(global_claimable_count)
+        if reward_status:
+            print(reward_status)
         if not sections:
             print("Nenhuma secao cadastrada.")
             input("\nEnter para voltar.")
@@ -500,25 +637,57 @@ def show_fish_bestiary(
                         unlocked_fish,
                     )
                     label = f"{section.title} ({section_unlocked}/{section_total})"
+                pool_claimable_count = (
+                    pending_pool_reward_count(section.title)
+                    if pending_pool_reward_count is not None and not section.locked
+                    else 0
+                )
+                if pool_claimable_count > 0:
+                    label = f"{label} 🎁"
                 options.append(MenuOption(str(idx), label))
             if total_pages > 1:
                 options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
                 options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            if global_claimable_count > 0 and claim_global_rewards is not None:
+                options.append(
+                    MenuOption(
+                        "G",
+                        f"Resgatar recompensa global ({global_claimable_count})",
+                    )
+                )
             options.append(MenuOption("0", "Voltar"))
+            header_lines = [
+                f"Conclusao: {unlocked_count}/{total_fish} ({completion:.0f}%)",
+                f"Pagina {page + 1}/{total_pages}",
+            ]
+            if reward_status:
+                header_lines.append(reward_status)
             print_menu_panel(
                 "BESTIARIO",
                 subtitle="Peixes por pool",
-                header_lines=[
-                    f"Conclusao: {unlocked_count}/{total_fish} ({completion:.0f}%)",
-                    f"Pagina {page + 1}/{total_pages}",
-                ],
+                header_lines=header_lines,
                 options=options,
                 prompt="Escolha uma pool/regiao:",
                 show_badge=False,
             )
-            choice = _read_choice("> ", total_pages)
+            choice = _read_choice(
+                "> ",
+                total_pages,
+                extra_instant_keys={"g"}
+                if global_claimable_count > 0 and claim_global_rewards is not None
+                else None,
+            )
             if choice == "0":
                 return
+            if (
+                choice == "g"
+                and global_claimable_count > 0
+                and claim_global_rewards is not None
+            ):
+                clear_screen()
+                _print_claim_notes(claim_global_rewards())
+                input("\nEnter para voltar.")
+                continue
 
             page, moved = apply_page_hotkey(choice, page, total_pages)
             if moved:
@@ -540,7 +709,12 @@ def show_fish_bestiary(
                 show_locked_entry()
                 continue
 
-            _show_fish_bestiary_section(section, unlocked_fish)
+            _show_fish_bestiary_section(
+                section,
+                unlocked_fish,
+                pending_pool_reward_count=pending_pool_reward_count,
+                claim_pool_rewards=claim_pool_rewards,
+            )
             continue
 
         print(f"Pagina {page + 1}/{total_pages}\n")
@@ -556,6 +730,13 @@ def show_fish_bestiary(
                     unlocked_fish,
                 )
                 label = f"{section.title} ({section_unlocked}/{section_total})"
+            pool_claimable_count = (
+                pending_pool_reward_count(section.title)
+                if pending_pool_reward_count is not None and not section.locked
+                else 0
+            )
+            if pool_claimable_count > 0:
+                label = f"{label} 🎁"
             print(f"{idx}. {label}")
 
         if total_pages > 1:
@@ -563,10 +744,27 @@ def show_fish_bestiary(
                 f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
                 f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
             )
+        if global_claimable_count > 0 and claim_global_rewards is not None:
+            print(f"G. Resgatar recompensa global ({global_claimable_count})")
         print("0. Voltar")
-        choice = _read_choice("Escolha uma pool/regiao: ", total_pages)
+        choice = _read_choice(
+            "Escolha uma pool/regiao: ",
+            total_pages,
+            extra_instant_keys={"g"}
+            if global_claimable_count > 0 and claim_global_rewards is not None
+            else None,
+        )
         if choice == "0":
             return
+        if (
+            choice == "g"
+            and global_claimable_count > 0
+            and claim_global_rewards is not None
+        ):
+            clear_screen()
+            _print_claim_notes(claim_global_rewards())
+            input("\nEnter para voltar.")
+            continue
 
         page, moved = apply_page_hotkey(choice, page, total_pages)
         if moved:
@@ -588,10 +786,20 @@ def show_fish_bestiary(
             show_locked_entry()
             continue
 
-        _show_fish_bestiary_section(section, unlocked_fish)
+        _show_fish_bestiary_section(
+            section,
+            unlocked_fish,
+            pending_pool_reward_count=pending_pool_reward_count,
+            claim_pool_rewards=claim_pool_rewards,
+        )
 
-
-def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
+def show_rods_bestiary(
+    rods: List[Rod],
+    unlocked_rods: Set[str],
+    *,
+    pending_reward_count: Optional[Callable[[str], int]] = None,
+    claim_rewards: Optional[Callable[[str], List[str]]] = None,
+):
     countable_rods = [
         rod
         for rod in rods
@@ -606,6 +814,10 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
         unlocked_count = sum(1 for rod in countable_rods if rod.name in unlocked_rods)
         completion = (unlocked_count / total_rods * 100) if total_rods else 0
         print(f"Complecao: {unlocked_count}/{total_rods} ({completion:.0f}%)")
+        claimable_count = pending_reward_count("rods") if pending_reward_count else 0
+        reward_status = _format_reward_status(claimable_count)
+        if reward_status:
+            print(reward_status)
         if not rods:
             print("Nenhuma vara cadastrada.")
             input("\nEnter para voltar.")
@@ -631,21 +843,37 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
             if total_pages > 1:
                 options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
                 options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            if claimable_count > 0 and claim_rewards is not None:
+                options.append(
+                    MenuOption("G", f"Resgatar recompensas (🎁 {claimable_count})")
+                )
             options.append(MenuOption("0", "Voltar"))
+            header_lines = [
+                f"Conclusao: {unlocked_count}/{total_rods} ({completion:.0f}%)",
+                f"Pagina {page + 1}/{total_pages}",
+            ]
+            if reward_status:
+                header_lines.append(reward_status)
             print_menu_panel(
                 "BESTIARIO",
                 subtitle="Varas adquiridas",
-                header_lines=[
-                    f"Conclusao: {unlocked_count}/{total_rods} ({completion:.0f}%)",
-                    f"Pagina {page + 1}/{total_pages}",
-                ],
+                header_lines=header_lines,
                 options=options,
                 prompt="Escolha uma vara:",
                 show_badge=False,
             )
-            choice = _read_choice("> ", total_pages)
+            choice = _read_choice(
+                "> ",
+                total_pages,
+                extra_instant_keys={"g"} if claimable_count > 0 else None,
+            )
             if choice == "0":
                 return
+            if choice == "g" and claimable_count > 0 and claim_rewards is not None:
+                clear_screen()
+                _print_claim_notes(claim_rewards("rods"))
+                input("\nEnter para voltar.")
+                continue
 
             page, moved = apply_page_hotkey(choice, page, total_pages)
             if moved:
@@ -698,10 +926,21 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
                 f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
                 f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
             )
+        if claimable_count > 0 and claim_rewards is not None:
+            print(f"G. Resgatar recompensas (🎁 {claimable_count})")
         print("0. Voltar")
-        choice = _read_choice("Escolha uma vara: ", total_pages)
+        choice = _read_choice(
+            "Escolha uma vara: ",
+            total_pages,
+            extra_instant_keys={"g"} if claimable_count > 0 else None,
+        )
         if choice == "0":
             return
+        if choice == "g" and claimable_count > 0 and claim_rewards is not None:
+            clear_screen()
+            _print_claim_notes(claim_rewards("rods"))
+            input("\nEnter para voltar.")
+            continue
 
         page, moved = apply_page_hotkey(choice, page, total_pages)
         if moved:
@@ -731,7 +970,13 @@ def show_rods_bestiary(rods: List[Rod], unlocked_rods: Set[str]):
         input("\nEnter para voltar.")
 
 
-def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
+def show_pools_bestiary(
+    pools: List["FishingPool"],
+    unlocked_pools: Set[str],
+    *,
+    pending_reward_count: Optional[Callable[[str], int]] = None,
+    claim_rewards: Optional[Callable[[str], List[str]]] = None,
+):
     visible_pools = [
         pool
         for pool in pools
@@ -751,6 +996,10 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
         unlocked_count = sum(1 for pool in countable_pools if pool.name in unlocked_pools)
         completion = (unlocked_count / total_pools * 100) if total_pools else 0
         print(f"Complecao: {unlocked_count}/{total_pools} ({completion:.0f}%)")
+        claimable_count = pending_reward_count("pools") if pending_reward_count else 0
+        reward_status = _format_reward_status(claimable_count)
+        if reward_status:
+            print(reward_status)
         if not visible_pools:
             print("Nenhuma pool cadastrada.")
             input("\nEnter para voltar.")
@@ -776,21 +1025,37 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
             if total_pages > 1:
                 options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
                 options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            if claimable_count > 0 and claim_rewards is not None:
+                options.append(
+                    MenuOption("G", f"Resgatar recompensas (🎁 {claimable_count})")
+                )
             options.append(MenuOption("0", "Voltar"))
+            header_lines = [
+                f"Conclusao: {unlocked_count}/{total_pools} ({completion:.0f}%)",
+                f"Pagina {page + 1}/{total_pages}",
+            ]
+            if reward_status:
+                header_lines.append(reward_status)
             print_menu_panel(
                 "BESTIARIO",
                 subtitle="Pools desbloqueadas",
-                header_lines=[
-                    f"Conclusao: {unlocked_count}/{total_pools} ({completion:.0f}%)",
-                    f"Pagina {page + 1}/{total_pages}",
-                ],
+                header_lines=header_lines,
                 options=options,
                 prompt="Escolha uma pool:",
                 show_badge=False,
             )
-            choice = _read_choice("> ", total_pages)
+            choice = _read_choice(
+                "> ",
+                total_pages,
+                extra_instant_keys={"g"} if claimable_count > 0 else None,
+            )
             if choice == "0":
                 return
+            if choice == "g" and claimable_count > 0 and claim_rewards is not None:
+                clear_screen()
+                _print_claim_notes(claim_rewards("pools"))
+                input("\nEnter para voltar.")
+                continue
 
             page, moved = apply_page_hotkey(choice, page, total_pages)
             if moved:
@@ -843,10 +1108,21 @@ def show_pools_bestiary(pools: List["FishingPool"], unlocked_pools: Set[str]):
                 f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
                 f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
             )
+        if claimable_count > 0 and claim_rewards is not None:
+            print(f"G. Resgatar recompensas (🎁 {claimable_count})")
         print("0. Voltar")
-        choice = _read_choice("Escolha uma pool: ", total_pages)
+        choice = _read_choice(
+            "Escolha uma pool: ",
+            total_pages,
+            extra_instant_keys={"g"} if claimable_count > 0 else None,
+        )
         if choice == "0":
             return
+        if choice == "g" and claimable_count > 0 and claim_rewards is not None:
+            clear_screen()
+            _print_claim_notes(claim_rewards("pools"))
+            input("\nEnter para voltar.")
+            continue
 
         page, moved = apply_page_hotkey(choice, page, total_pages)
         if moved:
@@ -884,6 +1160,11 @@ def show_bestiary(
     discovered_fish: Set[str],
     hunt_definitions: Optional[Sequence["HuntDefinition"]] = None,
     regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
+    bestiary_rewards: Optional[Sequence[BestiaryRewardDefinition]] = None,
+    bestiary_reward_state: Optional[BestiaryRewardState] = None,
+    on_claim_bestiary_reward: Optional[
+        Callable[[BestiaryRewardDefinition], List[str]]
+    ] = None,
 ):
     fish_sections = build_fish_bestiary_sections(
         pools,
@@ -894,13 +1175,107 @@ def show_bestiary(
     sorted_rods = sorted(available_rods, key=lambda rod: rod.name)
     sorted_pools = sorted(pools, key=lambda pool: pool.name)
 
+    def list_claimable_rewards(
+        category: str,
+        *,
+        fish_target_pool: Optional[str] = None,
+        fish_global_only: bool = False,
+    ) -> List[BestiaryRewardDefinition]:
+        if (
+            not bestiary_rewards
+            or bestiary_reward_state is None
+            or on_claim_bestiary_reward is None
+        ):
+            return []
+
+        unlocked_rod_names = {rod.name for rod in owned_rods}
+        fish_global_percent, fish_by_pool = _fish_completion_snapshot(
+            fish_sections,
+            discovered_fish,
+        )
+        rods_percent = _rods_completion_percent(sorted_rods, unlocked_rod_names)
+        pools_percent = _pools_completion_percent(sorted_pools, unlocked_pools)
+        claimable = get_claimable_bestiary_rewards(
+            bestiary_rewards,
+            bestiary_reward_state,
+            category=category,
+            fish_global_percent=fish_global_percent,
+            fish_percent_by_pool=fish_by_pool,
+            rods_percent=rods_percent,
+            pools_percent=pools_percent,
+        )
+        if category != "fish":
+            return claimable
+        if fish_global_only:
+            return [
+                reward
+                for reward in claimable
+                if reward.target_pool.casefold() == FISH_TARGET_ALL.casefold()
+            ]
+        if fish_target_pool is None:
+            return claimable
+        target_pool_key = fish_target_pool.casefold()
+        return [
+            reward
+            for reward in claimable
+            if reward.target_pool.casefold() == target_pool_key
+        ]
+
+    def pending_rewards_count(category: str) -> int:
+        return len(list_claimable_rewards(category))
+
+    def _claim_selected_rewards(
+        selected_rewards: Sequence[BestiaryRewardDefinition],
+    ) -> List[str]:
+        if (
+            not bestiary_rewards
+            or bestiary_reward_state is None
+            or on_claim_bestiary_reward is None
+        ):
+            return ["Sistema de recompensas indisponivel."]
+        if not selected_rewards:
+            return ["Nenhuma recompensa disponivel no momento."]
+
+        notes: List[str] = []
+        for reward in selected_rewards:
+            claim_notes = on_claim_bestiary_reward(reward)
+            bestiary_reward_state.claimed.add(reward.reward_id)
+            notes.append(f"Recompensa: {reward.name}")
+            if claim_notes:
+                notes.extend(claim_notes)
+            else:
+                notes.append("Recompensa resgatada!")
+        return notes
+
+    def claim_rewards_for_category(category: str) -> List[str]:
+        return _claim_selected_rewards(list_claimable_rewards(category))
+
+    def pending_fish_pool_rewards(pool_name: str) -> int:
+        return len(list_claimable_rewards("fish", fish_target_pool=pool_name))
+
+    def claim_fish_pool_rewards(pool_name: str) -> List[str]:
+        return _claim_selected_rewards(
+            list_claimable_rewards("fish", fish_target_pool=pool_name)
+        )
+
+    def pending_fish_global_rewards() -> int:
+        return len(list_claimable_rewards("fish", fish_global_only=True))
+
+    def claim_fish_global_rewards() -> List[str]:
+        return _claim_selected_rewards(
+            list_claimable_rewards("fish", fish_global_only=True)
+        )
+
     while True:
         clear_screen()
+        fish_status = _format_reward_status(pending_rewards_count("fish"))
+        rods_status = _format_reward_status(pending_rewards_count("rods"))
+        pools_status = _format_reward_status(pending_rewards_count("pools"))
         print_spaced_lines([
             "=== Bestiário ===",
-            "1. Peixes pescados",
-            "2. Varas adquiridas",
-            "3. Pools desbloqueadas",
+            f"1. Peixes pescados {fish_status}".rstrip(),
+            f"2. Varas adquiridas {rods_status}".rstrip(),
+            f"3. Pools desbloqueadas {pools_status}".rstrip(),
             "0. Voltar",
         ])
 
@@ -911,15 +1286,32 @@ def show_bestiary(
         unlocked_rods = {rod.name for rod in owned_rods}
 
         if choice == "1":
-            show_fish_bestiary(fish_sections, discovered_fish)
+            show_fish_bestiary(
+                fish_sections,
+                discovered_fish,
+                pending_global_reward_count=pending_fish_global_rewards,
+                claim_global_rewards=claim_fish_global_rewards,
+                pending_pool_reward_count=pending_fish_pool_rewards,
+                claim_pool_rewards=claim_fish_pool_rewards,
+            )
             continue
 
         if choice == "2":
-            show_rods_bestiary(sorted_rods, unlocked_rods)
+            show_rods_bestiary(
+                sorted_rods,
+                unlocked_rods,
+                pending_reward_count=pending_rewards_count,
+                claim_rewards=claim_rewards_for_category,
+            )
             continue
 
         if choice == "3":
-            show_pools_bestiary(sorted_pools, unlocked_pools)
+            show_pools_bestiary(
+                sorted_pools,
+                unlocked_pools,
+                pending_reward_count=pending_rewards_count,
+                claim_rewards=claim_rewards_for_category,
+            )
             continue
 
         print("Opção inválida.")
