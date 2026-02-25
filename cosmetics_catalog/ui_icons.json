@@ -1,0 +1,26 @@
+{
+  "icons": [
+    {"icon_id": "cat", "name": "Gato", "badge_lines": ["  /\\_/\\  ", " ( o.o ) ", "  > ^ <  "]},
+    {"icon_id": "fish", "name": "Peixe", "badge_lines": ["  ><(((>  ", "   / _ \\  ", "  /_/ \\_\\ "]},
+    {"icon_id": "star", "name": "Estrela", "badge_lines": ["    /\\    ", " < (**) > ", "    \\/    "]},
+    {"icon_id": "wave", "name": "Onda", "badge_lines": [" ~~~~~~~~ ", "  ~~~~~~  ", " ~~~~~~~~ "]},
+    {"icon_id": "anchor", "name": "Ancora", "badge_lines": ["    |     ", " --(_)--  ", "   / \\    "]},
+    {"icon_id": "crab", "name": "Caranguejo", "badge_lines": [" \\_\\_/ /  ", " (o   o)  ", " /_/^\\_\\  "]},
+    {"icon_id": "shell", "name": "Concha", "badge_lines": ["  .----.  ", " / .--. \\ ", " '----'  "]},
+    {"icon_id": "hook", "name": "Anzol", "badge_lines": ["    __    ", "   / /_   ", "   \\__/   "]},
+    {"icon_id": "boat", "name": "Barco", "badge_lines": ["    |\\    ", "   /_|_\\  ", " ~~~|~~~  "]},
+    {"icon_id": "treasure", "name": "Tesouro", "badge_lines": [" .------. ", " | [$$] | ", " '------' "]},
+    {"icon_id": "pool_lagoa", "name": "Lagoa", "badge_lines": ["   .--.   ", " ~(____)~ ", "   '~~'   "]},
+    {"icon_id": "pool_mar", "name": "Mar Aberto", "badge_lines": ["  ~~~~~~  ", " ~~/\\~~~~ ", "~~~\\/~~~~ "]},
+    {"icon_id": "pool_rio", "name": "Rio Correnteza", "badge_lines": [" ~~>>~~~  ", ">~~>>~~>  ", " ~~>>~~~  "]},
+    {"icon_id": "pool_grandreef", "name": "Grande Recife", "badge_lines": ["   /\\/\\   ", " _/\\||/\\_ ", "   /||\\   "]},
+    {"icon_id": "pool_pantano", "name": "Pantano Mushgrove", "badge_lines": ["  _^_  _^_", " (___)(___)", "  ||    || "]},
+    {"icon_id": "pool_crystalcove", "name": "Angra Cristal", "badge_lines": ["   /\\ /\\  ", "  /__V__\\ ", "   \\/ \\/  "]},
+    {"icon_id": "pool_brinepool", "name": "Piscina de Salmoura", "badge_lines": ["   .--.   ", " ~(xxxx)~ ", "   \\/\\/   "]},
+    {"icon_id": "pool_vertigo", "name": "Vertigo", "badge_lines": ["   .--.   ", "  / @@ \\  ", "  \\_@@_/  "]},
+    {"icon_id": "pool_thedepths", "name": "As profundezas", "badge_lines": ["  ~~~~~~  ", "   \\  /   ", "    \\/    "]},
+    {"icon_id": "pool_desolatedeep", "name": "Profundezas Desoladas", "badge_lines": ["  _|[]|_  ", " |  __  | ", " |_/  \\_| "]},
+    {"icon_id": "pool_farseas_eye", "name": "Olho de Farseas", "badge_lines": ["  .-===-. ", " (  o o ) ", "  '-___-' "]},
+    {"icon_id": "pool_cafeteria_coffee", "name": "Xicara da Cafeteria", "badge_lines": ["  (____)  ", "  |____|) ", "   ||||   "]}
+  ]
+}

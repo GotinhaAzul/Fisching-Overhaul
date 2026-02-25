@@ -6,6 +6,20 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
+from utils.requirements_common import (
+    collect_countable_fish_names,
+    completion_percent,
+    count_fish_mutation_pair,
+    count_name_case_insensitive,
+    fish_counts_for_bestiary_completion,
+    fish_mutation_key,
+    fish_name_matches,
+    pool_counts_for_bestiary_completion,
+    safe_float,
+    safe_int,
+    safe_str,
+    seconds_from_requirement,
+)
 
 if TYPE_CHECKING:
     from utils.rods import Rod
@@ -287,6 +301,101 @@ def is_craft_unlocked(
     return all(results)
 
 
+def _format_craft_fish_requirement(
+    requirement: Dict[str, object],
+    craft_id: str,
+    progress: CraftingProgress,
+    level: int,
+) -> Tuple[str, int, int, bool]:
+    del level
+    target = max(0, _safe_int(requirement.get("count", 0)))
+    fish_name = _safe_str(requirement.get("fish_name"))
+    current = _delivered_fish_count(progress, craft_id, fish_name)
+    label = f"Entregar peixe {fish_name}" if fish_name else "Entregar peixes"
+    return label, current, target, current >= target
+
+
+def _format_craft_mutation_requirement(
+    requirement: Dict[str, object],
+    craft_id: str,
+    progress: CraftingProgress,
+    level: int,
+) -> Tuple[str, int, int, bool]:
+    del level
+    target = max(0, _safe_int(requirement.get("count", 0)))
+    mutation_name = _safe_str(requirement.get("mutation_name"))
+    current = _delivered_mutation_count(progress, craft_id, mutation_name)
+    label = (
+        f"Entregar mutacao {mutation_name}"
+        if mutation_name
+        else "Entregar peixe com mutacao"
+    )
+    return label, current, target, current >= target
+
+
+def _format_craft_fish_with_mutation_requirement(
+    requirement: Dict[str, object],
+    craft_id: str,
+    progress: CraftingProgress,
+    level: int,
+) -> Tuple[str, int, int, bool]:
+    del level
+    target = max(0, _safe_int(requirement.get("count", 0)))
+    fish_name = _safe_str(requirement.get("fish_name"))
+    mutation_name = _safe_str(requirement.get("mutation_name"))
+    current = _delivered_fish_with_mutation_count(
+        progress,
+        craft_id,
+        fish_name,
+        mutation_name,
+    )
+    if fish_name and mutation_name:
+        label = f"Entregar {fish_name} com mutacao {mutation_name}"
+    elif fish_name:
+        label = f"Entregar {fish_name} com mutacao"
+    elif mutation_name:
+        label = f"Entregar mutacao {mutation_name}"
+    else:
+        label = "Entregar peixe com mutacao"
+    return label, current, target, current >= target
+
+
+def _format_craft_money_requirement(
+    requirement: Dict[str, object],
+    craft_id: str,
+    progress: CraftingProgress,
+    level: int,
+) -> Tuple[str, int, int, bool]:
+    del level
+    target = max(0, int(round(_safe_float(requirement.get("amount", 0.0)))))
+    current = max(
+        0,
+        int(round(progress.paid_money_by_craft.get(craft_id, 0.0))),
+    )
+    return "Pagar dinheiro", current, target, current >= target
+
+
+def _format_craft_level_requirement(
+    requirement: Dict[str, object],
+    craft_id: str,
+    progress: CraftingProgress,
+    level: int,
+) -> Tuple[str, int, int, bool]:
+    del craft_id, progress
+    target = max(0, _safe_int(requirement.get("level")))
+    current = max(0, int(level))
+    return "Nivel", current, target, current >= target
+
+
+_CRAFT_REQUIREMENT_FORMATTERS = {
+    "fish": _format_craft_fish_requirement,
+    "mutation": _format_craft_mutation_requirement,
+    "fish_with_mutation": _format_craft_fish_with_mutation_requirement,
+    "money": _format_craft_money_requirement,
+    "level": _format_craft_level_requirement,
+}
+
+
 def format_crafting_requirement(
     requirement: Dict[str, object],
     craft_id: str,
@@ -294,54 +403,10 @@ def format_crafting_requirement(
     level: int,
 ) -> Tuple[str, int, int, bool]:
     requirement_type = requirement.get("type")
-    if requirement_type == "fish":
-        target = max(0, _safe_int(requirement.get("count", 0)))
-        fish_name = _safe_str(requirement.get("fish_name"))
-        current = _delivered_fish_count(progress, craft_id, fish_name)
-        label = f"Entregar peixe {fish_name}" if fish_name else "Entregar peixes"
-        return label, current, target, current >= target
-    if requirement_type == "mutation":
-        target = max(0, _safe_int(requirement.get("count", 0)))
-        mutation_name = _safe_str(requirement.get("mutation_name"))
-        current = _delivered_mutation_count(progress, craft_id, mutation_name)
-        label = (
-            f"Entregar mutacao {mutation_name}"
-            if mutation_name
-            else "Entregar peixe com mutacao"
-        )
-        return label, current, target, current >= target
-    if requirement_type == "fish_with_mutation":
-        target = max(0, _safe_int(requirement.get("count", 0)))
-        fish_name = _safe_str(requirement.get("fish_name"))
-        mutation_name = _safe_str(requirement.get("mutation_name"))
-        current = _delivered_fish_with_mutation_count(
-            progress,
-            craft_id,
-            fish_name,
-            mutation_name,
-        )
-        if fish_name and mutation_name:
-            label = f"Entregar {fish_name} com mutacao {mutation_name}"
-        elif fish_name:
-            label = f"Entregar {fish_name} com mutacao"
-        elif mutation_name:
-            label = f"Entregar mutacao {mutation_name}"
-        else:
-            label = "Entregar peixe com mutacao"
-        return label, current, target, current >= target
-    if requirement_type == "money":
-        target = max(0, int(round(_safe_float(requirement.get("amount", 0.0)))))
-        current = max(
-            0,
-            int(round(progress.paid_money_by_craft.get(craft_id, 0.0))),
-        )
-        return "Pagar dinheiro", current, target, current >= target
-    if requirement_type == "level":
-        target = max(0, _safe_int(requirement.get("level")))
-        current = max(0, int(level))
-        return "Nivel", current, target, current >= target
-
-    return "Requisito desconhecido", 0, 1, False
+    formatter = _CRAFT_REQUIREMENT_FORMATTERS.get(requirement_type)
+    if formatter is None:
+        return "Requisito desconhecido", 0, 1, False
+    return formatter(requirement, craft_id, progress, level)
 
 
 def is_craft_ready(
@@ -490,67 +555,160 @@ def _check_unlock_requirement(
     inventory_fish_counts: Optional[Dict[str, int]] = None,
     inventory_mutation_counts: Optional[Dict[str, int]] = None,
 ) -> bool:
+    context = _UnlockRequirementContext(
+        level=level,
+        pools=pools,
+        discovered_fish=discovered_fish,
+        unlocked_pools=unlocked_pools,
+        mission_state=mission_state,
+        unlocked_rods=unlocked_rods,
+        play_time_seconds=play_time_seconds,
+        inventory_fish_counts=inventory_fish_counts,
+        inventory_mutation_counts=inventory_mutation_counts,
+    )
     requirement_type = requirement.get("type")
-    if requirement_type == "level":
-        return level >= max(0, _safe_int(requirement.get("level")))
-    if requirement_type in {"bestiary", "bestiary_percent"}:
-        target = max(0.0, _safe_float(requirement.get("percent", 0.0)))
-        pool_name = _safe_str(requirement.get("pool_name"))
-        completion = _calculate_bestiary_completion(
-            pools,
-            discovered_fish,
-            pool_name=pool_name if pool_name else None,
-        )
-        return completion >= target
-    if requirement_type == "find_fish":
-        target = max(0, _safe_int(requirement.get("count", 0)))
-        fish_name = _safe_str(requirement.get("fish_name"))
-        if not fish_name:
-            return False
-        found_count = _count_name_case_insensitive(progress.find_fish_counts_by_name, fish_name)
-        inventory_count = (
-            _count_name_case_insensitive(inventory_fish_counts, fish_name)
-            if inventory_fish_counts is not None
-            else 0
-        )
-        return found_count >= target or inventory_count >= target
-    if requirement_type == "find_mutation":
-        target = max(0, _safe_int(requirement.get("count", 0)))
-        mutation_name = _safe_str(requirement.get("mutation_name"))
-        if not mutation_name:
-            return False
-        found_count = progress.find_mutation_counts_by_name.get(mutation_name, 0)
-        inventory_count = (
-            max(0, _safe_int(inventory_mutation_counts.get(mutation_name, 0)))
-            if inventory_mutation_counts is not None
-            else 0
-        )
-        return found_count >= target or inventory_count >= target
-    if requirement_type == "unlock_pool":
-        pool_name = _safe_str(requirement.get("pool_name"))
-        if not pool_name:
-            return False
-        normalized = {item.strip().casefold() for item in unlocked_pools}
-        return pool_name.strip().casefold() in normalized
-    if requirement_type == "unlock_quest":
-        mission_id = _safe_str(requirement.get("mission_id"))
-        state_name = _safe_str(requirement.get("state"), fallback="completed").casefold()
-        if not mission_id:
-            return False
-        state_values = _extract_mission_state(mission_state)
-        if state_name == "unlocked":
-            return mission_id in state_values["unlocked"]
-        if state_name == "claimed":
-            return mission_id in state_values["claimed"]
-        return mission_id in state_values["completed"]
-    if requirement_type == "time_played":
-        target_seconds = _seconds_from_requirement(requirement)
-        return play_time_seconds >= target_seconds
-    if requirement_type == "unlock_rod":
-        rod_name = _safe_str(requirement.get("rod_name"))
-        return bool(rod_name) and rod_name in unlocked_rods
+    checker = _UNLOCK_REQUIREMENT_CHECKERS.get(requirement_type)
+    if checker is None:
+        return False
+    return checker(requirement, progress, context)
 
-    return False
+
+@dataclass(frozen=True)
+class _UnlockRequirementContext:
+    level: int
+    pools: Sequence[object]
+    discovered_fish: Set[str]
+    unlocked_pools: Set[str]
+    mission_state: object
+    unlocked_rods: Set[str]
+    play_time_seconds: float
+    inventory_fish_counts: Optional[Dict[str, int]]
+    inventory_mutation_counts: Optional[Dict[str, int]]
+
+
+def _check_unlock_level_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    del progress
+    return context.level >= max(0, _safe_int(requirement.get("level")))
+
+
+def _check_unlock_bestiary_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    del progress
+    target = max(0.0, _safe_float(requirement.get("percent", 0.0)))
+    pool_name = _safe_str(requirement.get("pool_name"))
+    completion = _calculate_bestiary_completion(
+        context.pools,
+        context.discovered_fish,
+        pool_name=pool_name if pool_name else None,
+    )
+    return completion >= target
+
+
+def _check_unlock_find_fish_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    target = max(0, _safe_int(requirement.get("count", 0)))
+    fish_name = _safe_str(requirement.get("fish_name"))
+    if not fish_name:
+        return False
+    found_count = _count_name_case_insensitive(progress.find_fish_counts_by_name, fish_name)
+    inventory_count = (
+        _count_name_case_insensitive(context.inventory_fish_counts, fish_name)
+        if context.inventory_fish_counts is not None
+        else 0
+    )
+    return found_count >= target or inventory_count >= target
+
+
+def _check_unlock_find_mutation_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    target = max(0, _safe_int(requirement.get("count", 0)))
+    mutation_name = _safe_str(requirement.get("mutation_name"))
+    if not mutation_name:
+        return False
+    found_count = progress.find_mutation_counts_by_name.get(mutation_name, 0)
+    inventory_count = (
+        max(0, _safe_int(context.inventory_mutation_counts.get(mutation_name, 0)))
+        if context.inventory_mutation_counts is not None
+        else 0
+    )
+    return found_count >= target or inventory_count >= target
+
+
+def _check_unlock_pool_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    del progress
+    pool_name = _safe_str(requirement.get("pool_name"))
+    if not pool_name:
+        return False
+    normalized = {item.strip().casefold() for item in context.unlocked_pools}
+    return pool_name.strip().casefold() in normalized
+
+
+def _check_unlock_quest_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    del progress
+    mission_id = _safe_str(requirement.get("mission_id"))
+    state_name = _safe_str(requirement.get("state"), fallback="completed").casefold()
+    if not mission_id:
+        return False
+    state_values = _extract_mission_state(context.mission_state)
+    if state_name == "unlocked":
+        return mission_id in state_values["unlocked"]
+    if state_name == "claimed":
+        return mission_id in state_values["claimed"]
+    return mission_id in state_values["completed"]
+
+
+def _check_unlock_time_played_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    del progress
+    target_seconds = _seconds_from_requirement(requirement)
+    return context.play_time_seconds >= target_seconds
+
+
+def _check_unlock_rod_requirement(
+    requirement: Dict[str, object],
+    progress: CraftingProgress,
+    context: _UnlockRequirementContext,
+) -> bool:
+    del progress
+    rod_name = _safe_str(requirement.get("rod_name"))
+    return bool(rod_name) and rod_name in context.unlocked_rods
+
+
+_UNLOCK_REQUIREMENT_CHECKERS = {
+    "level": _check_unlock_level_requirement,
+    "bestiary": _check_unlock_bestiary_requirement,
+    "bestiary_percent": _check_unlock_bestiary_requirement,
+    "find_fish": _check_unlock_find_fish_requirement,
+    "find_mutation": _check_unlock_find_mutation_requirement,
+    "unlock_pool": _check_unlock_pool_requirement,
+    "unlock_quest": _check_unlock_quest_requirement,
+    "time_played": _check_unlock_time_played_requirement,
+    "unlock_rod": _check_unlock_rod_requirement,
+}
 
 
 def _calculate_bestiary_completion(
@@ -579,23 +737,10 @@ def _calculate_bestiary_completion(
             if getattr(fish, "name", "")
             and _fish_counts_for_bestiary_completion(fish)
         }
-        if not fish_names:
-            return 0.0
-        discovered = sum(1 for fish_name in fish_names if fish_name in discovered_fish)
-        return (discovered / len(fish_names)) * 100
+        return completion_percent(fish_names, discovered_fish)
 
-    all_fish_names: Set[str] = set()
-    for pool in pools:
-        if not _pool_counts_for_bestiary_completion(pool):
-            continue
-        for fish in getattr(pool, "fish_profiles", []):
-            fish_name = getattr(fish, "name", "")
-            if fish_name and _fish_counts_for_bestiary_completion(fish):
-                all_fish_names.add(fish_name)
-    if not all_fish_names:
-        return 0.0
-    discovered = sum(1 for fish_name in all_fish_names if fish_name in discovered_fish)
-    return (discovered / len(all_fish_names)) * 100
+    all_fish_names = collect_countable_fish_names(pools)
+    return completion_percent(all_fish_names, discovered_fish)
 
 
 def count_inventory_fish(inventory: Sequence[InventoryEntry]) -> Dict[str, int]:
@@ -626,11 +771,11 @@ def _pool_matches_name(pool: object, normalized_name: str) -> bool:
 
 
 def _pool_counts_for_bestiary_completion(pool: object) -> bool:
-    return bool(getattr(pool, "counts_for_bestiary_completion", True))
+    return pool_counts_for_bestiary_completion(pool)
 
 
 def _fish_counts_for_bestiary_completion(fish: object) -> bool:
-    return bool(getattr(fish, "counts_for_bestiary_completion", True))
+    return fish_counts_for_bestiary_completion(fish)
 
 
 def _entry_matches_any_pending_requirement(
@@ -747,21 +892,15 @@ def _extract_requirement_list(raw_value: object) -> List[Dict[str, object]]:
 
 
 def _safe_int(value: object) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return 0
+    return safe_int(value)
 
 
 def _safe_float(value: object) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
+    return safe_float(value)
 
 
 def _safe_str(value: object, *, fallback: str = "") -> str:
-    return value if isinstance(value, str) else fallback
+    return safe_str(value, fallback=fallback)
 
 
 def _safe_str_int_map(value: object) -> Dict[str, int]:
@@ -845,16 +984,11 @@ def _delivered_fish_with_mutation_count(
 
 
 def _fish_name_matches(actual_name: str, expected_name: str) -> bool:
-    return actual_name.casefold() == expected_name.casefold()
+    return fish_name_matches(actual_name, expected_name)
 
 
 def _count_name_case_insensitive(counts: Dict[str, int], name: str) -> int:
-    normalized_name = name.casefold()
-    return sum(
-        count
-        for key, count in counts.items()
-        if key.casefold() == normalized_name
-    )
+    return count_name_case_insensitive(counts, name)
 
 
 def _count_fish_mutation_pair(
@@ -863,29 +997,16 @@ def _count_fish_mutation_pair(
     fish_name: Optional[str],
     mutation_name: Optional[str],
 ) -> int:
-    normalized_fish_name = fish_name.casefold() if fish_name else None
-    total = 0
-    for pair_key, count in counts.items():
-        fish_part, separator, mutation_part = pair_key.partition("::")
-        if separator != "::":
-            continue
-        if normalized_fish_name and fish_part.casefold() != normalized_fish_name:
-            continue
-        if mutation_name and mutation_part != mutation_name:
-            continue
-        total += count
-    return total
+    return count_fish_mutation_pair(
+        counts,
+        fish_name=fish_name,
+        mutation_name=mutation_name,
+    )
 
 
 def _fish_mutation_key(fish_name: str, mutation_name: str) -> str:
-    return f"{fish_name}::{mutation_name}"
+    return fish_mutation_key(fish_name, mutation_name)
 
 
 def _seconds_from_requirement(requirement: Dict[str, object]) -> float:
-    if "seconds" in requirement:
-        return max(0.0, _safe_float(requirement.get("seconds")))
-    if "minutes" in requirement:
-        return max(0.0, _safe_float(requirement.get("minutes")) * 60)
-    if "hours" in requirement:
-        return max(0.0, _safe_float(requirement.get("hours")) * 3600)
-    return max(0.0, _safe_float(requirement.get("time_seconds")))
+    return seconds_from_requirement(requirement, clamp_non_negative=True)

@@ -19,3 +19,7 @@ fisching = "start_game:main"
 [tool.setuptools]
 py-modules = ["start_game"]
 packages = ["utils"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

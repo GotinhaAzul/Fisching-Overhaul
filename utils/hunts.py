@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import random
-import sys
-import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, TYPE_CHECKING
+
+from utils.manager_lifecycle import ManagerLifecycle
 
 if TYPE_CHECKING:
     from utils.pesca import FishProfile
@@ -64,33 +64,20 @@ class HuntManager:
         }
         self._active_by_pool: Dict[str, ActiveHunt] = {}
 
-        self._lock = threading.Lock()
-        self._pending_notifications: List[str] = []
-        self._suppress_notifications = False
-        self._stop_event = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._lifecycle = ManagerLifecycle()
+        self._lock = self._lifecycle.lock
 
     def start(self) -> None:
-        if not self._hunts or self._thread:
-            return
-        self._thread = threading.Thread(target=self._run_loop, daemon=True)
-        self._thread.start()
+        self._lifecycle.start(self._run_loop, enabled=bool(self._hunts))
 
     def stop(self) -> None:
-        self._stop_event.set()
-        if self._thread:
-            self._thread.join(timeout=1)
-        self._thread = None
+        self._lifecycle.stop()
 
     def suppress_notifications(self, value: bool) -> None:
-        with self._lock:
-            self._suppress_notifications = value
+        self._lifecycle.suppress_notifications(value)
 
     def pop_notifications(self) -> List[str]:
-        with self._lock:
-            notifications = self._pending_notifications[:]
-            self._pending_notifications.clear()
-        return notifications
+        return self._lifecycle.pop_notifications()
 
     def get_active_hunt_for_pool(self, pool_name: str) -> Optional[ActiveHunt]:
         with self._lock:
@@ -246,15 +233,10 @@ class HuntManager:
                 )
 
     def _emit_notification(self, message: str) -> None:
-        with self._lock:
-            if self._suppress_notifications:
-                self._pending_notifications.append(message)
-                return
-        print(f"\n🔔 {message}")
-        sys.stdout.flush()
+        self._lifecycle.emit_notification(message)
 
     def _run_loop(self) -> None:
-        while not self._stop_event.is_set():
+        while not self._lifecycle.stop_event.is_set():
             now = time.monotonic()
             notifications: List[str] = []
 

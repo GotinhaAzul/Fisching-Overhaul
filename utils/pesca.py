@@ -1,4 +1,4 @@
-import importlib
+﻿import importlib
 import importlib.util
 import json
 import math
@@ -36,7 +36,6 @@ from utils.cosmetics import (
     list_unlocked_ui_colors,
     list_unlocked_ui_icons,
     restore_cosmetics_state,
-    serialize_cosmetics_state,
     unlock_ui_color,
     unlock_ui_icon,
 )
@@ -46,7 +45,6 @@ from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_fo
 from utils.menu_input import read_menu_choice
 from utils.market import (
     restore_pool_market_orders,
-    serialize_pool_market_orders,
     show_market,
 )
 from utils.crafting import (
@@ -57,8 +55,6 @@ from utils.crafting import (
     load_crafting_definitions,
     restore_crafting_progress,
     restore_crafting_state,
-    serialize_crafting_progress,
-    serialize_crafting_state,
     update_crafting_unlocks,
 )
 from utils.modern_ui import (
@@ -82,8 +78,6 @@ from utils.missions import (
     load_missions,
     restore_mission_progress,
     restore_mission_state,
-    serialize_mission_progress,
-    serialize_mission_state,
     show_missions_menu,
     update_mission_completions,
 )
@@ -96,6 +90,26 @@ from utils.mutations import (
 )
 from utils.events import ActiveEvent, EventDefinition, EventManager
 from utils.hunts import ActiveHunt, HuntDefinition, HuntManager
+from utils.pesca_autosave import autosave_state as _autosave_state_impl
+from utils.pesca_boot import (
+    build_default_unlocked_pools,
+    build_default_unlocked_rods,
+    select_default_pool,
+    select_starter_rod,
+)
+from utils.pesca_devtools_helpers import sorted_baits_for_dev_menu
+from utils.pesca_inventory_helpers import (
+    active_bait_summary as inventory_active_bait_summary,
+    active_cosmetics_summary as inventory_active_cosmetics_summary,
+    list_owned_baits as inventory_list_owned_baits,
+    sanitize_equipped_bait as inventory_sanitize_equipped_bait,
+)
+from utils.pesca_round_helpers import (
+    calculate_effective_rod_stats,
+    combine_fish_profiles,
+    filter_eligible_fish,
+    resolve_active_bait,
+)
 from utils.rods import Rod, load_rods
 from utils.save_system import (
     get_default_save_path,
@@ -112,7 +126,6 @@ from utils.save_system import (
     restore_selected_pool,
     restore_unlocked_pools,
     restore_xp,
-    save_game,
 )
 from utils.ui import clear_screen
 
@@ -154,7 +167,7 @@ def _reel_time_multiplier_from_pace(recent_catch_count: int) -> float:
 class FishingAttempt:
     """Descreve uma tentativa de pesca (o 'quick time event')."""
     sequence: List[str]
-    time_limit_s: float  # tempo TOTAL para completar a sequÃƒÂªncia
+    time_limit_s: float  # tempo TOTAL para completar a sequência
     allowed_keys: List[str]
 
 
@@ -169,8 +182,8 @@ class FishingResult:
 
 class FishProfile:
     """
-    Perfil de peixe: define como gerar a tentativa (sequÃƒÂªncia + tempo).
-    Isso deixa a lÃƒÂ³gica expansÃƒÂ­vel: cada peixe pode ter seu comportamento.
+    Perfil de peixe: define como gerar a tentativa (sequência + tempo).
+    Isso deixa a lógica expansível: cada peixe pode ter seu comportamento.
     """
     def __init__(
         self,
@@ -243,7 +256,7 @@ class FishingPool:
 
         available_rarities = list(fish_by_rarity.keys())
         if not available_rarities:
-            raise RuntimeError("Pool sem peixes disponÃƒÂ­veis.")
+            raise RuntimeError("Pool sem peixes disponíveis.")
 
         base_weights = rarity_weights_override or self.rarity_weights
         weights_by_rarity = _apply_luck_to_weights(
@@ -531,7 +544,7 @@ def load_hunts(
 
 def load_pools(base_dir: Path) -> List[FishingPool]:
     if not base_dir.exists():
-        raise FileNotFoundError(f"DiretÃƒÂ³rio de pools nÃƒÂ£o encontrado: {base_dir}")
+        raise FileNotFoundError(f"Diretório de pools não encontrado: {base_dir}")
 
     pools: List[FishingPool] = []
     for pool_dir in sorted(p for p in base_dir.iterdir() if p.is_dir()):
@@ -729,13 +742,13 @@ class KeyStream:
 
 
 # -----------------------------
-# LÃƒÂ³gica da Pesca (flexÃƒÂ­vel)
+# Lógica da Pesca (flexível)
 # -----------------------------
 
 class FishingMiniGame:
     """
     Controla uma tentativa (um peixe).
-    MantÃƒÂ©m estado mÃƒÂ­nimo e retorna um FishingResult no final.
+    Mantém estado mínimo e retorna um FishingResult no final.
     """
     def __init__(
         self,
@@ -781,9 +794,9 @@ class FishingMiniGame:
     def handle_key(self, key: str) -> Optional[FishingResult]:
         """
         Processa uma tecla. Retorna FishingResult se terminou (sucesso/erro),
-        ou None se ainda estÃƒÂ¡ em andamento.
+        ou None se ainda está em andamento.
         """
-        # sÃƒÂ³ considera teclas permitidas
+        # só considera teclas permitidas
         if key not in self.attempt.allowed_keys:
             return None
 
@@ -816,7 +829,7 @@ class FishingMiniGame:
 
         expected = self.expected_key()
         if expected is None:
-            # jÃƒÂ¡ terminou, ignora
+            # já terminou, ignora
             return None
 
         self.typed.append(key)
@@ -893,14 +906,14 @@ def render(
 
     # Mostra apenas as teclas restantes
     remaining = seq[idx:]
-    seq_str = " ".join(k.upper() for k in remaining) if remaining else "Ã¢Å“â€"
+    seq_str = " ".join(k.upper() for k in remaining) if remaining else "✔"
 
     # Barra de tempo
     total = max(0.001, total_time_s if total_time_s is not None else attempt.time_limit_s)
     ratio = max(0.0, min(1.0, time_left / total))
     bar_len = 20
     filled = int(bar_len * ratio)
-    bar = "Ã¢â€“Ë†" * filled + " " * (bar_len - filled)
+    bar = "▮" * filled + " " * (bar_len - filled)
 
     line = (
         f"Seq: {seq_str:<15} "
@@ -1631,17 +1644,20 @@ def show_dev_save_editor(
             continue
 
         if choice == "16":
-            available_baits = sorted(bait_by_id.values(), key=lambda bait: bait.name)
-            if not available_baits:
+            bait_rows = sorted_baits_for_dev_menu(
+                bait_by_id,
+                bait_inventory,
+                equipped_bait_id,
+            )
+            if not bait_rows:
                 print("Nao ha iscas carregadas.")
                 time.sleep(1)
                 continue
 
             clear_screen()
             print("=== Add bait ===")
-            for index, bait in enumerate(available_baits, start=1):
-                quantity = bait_inventory.get(bait.bait_id, 0)
-                marker = " (equipada)" if bait.bait_id == equipped_bait_id else ""
+            for index, (bait, quantity, is_equipped) in enumerate(bait_rows, start=1):
+                marker = " (equipada)" if is_equipped else ""
                 print(
                     f"{index}. [{bait.rarity}] {bait.name} x{quantity}{marker} "
                     f"- {format_bait_stats(bait)}"
@@ -1655,12 +1671,12 @@ def show_dev_save_editor(
                 print("Opcao invalida.")
                 time.sleep(1)
                 continue
-            if not (1 <= selected_index <= len(available_baits)):
+            if not (1 <= selected_index <= len(bait_rows)):
                 print("Opcao invalida.")
                 time.sleep(1)
                 continue
 
-            selected_bait = available_baits[selected_index - 1]
+            selected_bait = bait_rows[selected_index - 1][0]
             raw_quantity = input("Quantidade para adicionar (padrao 1): ").strip()
             if raw_quantity:
                 try:
@@ -1709,28 +1725,29 @@ def autosave_state(
     cosmetics_state: PlayerCosmeticsState,
     hunt_manager: Optional[HuntManager],
 ) -> None:
-    save_game(
+    _autosave_state_impl(
         save_path,
-        balance=balance,
-        inventory=inventory,
-        owned_rods=owned_rods,
-        equipped_rod=equipped_rod,
-        selected_pool=selected_pool,
-        unlocked_pools=sorted(unlocked_pools),
-        unlocked_rods=sorted(unlocked_rods),
-        level=level,
-        xp=xp,
-        discovered_fish=sorted(discovered_fish),
-        mission_state=serialize_mission_state(mission_state),
-        mission_progress=serialize_mission_progress(mission_progress),
-        crafting_state=serialize_crafting_state(crafting_state),
-        crafting_progress=serialize_crafting_progress(crafting_progress),
-        pool_market_orders=serialize_pool_market_orders(pool_market_orders),
-        hunt_state=hunt_manager.serialize_state() if hunt_manager else {},
-        bait_inventory=bait_inventory,
-        equipped_bait=equipped_bait_id,
-        bestiary_reward_state=serialize_bestiary_reward_state(bestiary_reward_state),
-        cosmetics_state=serialize_cosmetics_state(cosmetics_state),
+        balance,
+        inventory,
+        bait_inventory,
+        owned_rods,
+        equipped_rod,
+        equipped_bait_id,
+        selected_pool,
+        unlocked_pools,
+        unlocked_rods,
+        level,
+        xp,
+        discovered_fish,
+        mission_state,
+        mission_progress,
+        crafting_state,
+        crafting_progress,
+        pool_market_orders,
+        bestiary_reward_state,
+        cosmetics_state,
+        hunt_manager,
+        serialize_bestiary_reward_state,
     )
 
 
@@ -1766,41 +1783,25 @@ def show_inventory(
 
     def sanitize_equipped_bait() -> None:
         nonlocal equipped_bait_id
-        if not equipped_bait_id:
-            return
-        if equipped_bait_id not in bait_by_id:
-            equipped_bait_id = None
-            return
-        if bait_inventory.get(equipped_bait_id, 0) <= 0:
-            equipped_bait_id = None
+        equipped_bait_id = inventory_sanitize_equipped_bait(
+            equipped_bait_id,
+            bait_inventory,
+            bait_by_id,
+        )
 
     def list_owned_baits() -> List[tuple[str, BaitDefinition, int]]:
-        owned: List[tuple[str, BaitDefinition, int]] = []
-        for bait_id, quantity in bait_inventory.items():
-            if quantity <= 0:
-                continue
-            bait = bait_by_id.get(bait_id)
-            if bait is None:
-                continue
-            owned.append((bait_id, bait, quantity))
-        owned.sort(key=lambda item: item[1].name)
-        return owned
+        return inventory_list_owned_baits(bait_inventory, bait_by_id)
 
     def active_bait_summary() -> tuple[str, str]:
-        if not equipped_bait_id:
-            return "Nenhuma", ""
-        bait = bait_by_id.get(equipped_bait_id)
-        quantity = bait_inventory.get(equipped_bait_id, 0)
-        if bait is None or quantity <= 0:
-            return "Nenhuma", ""
-        return f"{bait.name} x{quantity}", format_bait_stats(bait)
+        return inventory_active_bait_summary(
+            equipped_bait_id,
+            bait_inventory,
+            bait_by_id,
+            format_bait_stats,
+        )
 
     def active_cosmetics_summary() -> tuple[str, str]:
-        color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_ui_color)
-        icon_def = UI_ICON_DEFINITIONS.get(cosmetics_state.equipped_ui_icon)
-        color_label = color_def.name if color_def is not None else cosmetics_state.equipped_ui_color
-        icon_label = icon_def.name if icon_def is not None else cosmetics_state.equipped_ui_icon
-        return color_label, icon_label
+        return inventory_active_cosmetics_summary(cosmetics_state)
 
     def open_cosmetics_menu() -> None:
         while True:
@@ -2228,11 +2229,11 @@ def run_fishing_round(
         if event_manager:
             event_manager.suppress_notifications(False)
             for note in event_manager.pop_notifications():
-                print(f"\nðŸ”” {note}")
+                print(f"\n🔔 {note}")
         if hunt_manager:
             hunt_manager.suppress_notifications(False)
             for note in hunt_manager.pop_notifications():
-                print(f"\nðŸ”” {note}")
+                print(f"\n🔔 {note}")
 
     while True:
         if event_manager:
@@ -2240,20 +2241,15 @@ def run_fishing_round(
         if hunt_manager:
             hunt_manager.suppress_notifications(True)
         clear_screen()
-        if equipped_bait_id and (
-            equipped_bait_id not in bait_by_id
-            or bait_inventory.get(equipped_bait_id, 0) <= 0
-        ):
-            bait_inventory.pop(equipped_bait_id, None)
-            equipped_bait_id = None
-        active_bait = bait_by_id.get(equipped_bait_id) if equipped_bait_id else None
-        active_bait_quantity = bait_inventory.get(equipped_bait_id, 0) if equipped_bait_id else 0
-        bait_control = active_bait.control if active_bait else 0.0
-        bait_luck = active_bait.luck if active_bait else 0.0
-        bait_kg_plus = active_bait.kg_plus if active_bait else 0.0
-        effective_control = equipped_rod.control + bait_control
-        effective_luck = equipped_rod.luck + bait_luck
-        effective_kg_max = max(0.01, equipped_rod.kg_max + bait_kg_plus)
+        equipped_bait_id, active_bait, active_bait_quantity = resolve_active_bait(
+            bait_inventory,
+            bait_by_id,
+            equipped_bait_id,
+        )
+        effective_control, effective_luck, effective_kg_max = calculate_effective_rod_stats(
+            equipped_rod,
+            active_bait,
+        )
         print("=== Pesca (WASD em tempo real) ===")
         print(f"Pool selecionada: {selected_pool.name}")
         print(f"Vara equipada: {equipped_rod.name}")
@@ -2275,16 +2271,9 @@ def run_fishing_round(
             else None
         )
         hunt_def = active_hunt.definition if active_hunt else None
-        event_fish = event_def.fish_profiles if event_def else []
         hunt_fish = hunt_def.fish_profiles if hunt_def else []
-        combined_fish = (
-            list(selected_pool.fish_profiles)
-            + list(event_fish)
-            + list(hunt_fish)
-        )
-        eligible_fish = [
-            fish for fish in combined_fish if fish.kg_min <= effective_kg_max
-        ]
+        combined_fish = combine_fish_profiles(selected_pool, event_def, hunt_def)
+        eligible_fish = filter_eligible_fish(combined_fish, kg_max=effective_kg_max)
         if not eligible_fish:
             ks.stop()
             print("Nenhum peixe desta pool pode ser fisgado com o setup atual.")
@@ -2353,7 +2342,7 @@ def run_fishing_round(
             else:
                 bait_inventory[equipped_bait_id] = consumed_bait_remaining
 
-        print("\nðŸŸ O peixe mordeu! Complete a sequÃªncia:")
+        print("\n🐟 O peixe mordeu! Complete a sequência:")
 
         if consumed_bait_name is not None:
             print(
@@ -2444,30 +2433,30 @@ def run_fishing_round(
                 if is_hunt_fish
                 else fish.name
             )
-            print(f"ðŸŽ£ VocÃª pescou: {fish_name_label} [{fish.rarity}] - {caught_kg:0.2f}kg")
+            print(f"🎣 Você pescou: {fish_name_label} [{fish.rarity}] - {caught_kg:0.2f}kg")
             if first_catch:
-                print(f"ðŸ“˜ Primeira captura registrada no bestiÃ¡rio: {fish_name_label}!")
+                print(f"📘 Primeira captura registrada no bestiário: {fish_name_label}!")
             if mutation:
                 print(
-                    "ðŸ§¬ MutaÃ§Ã£o: "
+                    "🧬 Mutação: "
                     f"{mutation.name} (x{mutation_xp_multiplier:0.2f} XP | "
                     f"x{mutation_gold_multiplier:0.2f} Gold)"
                 )
-            print(f"âœ¨ Ganhou {gained_xp} XP.")
+            print(f"✨ Ganhou {gained_xp} XP.")
             if level_ups:
-                print(f"â¬†ï¸  Subiu {level_ups} nÃ­vel(is)! Agora estÃ¡ no nÃ­vel {level}.")
+                print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
         else:
-            print(f"âŒ {result.reason}  ({result.elapsed_s:0.2f}s)")
-            print(f"SequÃªncia era: {' '.join(attempt.sequence)}")
+            print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
+            print(f"Sequência era: {' '.join(attempt.sequence)}")
             if result.typed:
-                print(f"VocÃª digitou:  {' '.join(result.typed)}")
+                print(f"Você digitou:  {' '.join(result.typed)}")
 
         flush_runtime_notifications()
         flush_input_buffer()
         while True:
             print("\n1. Pescar novamente")
             print("0. Voltar ao menu")
-            choice = input("Escolha uma opÃ§Ã£o: ").strip()
+            choice = input("Escolha uma opção: ").strip()
             if choice == "1":
                 if event_manager:
                     event_manager.suppress_notifications(True)
@@ -2476,7 +2465,7 @@ def run_fishing_round(
                 break
             if choice == "0" or choice == "":
                 return level, xp, equipped_bait_id
-            print("OpÃ§Ã£o invÃ¡lida.")
+            print("Opção inválida.")
 
     return level, xp, equipped_bait_id
 
@@ -2508,29 +2497,12 @@ def main(dev_mode: bool = False):
     baits_dir = Path(__file__).resolve().parent.parent / "baits"
     bait_crates = load_bait_crates(baits_dir)
     bait_by_id = build_bait_lookup(bait_crates)
-    starter_rod = next(
-        (
-            rod
-            for rod in available_rods
-            if rod.name.strip().lower() in {"vara de bambu", "vara bambu"}
-        ),
-        None,
-    )
-    if starter_rod is None:
-        default_rods = [rod for rod in available_rods if rod.unlocked_default]
-        starter_rod = min(default_rods or available_rods, key=lambda rod: rod.price)
+    starter_rod = select_starter_rod(available_rods)
     owned_rods = [starter_rod]
     equipped_rod = starter_rod
-    unlocked_rods = {
-        rod.name for rod in available_rods if rod.unlocked_default
-    } | {starter_rod.name}
-    selected_pool = next(
-        (pool for pool in pools if pool.folder.name.lower() == "lagoa"),
-        pools[0],
-    )
-    unlocked_pools = {
-        pool.name for pool in pools if pool.unlocked_default
-    } | {selected_pool.name}
+    unlocked_rods = build_default_unlocked_rods(available_rods, starter_rod)
+    selected_pool = select_default_pool(pools)
+    unlocked_pools = build_default_unlocked_pools(pools, selected_pool)
     missions_dir = Path(__file__).resolve().parent.parent / "missions"
     missions = load_missions(missions_dir)
     mission_state = restore_mission_state(None, missions)
@@ -2704,7 +2676,7 @@ def main(dev_mode: bool = False):
         ]
         if print_notifications:
             for note in notes:
-                print(f"\nðŸ”” {note}")
+                print(f"\n🔔 {note}")
         return notes
 
     def on_fish_caught_for_progress(fish: FishProfile, mutation: Optional[Mutation]) -> None:
@@ -2731,7 +2703,7 @@ def main(dev_mode: bool = False):
                 if amount > 0:
                     balance += amount
                     mission_progress.record_money_earned(amount)
-                    notes.append(f"ðŸ’° +R$ {amount:0.2f}")
+                    notes.append(f"💰 +R$ {amount:0.2f}")
                 continue
 
             if reward_type == "xp":
@@ -2741,9 +2713,9 @@ def main(dev_mode: bool = False):
                     amount = 0
                 if amount > 0:
                     level, xp, level_ups = apply_xp_gain(level, xp, amount)
-                    notes.append(f"âœ¨ +{amount} XP")
+                    notes.append(f"✨ +{amount} XP")
                     if level_ups:
-                        notes.append(f"â¬†ï¸ Subiu {level_ups} nivel(is)!")
+                        notes.append(f"⬆️ Subiu {level_ups} nivel(is)!")
                 continue
 
             if reward_type == "bait":
@@ -2758,7 +2730,7 @@ def main(dev_mode: bool = False):
                     and amount > 0
                 ):
                     bait_inventory[bait_id] = bait_inventory.get(bait_id, 0) + amount
-                    notes.append(f"ðŸª± +{amount}x {bait_by_id[bait_id].name}")
+                    notes.append(f"🪱 +{amount}x {bait_by_id[bait_id].name}")
                 continue
 
             if reward_type == "rod":
@@ -2772,9 +2744,9 @@ def main(dev_mode: bool = False):
                 unlocked_rods.add(rod.name)
                 if rod.name not in {owned.name for owned in owned_rods}:
                     owned_rods.append(rod)
-                    notes.append(f"ðŸª Vara adicionada: {rod.name}")
+                    notes.append(f"🪝 Vara adicionada: {rod.name}")
                 elif not was_unlocked:
-                    notes.append(f"ðŸª Vara desbloqueada: {rod.name}")
+                    notes.append(f"🪝 Vara desbloqueada: {rod.name}")
                 continue
 
             if reward_type == "ui_color":
@@ -3012,7 +2984,7 @@ def main(dev_mode: bool = False):
                 print("Saindo...")
                 break
             else:
-                print("OpÃ§Ã£o invÃ¡lida.")
+                print("Opção inválida.")
                 time.sleep(1)
             mission_progress.add_play_time(time.monotonic() - loop_start)
             play_time_recorded_for_loop = True

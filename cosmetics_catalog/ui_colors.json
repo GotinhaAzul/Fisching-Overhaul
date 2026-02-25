@@ -1,0 +1,26 @@
+{
+  "colors": [
+    {"color_id": "ocean_blue", "name": "Azul Oceano", "accent_color": "CYAN"},
+    {"color_id": "sunset_orange", "name": "Laranja Sunset", "accent_color": "LIGHTRED_EX"},
+    {"color_id": "emerald_green", "name": "Verde Esmeralda", "accent_color": "LIGHTGREEN_EX"},
+    {"color_id": "golden", "name": "Dourado", "accent_color": "YELLOW"},
+    {"color_id": "rose_pink", "name": "Rosa", "accent_color": "LIGHTMAGENTA_EX"},
+    {"color_id": "arctic_white", "name": "Branco Artico", "accent_color": "WHITE"},
+    {"color_id": "storm_gray", "name": "Cinza Tempestade", "accent_color": "LIGHTBLACK_EX"},
+    {"color_id": "lava_red", "name": "Vermelho Lava", "accent_color": "RED"},
+    {"color_id": "royal_purple", "name": "Roxo Real", "accent_color": "MAGENTA"},
+    {"color_id": "neon_lime", "name": "Lima Neon", "accent_color": "GREEN"},
+    {"color_id": "lagoon_mint", "name": "Menta da Lagoa", "accent_color": "LIGHTGREEN_EX"},
+    {"color_id": "open_sea_teal", "name": "Azul do Mar Aberto", "accent_color": "CYAN"},
+    {"color_id": "river_azure", "name": "Azul Correnteza", "accent_color": "LIGHTBLUE_EX"},
+    {"color_id": "reef_coral", "name": "Coral do Recife", "accent_color": "LIGHTRED_EX"},
+    {"color_id": "swamp_olive", "name": "Oliva do Pantano", "accent_color": "YELLOW"},
+    {"color_id": "crystal_violet", "name": "Violeta Cristalino", "accent_color": "LIGHTMAGENTA_EX"},
+    {"color_id": "brine_amber", "name": "Ambar Salmoura", "accent_color": "YELLOW"},
+    {"color_id": "vertigo_indigo", "name": "Indigo Vertigo", "accent_color": "BLUE"},
+    {"color_id": "abyss_navy", "name": "Marinho Abissal", "accent_color": "BLUE"},
+    {"color_id": "desolate_silver", "name": "Prata Desolada", "accent_color": "WHITE"},
+    {"color_id": "farseas_crimson", "name": "Carmesim de Farseas", "accent_color": "RED"},
+    {"color_id": "cafeteria_mocha", "name": "Mocha da Cafeteria", "accent_color": "LIGHTYELLOW_EX"}
+  ]
+}

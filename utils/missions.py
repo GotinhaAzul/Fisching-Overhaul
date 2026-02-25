@@ -8,6 +8,19 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.levels import apply_xp_gain
+from utils.requirements_common import (
+    collect_countable_fish_names,
+    completion_percent,
+    count_fish_mutation_pair,
+    count_name_case_insensitive,
+    fish_counts_for_bestiary_completion,
+    fish_mutation_key,
+    fish_name_matches,
+    pool_counts_for_bestiary_completion,
+    safe_float,
+    safe_int,
+    seconds_from_requirement,
+)
 from utils.ui import clear_screen, print_spaced_lines
 
 if TYPE_CHECKING:
@@ -763,6 +776,351 @@ def _required_spend_payment_amount(
     return required_amount
 
 
+def _format_earn_money_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = int(_safe_float(requirement.get("amount")))
+    current = max(0, int(progress.total_money_earned - baseline_progress.total_money_earned))
+    return "Acumular dinheiro", current, target, current >= target
+
+
+def _format_spend_money_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = int(_safe_float(requirement.get("amount")))
+    current = max(0, int(progress.total_money_spent - baseline_progress.total_money_spent))
+    return "Pagar dinheiro", current, target, current >= target
+
+
+def _format_level_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("level"))
+    current = level
+    return "Nível", current, target, current >= target
+
+
+def _format_catch_fish_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    fish_name = requirement.get("fish_name")
+    if isinstance(fish_name, str):
+        current = max(
+            0,
+            _count_fish_name(progress.fish_caught_by_name, fish_name)
+            - _count_fish_name(baseline_progress.fish_caught_by_name, fish_name),
+        )
+        return f"Capturar {fish_name}", current, target, current >= target
+    current = max(0, progress.fish_caught - baseline_progress.fish_caught)
+    return "Capturar peixes", current, target, current >= target
+
+
+def _format_deliver_fish_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    fish_name = requirement.get("fish_name")
+    if isinstance(fish_name, str):
+        current = max(
+            0,
+            _count_fish_name(progress.fish_delivered_by_name, fish_name)
+            - _count_fish_name(baseline_progress.fish_delivered_by_name, fish_name),
+        )
+        return f"Entregar {fish_name}", current, target, current >= target
+    current = max(0, progress.fish_delivered - baseline_progress.fish_delivered)
+    return "Entregar peixes", current, target, current >= target
+
+
+def _format_sell_fish_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    fish_name = requirement.get("fish_name")
+    if isinstance(fish_name, str):
+        current = max(
+            0,
+            _count_fish_name(progress.fish_sold_by_name, fish_name)
+            - _count_fish_name(baseline_progress.fish_sold_by_name, fish_name),
+        )
+        return f"Vender {fish_name}", current, target, current >= target
+    current = max(0, progress.fish_sold - baseline_progress.fish_sold)
+    return "Vender peixes", current, target, current >= target
+
+
+def _format_catch_mutation_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    mutation_name = requirement.get("mutation_name")
+    if isinstance(mutation_name, str):
+        current = max(
+            0,
+            progress.mutations_caught_by_name.get(mutation_name, 0)
+            - baseline_progress.mutations_caught_by_name.get(mutation_name, 0),
+        )
+        return f"Capturar mutação {mutation_name}", current, target, current >= target
+    current = max(0, progress.mutated_fish_caught - baseline_progress.mutated_fish_caught)
+    return "Capturar mutações", current, target, current >= target
+
+
+def _format_deliver_mutation_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    mutation_name = requirement.get("mutation_name")
+    if isinstance(mutation_name, str):
+        current = max(
+            0,
+            progress.mutations_delivered_by_name.get(mutation_name, 0)
+            - baseline_progress.mutations_delivered_by_name.get(mutation_name, 0),
+        )
+        return f"Entregar mutação {mutation_name}", current, target, current >= target
+    current = max(0, progress.mutated_fish_delivered - baseline_progress.mutated_fish_delivered)
+    return "Entregar mutações", current, target, current >= target
+
+
+def _format_catch_fish_with_mutation_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    fish_name = requirement.get("fish_name")
+    if isinstance(fish_name, str):
+        current = max(
+            0,
+            _count_fish_name(progress.fish_caught_with_mutation_by_name, fish_name)
+            - _count_fish_name(baseline_progress.fish_caught_with_mutation_by_name, fish_name),
+        )
+        return f"Capturar {fish_name} com mutação", current, target, current >= target
+    current = max(0, progress.mutated_fish_caught - baseline_progress.mutated_fish_caught)
+    return "Capturar peixe com mutação", current, target, current >= target
+
+
+def _format_deliver_fish_with_mutation_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    fish_name = requirement.get("fish_name")
+    mutation_name = requirement.get("mutation_name")
+    if isinstance(fish_name, str) and isinstance(mutation_name, str):
+        current = max(
+            0,
+            _count_fish_mutation_pair(
+                progress.fish_delivered_with_mutation_pair_counts,
+                fish_name=fish_name,
+                mutation_name=mutation_name,
+            )
+            - _count_fish_mutation_pair(
+                baseline_progress.fish_delivered_with_mutation_pair_counts,
+                fish_name=fish_name,
+                mutation_name=mutation_name,
+            ),
+        )
+        return (
+            f"Entregar {fish_name} com mutação {mutation_name}",
+            current,
+            target,
+            current >= target,
+        )
+    if isinstance(fish_name, str):
+        current = max(
+            0,
+            _count_fish_name(progress.fish_delivered_with_mutation_by_name, fish_name)
+            - _count_fish_name(baseline_progress.fish_delivered_with_mutation_by_name, fish_name),
+        )
+        return f"Entregar {fish_name} com mutação", current, target, current >= target
+    if isinstance(mutation_name, str):
+        current = max(
+            0,
+            progress.mutations_delivered_by_name.get(mutation_name, 0)
+            - baseline_progress.mutations_delivered_by_name.get(mutation_name, 0),
+        )
+        return f"Entregar mutação {mutation_name}", current, target, current >= target
+    current = max(0, progress.mutated_fish_delivered - baseline_progress.mutated_fish_delivered)
+    return "Entregar peixe com mutação", current, target, current >= target
+
+
+def _format_play_time_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(_seconds_from_requirement(requirement))
+    current = max(0, int(progress.play_time_seconds - baseline_progress.play_time_seconds))
+    return "Tempo de jogo (s)", current, target, current >= target
+
+
+def _format_missions_completed_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("count"))
+    current = max(
+        0,
+        len({mid for mid in completed_missions if mid != current_mission_id}) - completed_baseline,
+    )
+    return "Missões feitas", current, target, current >= target
+
+
+def _format_bestiary_percent_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("percent"))
+    current = int(_calculate_bestiary_percent(pools, discovered_fish))
+    return "Compleção do bestiário", current, target, current >= target
+
+
+def _format_bestiary_pool_percent_requirement(
+    requirement: Dict[str, object],
+    progress: MissionProgress,
+    completed_missions: Set[str],
+    current_mission_id: str,
+    *,
+    baseline_progress: MissionProgress,
+    completed_baseline: int,
+    level: int,
+    pools: Sequence["FishingPool"],
+    discovered_fish: Set[str],
+) -> Tuple[str, int, int, bool]:
+    target = _safe_int(requirement.get("percent"))
+    pool_name = requirement.get("pool_name")
+    current = int(_calculate_pool_percent(pools, discovered_fish, pool_name))
+    label = f"Compleção da pool {pool_name}" if isinstance(pool_name, str) else "Compleção da pool"
+    return label, current, target, current >= target
+
+
+_REQUIREMENT_FORMATTERS = {
+    "earn_money": _format_earn_money_requirement,
+    "spend_money": _format_spend_money_requirement,
+    "level": _format_level_requirement,
+    "catch_fish": _format_catch_fish_requirement,
+    "deliver_fish": _format_deliver_fish_requirement,
+    "sell_fish": _format_sell_fish_requirement,
+    "catch_mutation": _format_catch_mutation_requirement,
+    "deliver_mutation": _format_deliver_mutation_requirement,
+    "catch_fish_with_mutation": _format_catch_fish_with_mutation_requirement,
+    "deliver_fish_with_mutation": _format_deliver_fish_with_mutation_requirement,
+    "play_time": _format_play_time_requirement,
+    "missions_completed": _format_missions_completed_requirement,
+    "bestiary_percent": _format_bestiary_percent_requirement,
+    "bestiary_pool_percent": _format_bestiary_pool_percent_requirement,
+}
+
+
 def _format_requirement(
     requirement: Dict[str, object],
     progress: MissionProgress,
@@ -776,153 +1134,20 @@ def _format_requirement(
     discovered_fish: Set[str],
 ) -> Tuple[str, int, int, bool]:
     requirement_type = requirement.get("type")
-    if requirement_type == "earn_money":
-        target = int(_safe_float(requirement.get("amount")))
-        current = max(0, int(progress.total_money_earned - baseline_progress.total_money_earned))
-        return "Acumular dinheiro", current, target, current >= target
-    if requirement_type == "spend_money":
-        target = int(_safe_float(requirement.get("amount")))
-        current = max(0, int(progress.total_money_spent - baseline_progress.total_money_spent))
-        return "Pagar dinheiro", current, target, current >= target
-    if requirement_type == "level":
-        target = _safe_int(requirement.get("level"))
-        current = level
-        return "Nível", current, target, current >= target
-    if requirement_type == "catch_fish":
-        target = _safe_int(requirement.get("count"))
-        fish_name = requirement.get("fish_name")
-        if isinstance(fish_name, str):
-            current = max(
-                0,
-                _count_fish_name(progress.fish_caught_by_name, fish_name)
-                - _count_fish_name(baseline_progress.fish_caught_by_name, fish_name),
-            )
-            return f"Capturar {fish_name}", current, target, current >= target
-        current = max(0, progress.fish_caught - baseline_progress.fish_caught)
-        return "Capturar peixes", current, target, current >= target
-    if requirement_type == "deliver_fish":
-        target = _safe_int(requirement.get("count"))
-        fish_name = requirement.get("fish_name")
-        if isinstance(fish_name, str):
-            current = max(
-                0,
-                _count_fish_name(progress.fish_delivered_by_name, fish_name)
-                - _count_fish_name(baseline_progress.fish_delivered_by_name, fish_name),
-            )
-            return f"Entregar {fish_name}", current, target, current >= target
-        current = max(0, progress.fish_delivered - baseline_progress.fish_delivered)
-        return "Entregar peixes", current, target, current >= target
-    if requirement_type == "sell_fish":
-        target = _safe_int(requirement.get("count"))
-        fish_name = requirement.get("fish_name")
-        if isinstance(fish_name, str):
-            current = max(
-                0,
-                _count_fish_name(progress.fish_sold_by_name, fish_name)
-                - _count_fish_name(baseline_progress.fish_sold_by_name, fish_name),
-            )
-            return f"Vender {fish_name}", current, target, current >= target
-        current = max(0, progress.fish_sold - baseline_progress.fish_sold)
-        return "Vender peixes", current, target, current >= target
-    if requirement_type == "catch_mutation":
-        target = _safe_int(requirement.get("count"))
-        mutation_name = requirement.get("mutation_name")
-        if isinstance(mutation_name, str):
-            current = max(
-                0,
-                progress.mutations_caught_by_name.get(mutation_name, 0)
-                - baseline_progress.mutations_caught_by_name.get(mutation_name, 0),
-            )
-            return f"Capturar mutação {mutation_name}", current, target, current >= target
-        current = max(0, progress.mutated_fish_caught - baseline_progress.mutated_fish_caught)
-        return "Capturar mutações", current, target, current >= target
-    if requirement_type == "deliver_mutation":
-        target = _safe_int(requirement.get("count"))
-        mutation_name = requirement.get("mutation_name")
-        if isinstance(mutation_name, str):
-            current = max(
-                0,
-                progress.mutations_delivered_by_name.get(mutation_name, 0)
-                - baseline_progress.mutations_delivered_by_name.get(mutation_name, 0),
-            )
-            return f"Entregar mutação {mutation_name}", current, target, current >= target
-        current = max(0, progress.mutated_fish_delivered - baseline_progress.mutated_fish_delivered)
-        return "Entregar mutações", current, target, current >= target
-    if requirement_type == "catch_fish_with_mutation":
-        target = _safe_int(requirement.get("count"))
-        fish_name = requirement.get("fish_name")
-        if isinstance(fish_name, str):
-            current = max(
-                0,
-                _count_fish_name(progress.fish_caught_with_mutation_by_name, fish_name)
-                - _count_fish_name(baseline_progress.fish_caught_with_mutation_by_name, fish_name),
-            )
-            return f"Capturar {fish_name} com mutação", current, target, current >= target
-        current = max(0, progress.mutated_fish_caught - baseline_progress.mutated_fish_caught)
-        return "Capturar peixe com mutação", current, target, current >= target
-    if requirement_type == "deliver_fish_with_mutation":
-        target = _safe_int(requirement.get("count"))
-        fish_name = requirement.get("fish_name")
-        mutation_name = requirement.get("mutation_name")
-        if isinstance(fish_name, str) and isinstance(mutation_name, str):
-            current = max(
-                0,
-                _count_fish_mutation_pair(
-                    progress.fish_delivered_with_mutation_pair_counts,
-                    fish_name=fish_name,
-                    mutation_name=mutation_name,
-                )
-                - _count_fish_mutation_pair(
-                    baseline_progress.fish_delivered_with_mutation_pair_counts,
-                    fish_name=fish_name,
-                    mutation_name=mutation_name,
-                ),
-            )
-            return (
-                f"Entregar {fish_name} com muta??o {mutation_name}",
-                current,
-                target,
-                current >= target,
-            )
-        if isinstance(fish_name, str):
-            current = max(
-                0,
-                _count_fish_name(progress.fish_delivered_with_mutation_by_name, fish_name)
-                - _count_fish_name(baseline_progress.fish_delivered_with_mutation_by_name, fish_name),
-            )
-            return f"Entregar {fish_name} com muta??o", current, target, current >= target
-        if isinstance(mutation_name, str):
-            current = max(
-                0,
-                progress.mutations_delivered_by_name.get(mutation_name, 0)
-                - baseline_progress.mutations_delivered_by_name.get(mutation_name, 0),
-            )
-            return f"Entregar muta??o {mutation_name}", current, target, current >= target
-        current = max(0, progress.mutated_fish_delivered - baseline_progress.mutated_fish_delivered)
-        return "Entregar peixe com muta??o", current, target, current >= target
-    if requirement_type == "play_time":
-        target = _safe_int(_seconds_from_requirement(requirement))
-        current = max(0, int(progress.play_time_seconds - baseline_progress.play_time_seconds))
-        return "Tempo de jogo (s)", current, target, current >= target
-    if requirement_type == "missions_completed":
-        target = _safe_int(requirement.get("count"))
-        current = max(
-            0,
-            len({mid for mid in completed_missions if mid != current_mission_id}) - completed_baseline,
-        )
-        return "Missões feitas", current, target, current >= target
-    if requirement_type == "bestiary_percent":
-        target = _safe_int(requirement.get("percent"))
-        current = int(_calculate_bestiary_percent(pools, discovered_fish))
-        return "Compleção do bestiário", current, target, current >= target
-    if requirement_type == "bestiary_pool_percent":
-        target = _safe_int(requirement.get("percent"))
-        pool_name = requirement.get("pool_name")
-        current = int(_calculate_pool_percent(pools, discovered_fish, pool_name))
-        label = f"Compleção da pool {pool_name}" if isinstance(pool_name, str) else "Compleção da pool"
-        return label, current, target, current >= target
-    return "Requisito desconhecido", 0, 0, False
-
+    formatter = _REQUIREMENT_FORMATTERS.get(requirement_type)
+    if formatter is None:
+        return "Requisito desconhecido", 0, 0, False
+    return formatter(
+        requirement,
+        progress,
+        completed_missions,
+        current_mission_id,
+        baseline_progress=baseline_progress,
+        completed_baseline=completed_baseline,
+        level=level,
+        pools=pools,
+        discovered_fish=discovered_fish,
+    )
 
 def _check_requirement(
     requirement: Dict[str, object],
@@ -965,17 +1190,8 @@ def _calculate_bestiary_percent(
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
 ) -> float:
-    all_fish: Set[str] = set()
-    for pool in pools:
-        if not _pool_counts_for_bestiary_completion(pool):
-            continue
-        for fish in pool.fish_profiles:
-            if _fish_counts_for_bestiary_completion(fish):
-                all_fish.add(fish.name)
-    if not all_fish:
-        return 0.0
-    discovered = sum(1 for name in all_fish if name in discovered_fish)
-    return (discovered / len(all_fish)) * 100
+    all_fish = collect_countable_fish_names(pools)
+    return completion_percent(all_fish, discovered_fish)
 
 
 def _calculate_pool_percent(
@@ -995,42 +1211,27 @@ def _calculate_pool_percent(
         for fish in pool.fish_profiles
         if _fish_counts_for_bestiary_completion(fish)
     }
-    if not fish_names:
-        return 0.0
-    discovered = sum(1 for name in fish_names if name in discovered_fish)
-    return (discovered / len(fish_names)) * 100
+    return completion_percent(fish_names, discovered_fish)
 
 
 def _pool_counts_for_bestiary_completion(pool: "FishingPool") -> bool:
-    return bool(getattr(pool, "counts_for_bestiary_completion", True))
+    return pool_counts_for_bestiary_completion(pool)
 
 
 def _fish_counts_for_bestiary_completion(fish: "FishProfile") -> bool:
-    return bool(getattr(fish, "counts_for_bestiary_completion", True))
+    return fish_counts_for_bestiary_completion(fish)
 
 
 def _seconds_from_requirement(requirement: Dict[str, object]) -> float:
-    if "seconds" in requirement:
-        return _safe_float(requirement.get("seconds"))
-    if "minutes" in requirement:
-        return _safe_float(requirement.get("minutes")) * 60
-    if "hours" in requirement:
-        return _safe_float(requirement.get("hours")) * 3600
-    return _safe_float(requirement.get("time_seconds"))
+    return seconds_from_requirement(requirement, clamp_non_negative=False)
 
 
 def _safe_float(value: object) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
+    return safe_float(value)
 
 
 def _safe_int(value: object) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return 0
+    return safe_int(value)
 
 
 def _safe_str_int_map(value: object) -> Dict[str, int]:
@@ -1050,16 +1251,11 @@ def _extract_string_list(value: object) -> List[str]:
 
 
 def _fish_name_matches(actual_name: str, expected_name: str) -> bool:
-    return actual_name.casefold() == expected_name.casefold()
+    return fish_name_matches(actual_name, expected_name)
 
 
 def _count_fish_name(counts: Dict[str, int], fish_name: str) -> int:
-    normalized_name = fish_name.casefold()
-    return sum(
-        count
-        for name, count in counts.items()
-        if name.casefold() == normalized_name
-    )
+    return count_name_case_insensitive(counts, fish_name)
 
 
 def _count_fish_mutation_pair(
@@ -1068,22 +1264,15 @@ def _count_fish_mutation_pair(
     fish_name: str,
     mutation_name: str,
 ) -> int:
-    normalized_name = fish_name.casefold()
-    total = 0
-    for pair_key, count in counts.items():
-        fish_part, separator, mutation_part = pair_key.partition("::")
-        if separator != "::":
-            continue
-        if fish_part.casefold() != normalized_name:
-            continue
-        if mutation_part != mutation_name:
-            continue
-        total += count
-    return total
+    return count_fish_mutation_pair(
+        counts,
+        fish_name=fish_name,
+        mutation_name=mutation_name,
+    )
 
 
 def _fish_mutation_key(fish_name: str, mutation_name: str) -> str:
-    return f"{fish_name}::{mutation_name}"
+    return fish_mutation_key(fish_name, mutation_name)
 
 
 def _random_kg(fish: "FishProfile") -> float:

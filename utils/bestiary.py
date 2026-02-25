@@ -45,6 +45,32 @@ def _read_choice(
     ).lower()
 
 
+def _slice_paged_items(
+    items: Sequence[object],
+    page: int,
+    page_size: int,
+) -> tuple[Sequence[object], int, int]:
+    page_slice = get_page_slice(len(items), page, page_size)
+    page_items = items[page_slice.start:page_slice.end]
+    return page_items, page_slice.page, page_slice.total_pages
+
+
+def _add_pagination_options(options: List[MenuOption], total_pages: int) -> None:
+    if total_pages <= 1:
+        return
+    options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
+    options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+
+
+def _print_pagination_controls(total_pages: int) -> None:
+    if total_pages <= 1:
+        return
+    print(
+        f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
+        f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
+    )
+
+
 @dataclass(frozen=True)
 class FishBestiarySection:
     title: str
@@ -259,21 +285,14 @@ def _show_fish_bestiary_flat(
             input("\nEnter para voltar.")
             return
 
-        page_slice = get_page_slice(len(ordered_fish), page, page_size)
-        page = page_slice.page
-        total_pages = page_slice.total_pages
-        start = page_slice.start
-        end = page_slice.end
-        page_items = ordered_fish[start:end]
+        page_items, page, total_pages = _slice_paged_items(ordered_fish, page, page_size)
         if use_modern_ui():
             clear_screen()
             options = [
                 MenuOption(str(idx), fish.name if fish.name in unlocked_fish else "???")
                 for idx, fish in enumerate(page_items, start=1)
             ]
-            if total_pages > 1:
-                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
-                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            _add_pagination_options(options, total_pages)
             options.append(MenuOption("0", "Voltar"))
             print_menu_panel(
                 "BESTIARIO",
@@ -332,11 +351,7 @@ def _show_fish_bestiary_flat(
             label = fish.name if fish.name in unlocked_fish else "???"
             print(f"{idx}. {label}")
 
-        if total_pages > 1:
-            print(
-                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
-                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
-            )
+        _print_pagination_controls(total_pages)
         print("0. Voltar")
         choice = _read_choice("Escolha um peixe: ", total_pages)
         if choice == "0":
@@ -413,12 +428,7 @@ def _show_fish_bestiary_section(
             input("\nEnter para voltar.")
             return
 
-        page_slice = get_page_slice(len(ordered_fish), page, page_size)
-        page = page_slice.page
-        total_pages = page_slice.total_pages
-        start = page_slice.start
-        end = page_slice.end
-        page_items = ordered_fish[start:end]
+        page_items, page, total_pages = _slice_paged_items(ordered_fish, page, page_size)
         if use_modern_ui():
             clear_screen()
             if section.counts_for_completion:
@@ -442,9 +452,7 @@ def _show_fish_bestiary_section(
                 )
                 for idx, fish in enumerate(page_items, start=1)
             ]
-            if total_pages > 1:
-                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
-                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            _add_pagination_options(options, total_pages)
             if claimable_count > 0 and claim_pool_rewards is not None:
                 options.append(
                     MenuOption(
@@ -523,11 +531,7 @@ def _show_fish_bestiary_section(
                 f"{idx}. {_fish_label(fish, unlocked_fish, section.completion_fish_names)}"
             )
 
-        if total_pages > 1:
-            print(
-                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
-                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
-            )
+        _print_pagination_controls(total_pages)
         if claimable_count > 0 and claim_pool_rewards is not None:
             print(f"G. Resgatar recompensa da pool ({claimable_count})")
         print("0. Voltar")
@@ -617,12 +621,7 @@ def show_fish_bestiary(
             input("\nEnter para voltar.")
             return
 
-        page_slice = get_page_slice(len(sections), page, page_size)
-        page = page_slice.page
-        total_pages = page_slice.total_pages
-        start = page_slice.start
-        end = page_slice.end
-        page_items = sections[start:end]
+        page_items, page, total_pages = _slice_paged_items(sections, page, page_size)
         if use_modern_ui():
             clear_screen()
             options: List[MenuOption] = []
@@ -645,9 +644,7 @@ def show_fish_bestiary(
                 if pool_claimable_count > 0:
                     label = f"{label} 🎁"
                 options.append(MenuOption(str(idx), label))
-            if total_pages > 1:
-                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
-                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            _add_pagination_options(options, total_pages)
             if global_claimable_count > 0 and claim_global_rewards is not None:
                 options.append(
                     MenuOption(
@@ -739,11 +736,7 @@ def show_fish_bestiary(
                 label = f"{label} 🎁"
             print(f"{idx}. {label}")
 
-        if total_pages > 1:
-            print(
-                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
-                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
-            )
+        _print_pagination_controls(total_pages)
         if global_claimable_count > 0 and claim_global_rewards is not None:
             print(f"G. Resgatar recompensa global ({global_claimable_count})")
         print("0. Voltar")
@@ -823,12 +816,7 @@ def show_rods_bestiary(
             input("\nEnter para voltar.")
             return
 
-        page_slice = get_page_slice(len(rods), page, page_size)
-        page = page_slice.page
-        total_pages = page_slice.total_pages
-        start = page_slice.start
-        end = page_slice.end
-        page_items = rods[start:end]
+        page_items, page, total_pages = _slice_paged_items(rods, page, page_size)
         if use_modern_ui():
             clear_screen()
             options = []
@@ -840,9 +828,7 @@ def show_rods_bestiary(
                 else:
                     label = rod.name
                 options.append(MenuOption(str(idx), label))
-            if total_pages > 1:
-                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
-                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            _add_pagination_options(options, total_pages)
             if claimable_count > 0 and claim_rewards is not None:
                 options.append(
                     MenuOption("G", f"Resgatar recompensas (🎁 {claimable_count})")
@@ -921,11 +907,7 @@ def show_rods_bestiary(
                 label = rod.name
             print(f"{idx}. {label}")
 
-        if total_pages > 1:
-            print(
-                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
-                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
-            )
+        _print_pagination_controls(total_pages)
         if claimable_count > 0 and claim_rewards is not None:
             print(f"G. Resgatar recompensas (🎁 {claimable_count})")
         print("0. Voltar")
@@ -1005,12 +987,7 @@ def show_pools_bestiary(
             input("\nEnter para voltar.")
             return
 
-        page_slice = get_page_slice(len(visible_pools), page, page_size)
-        page = page_slice.page
-        total_pages = page_slice.total_pages
-        start = page_slice.start
-        end = page_slice.end
-        page_items = visible_pools[start:end]
+        page_items, page, total_pages = _slice_paged_items(visible_pools, page, page_size)
         if use_modern_ui():
             clear_screen()
             options = []
@@ -1022,9 +999,7 @@ def show_pools_bestiary(
                 else:
                     label = pool.name
                 options.append(MenuOption(str(idx), label))
-            if total_pages > 1:
-                options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proxima pagina"))
-                options.append(MenuOption(PAGE_PREV_KEY.upper(), "Pagina anterior"))
+            _add_pagination_options(options, total_pages)
             if claimable_count > 0 and claim_rewards is not None:
                 options.append(
                     MenuOption("G", f"Resgatar recompensas (🎁 {claimable_count})")
@@ -1103,11 +1078,7 @@ def show_pools_bestiary(
                 label = pool.name
             print(f"{idx}. {label}")
 
-        if total_pages > 1:
-            print(
-                f"\n{PAGE_PREV_KEY.upper()}. Pagina anterior | "
-                f"{PAGE_NEXT_KEY.upper()}. Proxima pagina"
-            )
+        _print_pagination_controls(total_pages)
         if claimable_count > 0 and claim_rewards is not None:
             print(f"G. Resgatar recompensas (🎁 {claimable_count})")
         print("0. Voltar")

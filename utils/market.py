@@ -690,6 +690,339 @@ def show_market(
                     print(f"  {stats_label}")
             input("\nEnter para continuar.")
 
+    def _handle_sell_action(current_balance: float) -> float:
+        balance_local = current_balance
+        clear_screen()
+        if not inventory:
+            print("Inventario vazio.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        print_spaced_lines([
+            "Escolha como vender:",
+            "1. Vender peixe individual",
+            "2. Vender inventario inteiro",
+            "0. Voltar",
+        ])
+
+        sell_choice = input("Escolha uma opcao: ").strip()
+        if sell_choice == "0":
+            return balance_local
+
+        if sell_choice == "1":
+            clear_screen()
+            print_spaced_lines(["Escolha o peixe para vender:"])
+            for index, entry in enumerate(inventory, start=1):
+                value = calculate_entry_value(entry)
+                mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+                print(
+                    f"{index}. {entry.name} "
+                    f"({entry.kg:0.2f}kg){mutation_label} - {format_currency(value)}"
+                )
+
+            selection = input("Digite o numero do peixe: ").strip()
+            if not selection.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                return balance_local
+
+            selected_index = int(selection)
+            if not (1 <= selected_index <= len(inventory)):
+                print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                return balance_local
+
+            entry = inventory.pop(selected_index - 1)
+            _mark_inventory_fish_counts_dirty()
+            value = calculate_entry_value(entry)
+            balance_local += value
+            if on_money_earned:
+                on_money_earned(value)
+            if on_fish_sold:
+                on_fish_sold(entry)
+            if on_fish_delivered:
+                on_fish_delivered(entry)
+            mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+            print(
+                f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                f"por {format_currency(value)}."
+            )
+            input("\nEnter para voltar.")
+            return balance_local
+
+        if sell_choice == "2":
+            clear_screen()
+            total = sum(calculate_entry_value(entry) for entry in inventory)
+            if on_fish_sold or on_fish_delivered:
+                for entry in inventory:
+                    if on_fish_sold:
+                        on_fish_sold(entry)
+                    if on_fish_delivered:
+                        on_fish_delivered(entry)
+            inventory.clear()
+            _mark_inventory_fish_counts_dirty()
+            balance_local += total
+            if on_money_earned:
+                on_money_earned(total)
+            print(f"Inventario vendido por {format_currency(total)}.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        print("Opcao invalida.")
+        input("\nEnter para voltar.")
+        return balance_local
+
+    def _handle_buy_rod_action(current_balance: float) -> float:
+        balance_local = current_balance
+        clear_screen()
+        owned_rod_names = {rod.name for rod in owned_rods}
+        rods_for_sale = [
+            rod
+            for rod in available_rods
+            if rod.name not in owned_rod_names
+            and (
+                unlocked_rods is None
+                or rod.name in resolved_unlocked_rods
+                or (
+                    bool(rod.unlocks_with_pool)
+                    and rod.unlocks_with_pool.strip().casefold()
+                    in {selected_pool_id, selected_pool_name}
+                    and (
+                        selected_pool.name in resolved_unlocked_pools
+                        or selected_pool_id in normalized_unlocked_pools
+                        or selected_pool_name in normalized_unlocked_pools
+                    )
+                )
+            )
+        ]
+        if not rods_for_sale:
+            print("Nenhuma vara disponivel para compra.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        print_spaced_lines(["Varas disponiveis:"])
+        for index, rod in enumerate(rods_for_sale, start=1):
+            print(format_rod_entry(index, rod))
+            print(f"   {rod.description}")
+            print()
+
+        selection = input("Digite o numero da vara: ").strip()
+        if not selection.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        selected_index = int(selection)
+        if not (1 <= selected_index <= len(rods_for_sale)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        rod = rods_for_sale[selected_index - 1]
+        if balance_local < rod.price:
+            print("Saldo insuficiente.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        balance_local -= rod.price
+        if on_money_spent:
+            on_money_spent(rod.price)
+        owned_rods.append(rod)
+        print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
+        input("\nEnter para voltar.")
+        return balance_local
+
+    def _handle_order_action(
+        current_balance: float,
+        current_level: int,
+        current_xp: int,
+    ) -> tuple[float, int, int]:
+        balance_local = current_balance
+        level_local = current_level
+        xp_local = current_xp
+        clear_screen()
+        order = get_pool_market_order(selected_pool, pool_orders)
+        if not order:
+            print("Nao ha pedido disponivel para esta pool agora.")
+            input("\nEnter para voltar.")
+            return balance_local, level_local, xp_local
+
+        matching_entries = [
+            entry
+            for entry in inventory
+            if entry.name == order.fish_name
+        ]
+        print_spaced_lines([
+            "📦 Pedido Atual ",
+            f"Pool: {order.pool_name}",
+            f"Solicitacao: {order.required_count}x {order.fish_name} [{order.rarity}]",
+            f"Disponivel no inventario: {len(matching_entries)}",
+            f"Recompensa: {format_currency(order.reward_money)} + {order.reward_xp} XP",
+        ])
+
+        if len(matching_entries) < order.required_count:
+            print("Voce ainda nao tem peixes suficientes para cumprir o pedido.")
+            input("\nEnter para voltar.")
+            return balance_local, level_local, xp_local
+
+        confirm = input("Entregar agora? (s/n): ").strip().lower()
+        if confirm != "s":
+            return balance_local, level_local, xp_local
+
+        delivered = 0
+        remaining_inventory: List[InventoryEntry] = []
+        for entry in inventory:
+            if entry.name == order.fish_name and delivered < order.required_count:
+                delivered += 1
+                if on_fish_sold:
+                    on_fish_sold(entry)
+                if on_fish_delivered:
+                    on_fish_delivered(entry)
+                continue
+            remaining_inventory.append(entry)
+
+        inventory[:] = remaining_inventory
+        _mark_inventory_fish_counts_dirty()
+        balance_local += order.reward_money
+        level_local, xp_local, level_ups = apply_xp_gain(level_local, xp_local, order.reward_xp)
+        if on_money_earned:
+            on_money_earned(order.reward_money)
+        print(
+            f"Pedido entregue! Voce recebeu {format_currency(order.reward_money)} "
+            f"e {order.reward_xp} XP."
+        )
+        if level_ups:
+            print(f"⬆️ Voce subiu {level_ups} nivel(is)!")
+        pool_orders.pop(selected_pool.name, None)
+        input("\nEnter para voltar.")
+        return balance_local, level_local, xp_local
+
+    def _handle_appraise_action(current_balance: float) -> float:
+        balance_local = current_balance
+        clear_screen()
+        if not inventory:
+            print("Inventario vazio.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        print_spaced_lines([
+            "🔎 Appraise",
+            "Escolha um peixe para rerolar KG e mutacao.",
+            "Que a sorte esteja com voce!",
+        ])
+        for index, entry in enumerate(inventory, start=1):
+            value = calculate_entry_value(entry)
+            cost = _appraise_cost(entry)
+            mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+            print(
+                f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
+                f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
+            )
+
+        selection = input("Digite o numero do peixe: ").strip()
+        if not selection.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        selected_index = int(selection)
+        if not (1 <= selected_index <= len(inventory)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        entry = inventory[selected_index - 1]
+        profile = fish_by_name.get(entry.name)
+        if not profile:
+            print("Esse peixe nao pode ser avaliado agora.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        cost = _appraise_cost(entry)
+        if balance_local < cost:
+            print("Saldo insuficiente para appraise.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        old_kg = entry.kg
+        old_mutation = entry.mutation_name
+        old_value = calculate_entry_value(entry)
+
+        confirm = input(
+            f"Cobrar {format_currency(cost)} para rerolar {entry.name}. Confirmar? (s/n): "
+        ).strip().lower()
+        if confirm != "s":
+            return balance_local
+
+        balance_local -= cost
+        if on_money_spent:
+            on_money_spent(cost)
+
+        entry.kg = random.uniform(profile.kg_min, profile.kg_max)
+        appraise_mutations = (
+            filter_mutations_for_rod(available_mutations, equipped_rod.name)
+            if equipped_rod is not None
+            else list(available_mutations)
+        )
+        mutation = choose_mutation(appraise_mutations)
+        entry.mutation_name = mutation.name if mutation else None
+        entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
+        entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
+        new_value = calculate_entry_value(entry)
+
+        old_mutation_label = old_mutation if old_mutation else "Sem mutacao"
+        new_mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
+        value_delta = new_value - old_value
+        print_spaced_lines([
+            "✅ Appraise concluido!",
+            f"KG: {old_kg:0.2f} -> {entry.kg:0.2f}",
+            f"Mutacao: {old_mutation_label} -> {new_mutation_label}",
+            (
+                f"Valor estimado: {format_currency(old_value)} -> {format_currency(new_value)} "
+                f"({value_delta:+.2f})"
+            ),
+        ])
+
+        if on_appraise_completed:
+            notes = on_appraise_completed(entry)
+            if notes:
+                print("")
+                for note in notes:
+                    print(note)
+        _refresh_crafting_unlocks()
+
+        input("\nEnter para voltar.")
+        return balance_local
+
+    def _handle_crafting_action(
+        current_balance: float,
+        *,
+        crafting_gate_open: bool,
+        crafting_gate_reason: str,
+    ) -> float:
+        if not (crafting_definitions and crafting_state and crafting_progress):
+            print("Sistema de crafting indisponivel no momento.")
+            input("\nEnter para voltar.")
+            return current_balance
+        if not crafting_gate_open:
+            print(crafting_gate_reason)
+            input("\nEnter para voltar.")
+            return current_balance
+        return _show_crafting_menu(
+            inventory,
+            current_balance,
+            level,
+            available_rods,
+            owned_rods,
+            resolved_unlocked_rods,
+            crafting_definitions,
+            crafting_state,
+            crafting_progress,
+            on_money_spent,
+            _refresh_crafting_unlocks,
+            _mark_inventory_fish_counts_dirty,
+        )
+
     while True:
         _refresh_crafting_unlocks()
         clear_screen()
@@ -739,297 +1072,19 @@ def show_market(
             return balance, level, xp
 
         if choice == "1":
-            clear_screen()
-            if not inventory:
-                print("Inventario vazio.")
-                input("\nEnter para voltar.")
-                continue
-
-            print_spaced_lines([
-                "Escolha como vender:",
-                "1. Vender peixe individual",
-                "2. Vender inventario inteiro",
-                "0. Voltar",
-            ])
-
-            sell_choice = input("Escolha uma opcao: ").strip()
-            if sell_choice == "0":
-                continue
-
-            if sell_choice == "1":
-                clear_screen()
-                print_spaced_lines(["Escolha o peixe para vender:"])
-                for index, entry in enumerate(inventory, start=1):
-                    value = calculate_entry_value(entry)
-                    mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-                    print(
-                        f"{index}. {entry.name} "
-                        f"({entry.kg:0.2f}kg){mutation_label} - {format_currency(value)}"
-                    )
-
-                selection = input("Digite o numero do peixe: ").strip()
-                if not selection.isdigit():
-                    print("Entrada invalida.")
-                    input("\nEnter para voltar.")
-                    continue
-
-                selected_index = int(selection)
-                if not (1 <= selected_index <= len(inventory)):
-                    print("Numero fora do intervalo.")
-                    input("\nEnter para voltar.")
-                    continue
-
-                entry = inventory.pop(selected_index - 1)
-                _mark_inventory_fish_counts_dirty()
-                value = calculate_entry_value(entry)
-                balance += value
-                if on_money_earned:
-                    on_money_earned(value)
-                if on_fish_sold:
-                    on_fish_sold(entry)
-                if on_fish_delivered:
-                    on_fish_delivered(entry)
-                mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-                print(
-                    f"Vendeu {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                    f"por {format_currency(value)}."
-                )
-                input("\nEnter para voltar.")
-                continue
-
-            if sell_choice == "2":
-                clear_screen()
-                total = sum(calculate_entry_value(entry) for entry in inventory)
-                if on_fish_sold or on_fish_delivered:
-                    for entry in inventory:
-                        if on_fish_sold:
-                            on_fish_sold(entry)
-                        if on_fish_delivered:
-                            on_fish_delivered(entry)
-                inventory.clear()
-                _mark_inventory_fish_counts_dirty()
-                balance += total
-                if on_money_earned:
-                    on_money_earned(total)
-                print(f"Inventario vendido por {format_currency(total)}.")
-                input("\nEnter para voltar.")
-                continue
-
-            print("Opcao invalida.")
-            input("\nEnter para voltar.")
+            balance = _handle_sell_action(balance)
             continue
 
         if choice == "2":
-            clear_screen()
-            owned_rod_names = {rod.name for rod in owned_rods}
-            rods_for_sale = [
-                rod
-                for rod in available_rods
-                if rod.name not in owned_rod_names
-                and (
-                    unlocked_rods is None
-                    or rod.name in resolved_unlocked_rods
-                    or (
-                        bool(rod.unlocks_with_pool)
-                        and rod.unlocks_with_pool.strip().casefold()
-                        in {selected_pool_id, selected_pool_name}
-                        and (
-                            selected_pool.name in resolved_unlocked_pools
-                            or selected_pool_id in normalized_unlocked_pools
-                            or selected_pool_name in normalized_unlocked_pools
-                        )
-                    )
-                )
-            ]
-            if not rods_for_sale:
-                print("Nenhuma vara disponivel para compra.")
-                input("\nEnter para voltar.")
-                continue
-
-            print_spaced_lines(["Varas disponiveis:"])
-            for index, rod in enumerate(rods_for_sale, start=1):
-                print(format_rod_entry(index, rod))
-                print(f"   {rod.description}")
-                print()
-
-            selection = input("Digite o numero da vara: ").strip()
-            if not selection.isdigit():
-                print("Entrada invalida.")
-                input("\nEnter para voltar.")
-                continue
-
-            selected_index = int(selection)
-            if not (1 <= selected_index <= len(rods_for_sale)):
-                print("Numero fora do intervalo.")
-                input("\nEnter para voltar.")
-                continue
-
-            rod = rods_for_sale[selected_index - 1]
-            if balance < rod.price:
-                print("Saldo insuficiente.")
-                input("\nEnter para voltar.")
-                continue
-
-            balance -= rod.price
-            if on_money_spent:
-                on_money_spent(rod.price)
-            owned_rods.append(rod)
-            print(f"Comprou {rod.name} por {format_currency(rod.price)}.")
-            input("\nEnter para voltar.")
+            balance = _handle_buy_rod_action(balance)
             continue
 
         if choice == "3":
-            clear_screen()
-            order = get_pool_market_order(selected_pool, pool_orders)
-            if not order:
-                print("Nao ha pedido disponivel para esta pool agora.")
-                input("\nEnter para voltar.")
-                continue
-
-            matching_entries = [
-                entry
-                for entry in inventory
-                if entry.name == order.fish_name
-            ]
-            print_spaced_lines([
-                "📦 Pedido Atual ",
-                f"Pool: {order.pool_name}",
-                f"Solicitacao: {order.required_count}x {order.fish_name} [{order.rarity}]",
-                f"Disponivel no inventario: {len(matching_entries)}",
-                f"Recompensa: {format_currency(order.reward_money)} + {order.reward_xp} XP",
-            ])
-
-            if len(matching_entries) < order.required_count:
-                print("Voce ainda nao tem peixes suficientes para cumprir o pedido.")
-                input("\nEnter para voltar.")
-                continue
-
-            confirm = input("Entregar agora? (s/n): ").strip().lower()
-            if confirm != "s":
-                continue
-
-            delivered = 0
-            remaining_inventory: List[InventoryEntry] = []
-            for entry in inventory:
-                if entry.name == order.fish_name and delivered < order.required_count:
-                    delivered += 1
-                    if on_fish_sold:
-                        on_fish_sold(entry)
-                    if on_fish_delivered:
-                        on_fish_delivered(entry)
-                    continue
-                remaining_inventory.append(entry)
-
-            inventory[:] = remaining_inventory
-            _mark_inventory_fish_counts_dirty()
-            balance += order.reward_money
-            level, xp, level_ups = apply_xp_gain(level, xp, order.reward_xp)
-            if on_money_earned:
-                on_money_earned(order.reward_money)
-            print(
-                f"Pedido entregue! Voce recebeu {format_currency(order.reward_money)} "
-                f"e {order.reward_xp} XP."
-            )
-            if level_ups:
-                print(f"⬆️ Voce subiu {level_ups} nivel(is)!")
-            pool_orders.pop(selected_pool.name, None)
-            input("\nEnter para voltar.")
+            balance, level, xp = _handle_order_action(balance, level, xp)
             continue
 
         if choice == "4":
-            clear_screen()
-            if not inventory:
-                print("Inventario vazio.")
-                input("\nEnter para voltar.")
-                continue
-
-            print_spaced_lines([
-                "🔎 Appraise",
-                "Escolha um peixe para rerolar KG e mutacao.",
-                "Que a sorte esteja com voce!",
-            ])
-            for index, entry in enumerate(inventory, start=1):
-                value = calculate_entry_value(entry)
-                cost = _appraise_cost(entry)
-                mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-                print(
-                    f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                    f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
-                )
-
-            selection = input("Digite o numero do peixe: ").strip()
-            if not selection.isdigit():
-                print("Entrada invalida.")
-                input("\nEnter para voltar.")
-                continue
-
-            selected_index = int(selection)
-            if not (1 <= selected_index <= len(inventory)):
-                print("Numero fora do intervalo.")
-                input("\nEnter para voltar.")
-                continue
-
-            entry = inventory[selected_index - 1]
-            profile = fish_by_name.get(entry.name)
-            if not profile:
-                print("Esse peixe nao pode ser avaliado agora.")
-                input("\nEnter para voltar.")
-                continue
-
-            cost = _appraise_cost(entry)
-            if balance < cost:
-                print("Saldo insuficiente para appraise.")
-                input("\nEnter para voltar.")
-                continue
-
-            old_kg = entry.kg
-            old_mutation = entry.mutation_name
-            old_value = calculate_entry_value(entry)
-
-            confirm = input(
-                f"Cobrar {format_currency(cost)} para rerolar {entry.name}. Confirmar? (s/n): "
-            ).strip().lower()
-            if confirm != "s":
-                continue
-
-            balance -= cost
-            if on_money_spent:
-                on_money_spent(cost)
-
-            entry.kg = random.uniform(profile.kg_min, profile.kg_max)
-            appraise_mutations = (
-                filter_mutations_for_rod(available_mutations, equipped_rod.name)
-                if equipped_rod is not None
-                else list(available_mutations)
-            )
-            mutation = choose_mutation(appraise_mutations)
-            entry.mutation_name = mutation.name if mutation else None
-            entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
-            entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
-            new_value = calculate_entry_value(entry)
-
-            old_mutation_label = old_mutation if old_mutation else "Sem mutacao"
-            new_mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
-            value_delta = new_value - old_value
-            print_spaced_lines([
-                "✅ Appraise concluido!",
-                f"KG: {old_kg:0.2f} -> {entry.kg:0.2f}",
-                f"Mutacao: {old_mutation_label} -> {new_mutation_label}",
-                (
-                    f"Valor estimado: {format_currency(old_value)} -> {format_currency(new_value)} "
-                    f"({value_delta:+.2f})"
-                ),
-            ])
-
-            if on_appraise_completed:
-                notes = on_appraise_completed(entry)
-                if notes:
-                    print("")
-                    for note in notes:
-                        print(note)
-            _refresh_crafting_unlocks()
-
-            input("\nEnter para voltar.")
+            balance = _handle_appraise_action(balance)
             continue
 
         if choice == "5":
@@ -1037,28 +1092,10 @@ def show_market(
             continue
 
         if choice == "6":
-            if not (crafting_definitions and crafting_state and crafting_progress):
-                print("Sistema de crafting indisponivel no momento.")
-                input("\nEnter para voltar.")
-                continue
-            if not crafting_gate_open:
-                print(crafting_gate_reason)
-                input("\nEnter para voltar.")
-                continue
-
-            balance = _show_crafting_menu(
-                inventory,
+            balance = _handle_crafting_action(
                 balance,
-                level,
-                available_rods,
-                owned_rods,
-                resolved_unlocked_rods,
-                crafting_definitions,
-                crafting_state,
-                crafting_progress,
-                on_money_spent,
-                _refresh_crafting_unlocks,
-                _mark_inventory_fish_counts_dirty,
+                crafting_gate_open=crafting_gate_open,
+                crafting_gate_reason=crafting_gate_reason,
             )
             continue
 

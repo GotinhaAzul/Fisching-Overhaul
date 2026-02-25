@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Sequence, Set
 
 from colorama import Fore
@@ -20,171 +22,92 @@ class UIIconDefinition:
     badge_lines: Sequence[str]
 
 
-UI_COLORS_ORDER: List[str] = [
-    "ocean_blue",
-    "sunset_orange",
-    "emerald_green",
-    "golden",
-    "rose_pink",
-    "arctic_white",
-    "storm_gray",
-    "lava_red",
-    "royal_purple",
-    "neon_lime",
-    "lagoon_mint",
-    "open_sea_teal",
-    "river_azure",
-    "reef_coral",
-    "swamp_olive",
-    "crystal_violet",
-    "brine_amber",
-    "vertigo_indigo",
-    "abyss_navy",
-    "desolate_silver",
-    "farseas_crimson",
-    "cafeteria_mocha",
-]
+_CATALOG_DIR = Path(__file__).resolve().parent.parent / "cosmetics_catalog"
+_COLOR_CATALOG_PATH = _CATALOG_DIR / "ui_colors.json"
+_ICON_CATALOG_PATH = _CATALOG_DIR / "ui_icons.json"
+_DEFAULT_ACCENT_COLOR = Fore.CYAN
 
-UI_COLOR_DEFINITIONS: Dict[str, UIColorDefinition] = {
-    "ocean_blue": UIColorDefinition(
+_FORE_COLORS_BY_NAME: Dict[str, str] = {
+    name: value
+    for name, value in vars(Fore).items()
+    if name.isupper() and isinstance(value, str)
+}
+
+
+def _load_catalog_items(path: Path, root_key: str) -> List[Dict[str, object]]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if not isinstance(data, dict):
+        return []
+    raw_items = data.get(root_key)
+    if not isinstance(raw_items, list):
+        return []
+    return [item for item in raw_items if isinstance(item, dict)]
+
+
+def _load_ui_colors() -> tuple[List[str], Dict[str, UIColorDefinition]]:
+    order: List[str] = []
+    definitions: Dict[str, UIColorDefinition] = {}
+    for item in _load_catalog_items(_COLOR_CATALOG_PATH, "colors"):
+        color_id = item.get("color_id")
+        name = item.get("name")
+        accent_color_name = item.get("accent_color")
+        if not isinstance(color_id, str) or not color_id:
+            continue
+        if not isinstance(name, str) or not name:
+            continue
+        accent_color = (
+            _FORE_COLORS_BY_NAME.get(accent_color_name)
+            if isinstance(accent_color_name, str)
+            else None
+        )
+        definitions[color_id] = UIColorDefinition(
+            color_id=color_id,
+            name=name,
+            accent_color=accent_color or _DEFAULT_ACCENT_COLOR,
+        )
+        order.append(color_id)
+    return order, definitions
+
+
+def _load_ui_icons() -> tuple[List[str], Dict[str, UIIconDefinition]]:
+    order: List[str] = []
+    definitions: Dict[str, UIIconDefinition] = {}
+    for item in _load_catalog_items(_ICON_CATALOG_PATH, "icons"):
+        icon_id = item.get("icon_id")
+        name = item.get("name")
+        raw_badge_lines = item.get("badge_lines")
+        if not isinstance(icon_id, str) or not icon_id:
+            continue
+        if not isinstance(name, str) or not name:
+            continue
+        if not isinstance(raw_badge_lines, list):
+            continue
+        badge_lines = tuple(line for line in raw_badge_lines if isinstance(line, str))
+        if not badge_lines:
+            continue
+        definitions[icon_id] = UIIconDefinition(
+            icon_id=icon_id,
+            name=name,
+            badge_lines=badge_lines,
+        )
+        order.append(icon_id)
+    return order, definitions
+
+
+def _fallback_color_catalog() -> tuple[List[str], Dict[str, UIColorDefinition]]:
+    fallback = UIColorDefinition(
         color_id="ocean_blue",
         name="Azul Oceano",
         accent_color=Fore.CYAN,
-    ),
-    "sunset_orange": UIColorDefinition(
-        color_id="sunset_orange",
-        name="Laranja Sunset",
-        accent_color=Fore.LIGHTRED_EX,
-    ),
-    "emerald_green": UIColorDefinition(
-        color_id="emerald_green",
-        name="Verde Esmeralda",
-        accent_color=Fore.LIGHTGREEN_EX,
-    ),
-    "golden": UIColorDefinition(
-        color_id="golden",
-        name="Dourado",
-        accent_color=Fore.YELLOW,
-    ),
-    "rose_pink": UIColorDefinition(
-        color_id="rose_pink",
-        name="Rosa",
-        accent_color=Fore.LIGHTMAGENTA_EX,
-    ),
-    "arctic_white": UIColorDefinition(
-        color_id="arctic_white",
-        name="Branco Artico",
-        accent_color=Fore.WHITE,
-    ),
-    "storm_gray": UIColorDefinition(
-        color_id="storm_gray",
-        name="Cinza Tempestade",
-        accent_color=Fore.LIGHTBLACK_EX,
-    ),
-    "lava_red": UIColorDefinition(
-        color_id="lava_red",
-        name="Vermelho Lava",
-        accent_color=Fore.RED,
-    ),
-    "royal_purple": UIColorDefinition(
-        color_id="royal_purple",
-        name="Roxo Real",
-        accent_color=Fore.MAGENTA,
-    ),
-    "neon_lime": UIColorDefinition(
-        color_id="neon_lime",
-        name="Lima Neon",
-        accent_color=Fore.GREEN,
-    ),
-    "lagoon_mint": UIColorDefinition(
-        color_id="lagoon_mint",
-        name="Menta da Lagoa",
-        accent_color=Fore.LIGHTGREEN_EX,
-    ),
-    "open_sea_teal": UIColorDefinition(
-        color_id="open_sea_teal",
-        name="Azul do Mar Aberto",
-        accent_color=Fore.CYAN,
-    ),
-    "river_azure": UIColorDefinition(
-        color_id="river_azure",
-        name="Azul Correnteza",
-        accent_color=Fore.LIGHTBLUE_EX,
-    ),
-    "reef_coral": UIColorDefinition(
-        color_id="reef_coral",
-        name="Coral do Recife",
-        accent_color=Fore.LIGHTRED_EX,
-    ),
-    "swamp_olive": UIColorDefinition(
-        color_id="swamp_olive",
-        name="Oliva do Pantano",
-        accent_color=Fore.YELLOW,
-    ),
-    "crystal_violet": UIColorDefinition(
-        color_id="crystal_violet",
-        name="Violeta Cristalino",
-        accent_color=Fore.LIGHTMAGENTA_EX,
-    ),
-    "brine_amber": UIColorDefinition(
-        color_id="brine_amber",
-        name="Ambar Salmoura",
-        accent_color=Fore.YELLOW,
-    ),
-    "vertigo_indigo": UIColorDefinition(
-        color_id="vertigo_indigo",
-        name="Indigo Vertigo",
-        accent_color=Fore.BLUE,
-    ),
-    "abyss_navy": UIColorDefinition(
-        color_id="abyss_navy",
-        name="Marinho Abissal",
-        accent_color=Fore.BLUE,
-    ),
-    "desolate_silver": UIColorDefinition(
-        color_id="desolate_silver",
-        name="Prata Desolada",
-        accent_color=Fore.WHITE,
-    ),
-    "farseas_crimson": UIColorDefinition(
-        color_id="farseas_crimson",
-        name="Carmesim de Farseas",
-        accent_color=Fore.RED,
-    ),
-    "cafeteria_mocha": UIColorDefinition(
-        color_id="cafeteria_mocha",
-        name="Mocha da Cafeteria",
-        accent_color=Fore.LIGHTYELLOW_EX,
-    ),
-}
+    )
+    return [fallback.color_id], {fallback.color_id: fallback}
 
-UI_ICONS_ORDER: List[str] = [
-    "cat",
-    "fish",
-    "star",
-    "wave",
-    "anchor",
-    "crab",
-    "shell",
-    "hook",
-    "boat",
-    "treasure",
-    "pool_lagoa",
-    "pool_mar",
-    "pool_rio",
-    "pool_grandreef",
-    "pool_pantano",
-    "pool_crystalcove",
-    "pool_brinepool",
-    "pool_vertigo",
-    "pool_thedepths",
-    "pool_desolatedeep",
-    "pool_farseas_eye",
-    "pool_cafeteria_coffee",
-]
 
-UI_ICON_DEFINITIONS: Dict[str, UIIconDefinition] = {
-    "cat": UIIconDefinition(
+def _fallback_icon_catalog() -> tuple[List[str], Dict[str, UIIconDefinition]]:
+    fallback = UIIconDefinition(
         icon_id="cat",
         name="Gato",
         badge_lines=(
@@ -192,197 +115,17 @@ UI_ICON_DEFINITIONS: Dict[str, UIIconDefinition] = {
             " ( o.o ) ",
             "  > ^ <  ",
         ),
-    ),
-    "fish": UIIconDefinition(
-        icon_id="fish",
-        name="Peixe",
-        badge_lines=(
-            "  ><(((>  ",
-            "   / _ \\  ",
-            "  /_/ \\_\\ ",
-        ),
-    ),
-    "star": UIIconDefinition(
-        icon_id="star",
-        name="Estrela",
-        badge_lines=(
-            "    /\\    ",
-            " < (**) > ",
-            "    \\/    ",
-        ),
-    ),
-    "wave": UIIconDefinition(
-        icon_id="wave",
-        name="Onda",
-        badge_lines=(
-            " ~~~~~~~~ ",
-            "  ~~~~~~  ",
-            " ~~~~~~~~ ",
-        ),
-    ),
-    "anchor": UIIconDefinition(
-        icon_id="anchor",
-        name="Ancora",
-        badge_lines=(
-            "    |     ",
-            " --(_)--  ",
-            "   / \\    ",
-        ),
-    ),
-    "crab": UIIconDefinition(
-        icon_id="crab",
-        name="Caranguejo",
-        badge_lines=(
-            " \\_\\_/ /  ",
-            " (o   o)  ",
-            " /_/^\\_\\  ",
-        ),
-    ),
-    "shell": UIIconDefinition(
-        icon_id="shell",
-        name="Concha",
-        badge_lines=(
-            "  .----.  ",
-            " / .--. \\ ",
-            " '----'  ",
-        ),
-    ),
-    "hook": UIIconDefinition(
-        icon_id="hook",
-        name="Anzol",
-        badge_lines=(
-            "    __    ",
-            "   / /_   ",
-            "   \\__/   ",
-        ),
-    ),
-    "boat": UIIconDefinition(
-        icon_id="boat",
-        name="Barco",
-        badge_lines=(
-            "    |\\    ",
-            "   /_|_\\  ",
-            " ~~~|~~~  ",
-        ),
-    ),
-    "treasure": UIIconDefinition(
-        icon_id="treasure",
-        name="Tesouro",
-        badge_lines=(
-            " .------. ",
-            " | [$$] | ",
-            " '------' ",
-        ),
-    ),
-    "pool_lagoa": UIIconDefinition(
-        icon_id="pool_lagoa",
-        name="Lagoa",
-        badge_lines=(
-            "   .--.   ",
-            " ~(____)~ ",
-            "   '~~'   ",
-        ),
-    ),
-    "pool_mar": UIIconDefinition(
-        icon_id="pool_mar",
-        name="Mar Aberto",
-        badge_lines=(
-            "  ~~~~~~  ",
-            " ~~/\\~~~~ ",
-            "~~~\\/~~~~ ",
-        ),
-    ),
-    "pool_rio": UIIconDefinition(
-        icon_id="pool_rio",
-        name="Rio Correnteza",
-        badge_lines=(
-            " ~~>>~~~  ",
-            ">~~>>~~>  ",
-            " ~~>>~~~  ",
-        ),
-    ),
-    "pool_grandreef": UIIconDefinition(
-        icon_id="pool_grandreef",
-        name="Grande Recife",
-        badge_lines=(
-            "   /\\/\\   ",
-            " _/\\||/\\_ ",
-            "   /||\\   ",
-        ),
-    ),
-    "pool_pantano": UIIconDefinition(
-        icon_id="pool_pantano",
-        name="Pantano Mushgrove",
-        badge_lines=(
-            "  _^_  _^_",
-            " (___)(___)",
-            "  ||    || ",
-        ),
-    ),
-    "pool_crystalcove": UIIconDefinition(
-        icon_id="pool_crystalcove",
-        name="Angra Cristal",
-        badge_lines=(
-            "   /\\ /\\  ",
-            "  /__V__\\ ",
-            "   \\/ \\/  ",
-        ),
-    ),
-    "pool_brinepool": UIIconDefinition(
-        icon_id="pool_brinepool",
-        name="Piscina de Salmoura",
-        badge_lines=(
-            "   .--.   ",
-            " ~(xxxx)~ ",
-            "   \\/\\/   ",
-        ),
-    ),
-    "pool_vertigo": UIIconDefinition(
-        icon_id="pool_vertigo",
-        name="Vertigo",
-        badge_lines=(
-            "   .--.   ",
-            "  / @@ \\  ",
-            "  \\_@@_/  ",
-        ),
-    ),
-    "pool_thedepths": UIIconDefinition(
-        icon_id="pool_thedepths",
-        name="As profundezas",
-        badge_lines=(
-            "  ~~~~~~  ",
-            "   \\  /   ",
-            "    \\/    ",
-        ),
-    ),
-    "pool_desolatedeep": UIIconDefinition(
-        icon_id="pool_desolatedeep",
-        name="Profundezas Desoladas",
-        badge_lines=(
-            "  _|[]|_  ",
-            " |  __  | ",
-            " |_/  \\_| ",
-        ),
-    ),
-    "pool_farseas_eye": UIIconDefinition(
-        icon_id="pool_farseas_eye",
-        name="Olho de Farseas",
-        badge_lines=(
-            "  .-===-. ",
-            " (  o o ) ",
-            "  '-___-' ",
-        ),
-    ),
-    "pool_cafeteria_coffee": UIIconDefinition(
-        icon_id="pool_cafeteria_coffee",
-        name="Xicara da Cafeteria",
-        badge_lines=(
-            "  (____)  ",
-            "  |____|) ",
-            "   ||||   ",
-        ),
-    ),
-}
+    )
+    return [fallback.icon_id], {fallback.icon_id: fallback}
+
+
+UI_COLORS_ORDER, UI_COLOR_DEFINITIONS = _load_ui_colors()
+if not UI_COLORS_ORDER:
+    UI_COLORS_ORDER, UI_COLOR_DEFINITIONS = _fallback_color_catalog()
+
+UI_ICONS_ORDER, UI_ICON_DEFINITIONS = _load_ui_icons()
+if not UI_ICONS_ORDER:
+    UI_ICONS_ORDER, UI_ICON_DEFINITIONS = _fallback_icon_catalog()
 
 DEFAULT_UI_COLOR_ID = UI_COLORS_ORDER[0]
 DEFAULT_UI_ICON_ID = UI_ICONS_ORDER[0]
