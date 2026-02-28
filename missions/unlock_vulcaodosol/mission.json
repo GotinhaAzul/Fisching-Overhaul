@@ -1,0 +1,28 @@
+{
+  "id": "vulcao_do_sol_unlock",
+  "name": "Ficando Quente",
+  "description": "A Baia do Sol revelou uma rota para aguas extremas, ja pensou em pescar na LAVA?? ",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Baia do Sol",
+      "percent": 75
+    },
+    {
+      "type": "level",
+      "level": 12
+    },
+    {
+      "type": "catch_mutation",
+      "count": 5,
+      "mutation_name": "Coral"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Vulcao do Sol"]
+    }
+  ]
+}

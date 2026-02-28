@@ -1,0 +1,10 @@
+{
+  "name": "Basalto",
+  "rarity": "Comum",
+  "description": "O Basalto vive junto a crostas escuras no fundo do Vulcao do Sol e quase some na paisagem rochosa. Ele se move pouco, poupando energia no calor constante, e se alimenta de microfauna presa nas fissuras. Quando fisgado, reage com trancos secos e curtos para voltar ao abrigo mineral.",
+  "kg_min": 1.0,
+  "kg_max": 2.0,
+  "base_value": 7,
+  "sequence_len": 5,
+  "reaction_time_s": 2.5
+}

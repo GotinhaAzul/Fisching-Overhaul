@@ -1,0 +1,10 @@
+{
+  "name": "Pargo Vulcânico",
+  "rarity": "Raro",
+  "description": "O Pargo Vulcanico domina encostas de rocha quente e embosca presas em passagens estreitas. A especie parece resistente ao calor extremo e mantem atividade alta mesmo em zonas pouco oxigenadas. Em combate, combina forca constante com mudancas bruscas de profundidade para escapar do anzol.",
+  "kg_min": 3.0,
+  "kg_max": 6.5,
+  "base_value": 70,
+  "sequence_len": 6,
+  "reaction_time_s": 1.8
+}

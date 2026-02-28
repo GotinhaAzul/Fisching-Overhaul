@@ -1,0 +1,10 @@
+{
+  "name": "Cirurgião Magmático",
+  "rarity": "Incomum",
+  "description": "O Cirurgiao Magmatico patrulha corredores quentes em grupos pequenos e usa espinhos laterais para afastar rivais. Sua coloracao laranja intensa varia conforme a temperatura da agua ao redor. Na linha, acelera de forma repentina e troca de direcao para desgastar o controle do pescador.",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 1.7
+}

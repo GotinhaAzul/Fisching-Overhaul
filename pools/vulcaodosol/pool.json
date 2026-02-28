@@ -1,0 +1,12 @@
+{
+  "name": "Vulcao do Sol",
+  "description": "Camadas de agua aquecidas por fendas vulcanicas criam correntes instaveis e peixes agressivos.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 43,
+    "Incomum": 39,
+    "Raro": 15,
+    "Epico": 9,
+    "Lendario": 1
+  }
+}

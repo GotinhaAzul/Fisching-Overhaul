@@ -1,0 +1,10 @@
+{
+  "name": "Banshee Ígnea",
+  "rarity": "Lendario",
+  "description": "A Banshee Ignea e uma presenca rara nas zonas mais quentes do Vulcao do Sol, onde poucos peixes sobrevivem por muito tempo. Relatos descrevem um chamado agudo antes de suas investidas, seguido por movimentos violentos e quase imprevisiveis. Captura-la e um teste extremo de controle, foco e resistencia.",
+  "kg_min": 40.0,
+  "kg_max": 118.0,
+  "base_value": 172,
+  "sequence_len": 12,
+  "reaction_time_s": 2.3
+}

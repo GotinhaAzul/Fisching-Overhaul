@@ -1,0 +1,10 @@
+{
+  "name": "Espadarte de Obsidiana",
+  "rarity": "Epico",
+  "description": "O Espadarte de Obsidiana e um predador de corrida longa, adaptado a perseguir presas entre colunas de vapor subaquatico. Seu rostro rigido abre caminho por correntes turbulentas e torna os ataques precisos. Quando fisgado, impone um confronto prolongado, com arrancadas pesadas que testam equipamento e paciencia.",
+  "kg_min": 18.0,
+  "kg_max": 52.0,
+  "base_value": 100,
+  "sequence_len": 9,
+  "reaction_time_s": 1.9
+}

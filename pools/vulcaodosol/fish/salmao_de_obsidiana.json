@@ -1,0 +1,10 @@
+{
+  "name": "Salmão de Obsidiana",
+  "rarity": "Epico",
+  "description": "O Salmao de Obsidiana apresenta placas escuras e lisas que refletem pouca luz, dificultando sua leitura em aguas profundas. Ele nada contra correntes quentes para acumular forca antes de atacar peixes menores. Na captura, oferece resistencia continua e exige ritmo tecnico do inicio ao fim.",
+  "kg_min": 5.5,
+  "kg_max": 12.5,
+  "base_value": 98,
+  "sequence_len": 8,
+  "reaction_time_s": 1.6
+}

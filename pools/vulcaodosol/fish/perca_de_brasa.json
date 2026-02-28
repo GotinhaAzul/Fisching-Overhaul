@@ -1,0 +1,10 @@
+{
+  "name": "Perca de Brasa",
+  "rarity": "Incomum",
+  "description": "A Perca de Brasa passa boa parte do tempo perto de bolsos de agua superaquecida, onde caca cardumes menores. Suas escamas ganham reflexos vermelhos quando esta em alerta, como se estivessem em combustao. Ao ser fisgada, alterna arrancadas curtas com pausas para quebrar o ritmo de recolhimento.",
+  "kg_min": 2.0,
+  "kg_max": 4.5,
+  "base_value": 24,
+  "sequence_len": 5,
+  "reaction_time_s": 1.8
+}

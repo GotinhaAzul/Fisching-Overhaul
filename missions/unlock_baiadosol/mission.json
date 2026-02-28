@@ -1,7 +1,7 @@
 {
   "id": "unlock_baiadosol",
-  "name": "Rumo à Baía do Sol",
-  "description": "Dizem que as águas da Baía do Sol brilham tanto quanto o ouro. Alcance o nível 7 e prepare 900$ para financiar sua expedição a este paraíso tropical.",
+  "name": "A ilha do Sol!",
+  "description": "Uma ilha não muito longe, seus corais coloridos atraem pescadores... Tem algum filme que eles caminham até o Sol, não?",
   "starts_unlocked": false,
   "requirements": [
     {
@@ -21,6 +21,10 @@
     {
       "type": "unlock_pools",
       "pool_names": ["Baia do Sol"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["vulcao_do_sol_unlock"]
     }
   ]
 }

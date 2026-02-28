@@ -1,0 +1,10 @@
+{
+  "name": "Enguia de Lava",
+  "rarity": "Raro",
+  "description": "A Enguia de Lava percorre tuneis de pedra derretida e usa o corpo flexivel para atravessar frestas quase impossiveis. Ela percebe vibracoes da linha com facilidade e reage antes de muitos peixes da regiao. Fisga-la exige precisao, porque sua fuga e ondulatoria, longa e agressiva.",
+  "kg_min": 2.8,
+  "kg_max": 6.0,
+  "base_value": 76,
+  "sequence_len": 6,
+  "reaction_time_s": 1.7
+}
