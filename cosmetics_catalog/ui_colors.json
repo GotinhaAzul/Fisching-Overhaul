@@ -21,6 +21,8 @@
     {"color_id": "abyss_navy", "name": "Marinho Abissal", "accent_color": "BLUE"},
     {"color_id": "desolate_silver", "name": "Prata Desolada", "accent_color": "WHITE"},
     {"color_id": "farseas_crimson", "name": "Carmesim de Farseas", "accent_color": "RED"},
-    {"color_id": "cafeteria_mocha", "name": "Mocha da Cafeteria", "accent_color": "LIGHTYELLOW_EX"}
+    {"color_id": "cafeteria_mocha", "name": "Mocha da Cafeteria", "accent_color": "LIGHTYELLOW_EX"},
+    {"color_id": "solar_gold", "name": "Ouro Solar", "accent_color": "LIGHTYELLOW_EX"},
+    {"color_id": "glacial_cyan", "name": "Ciano Glacial", "accent_color": "LIGHTCYAN_EX"}
   ]
 }

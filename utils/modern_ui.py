@@ -22,6 +22,7 @@ _DEFAULT_BADGE = (
     "  > ^ <  ",
 )
 _active_accent_color = Fore.CYAN
+_active_icon_color = Fore.CYAN
 _active_badge_lines: Sequence[str] = _DEFAULT_BADGE
 
 
@@ -90,14 +91,19 @@ def _ascii_badge() -> List[str]:
 def set_ui_cosmetics(
     *,
     accent_color: Optional[str] = None,
+    icon_color: Optional[str] = None,
     badge_lines: Optional[Sequence[str]] = None,
 ) -> None:
-    global _active_accent_color, _active_badge_lines
+    global _active_accent_color, _active_icon_color, _active_badge_lines
 
     if isinstance(accent_color, str) and accent_color:
         _active_accent_color = accent_color
     else:
         _active_accent_color = Fore.CYAN
+    if isinstance(icon_color, str) and icon_color:
+        _active_icon_color = icon_color
+    else:
+        _active_icon_color = _active_accent_color
 
     normalized_badge: List[str] = []
     if badge_lines:
@@ -114,7 +120,7 @@ def _merge_badge(
     badge_left: bool,
 ) -> List[str]:
     merged: List[str] = []
-    badge_width = len(badge_block[0]) if badge_block else 0
+    badge_width = _visible_len(badge_block[0]) if badge_block else 0
     for idx, line in enumerate(menu_block):
         badge_line = badge_block[idx] if idx < len(badge_block) else (" " * badge_width)
         if badge_left:
@@ -185,6 +191,10 @@ def render_menu_panel(
         return panel_block
 
     badge_block = _frame_block(_ascii_badge(), 9)
+    badge_block = [
+        f"{_active_icon_color}{line}{Style.RESET_ALL}"
+        for line in badge_block
+    ]
     return _merge_badge(panel_block, badge_block, badge_left=badge_left)
 
 

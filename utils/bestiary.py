@@ -21,6 +21,7 @@ from utils.bestiary_rewards import (
     FISH_TARGET_ALL,
     get_claimable_bestiary_rewards,
 )
+from utils.cosmetics import UI_COLOR_DEFINITIONS, UI_ICON_DEFINITIONS
 
 if TYPE_CHECKING:
     from utils.hunts import HuntDefinition
@@ -241,6 +242,84 @@ def _print_claim_notes(notes: List[str]) -> None:
         print("Recompensa resgatada!")
 
 
+def _format_reward_preview_item(reward_payload: Dict[str, object]) -> Optional[str]:
+    reward_type = reward_payload.get("type")
+
+    if reward_type == "money":
+        try:
+            amount = float(reward_payload.get("amount", 0.0))
+        except (TypeError, ValueError):
+            amount = 0.0
+        return f"R$ {amount:0.2f}" if amount > 0 else None
+
+    if reward_type == "xp":
+        try:
+            amount = int(reward_payload.get("amount", 0))
+        except (TypeError, ValueError):
+            amount = 0
+        return f"{amount} XP" if amount > 0 else None
+
+    if reward_type == "bait":
+        bait_id = reward_payload.get("bait_id")
+        try:
+            amount = int(reward_payload.get("amount", 0))
+        except (TypeError, ValueError):
+            amount = 0
+        if not isinstance(bait_id, str) or not bait_id or amount <= 0:
+            return None
+        return f"{amount}x {bait_id}"
+
+    if reward_type == "ui_color":
+        color_id = reward_payload.get("color_id")
+        if not isinstance(color_id, str) or not color_id:
+            return None
+        color_def = UI_COLOR_DEFINITIONS.get(color_id)
+        color_name = color_def.name if color_def is not None else color_id
+        return f"Cor: {color_name}"
+
+    if reward_type == "ui_icon":
+        icon_id = reward_payload.get("icon_id")
+        if not isinstance(icon_id, str) or not icon_id:
+            return None
+        icon_def = UI_ICON_DEFINITIONS.get(icon_id)
+        icon_name = icon_def.name if icon_def is not None else icon_id
+        return f"Icone: {icon_name}"
+
+    if reward_type == "rod":
+        rod_name = reward_payload.get("rod_name")
+        if isinstance(rod_name, str) and rod_name:
+            return f"Vara: {rod_name}"
+
+    return None
+
+
+def _build_claim_preview_lines(
+    selected_rewards: Sequence[BestiaryRewardDefinition],
+    *,
+    max_lines: int = 2,
+) -> List[str]:
+    preview_lines: List[str] = []
+    for reward in selected_rewards:
+        item_preview = [
+            item
+            for item in (
+                _format_reward_preview_item(reward_payload)
+                for reward_payload in reward.rewards
+            )
+            if item is not None
+        ]
+        summary = " | ".join(item_preview) if item_preview else "Sem itens validos."
+        preview_lines.append(f"Previa: {reward.name} -> {summary}")
+
+    if max_lines > 0 and len(preview_lines) > max_lines:
+        hidden_count = len(preview_lines) - max_lines
+        return [
+            *preview_lines[:max_lines],
+            f"... e mais {hidden_count} recompensa(s).",
+        ]
+    return preview_lines
+
+
 def show_locked_entry():
     clear_screen()
     if use_modern_ui():
@@ -391,6 +470,7 @@ def _show_fish_bestiary_section(
     *,
     pending_pool_reward_count: Optional[Callable[[str], int]] = None,
     claim_pool_rewards: Optional[Callable[[str], List[str]]] = None,
+    preview_pool_rewards: Optional[Callable[[str], List[str]]] = None,
 ) -> None:
     ordered_fish = sorted(
         section.fish_profiles,
@@ -414,6 +494,11 @@ def _show_fish_bestiary_section(
             if pending_pool_reward_count is not None
             else 0
         )
+        preview_lines = (
+            preview_pool_rewards(section.title)
+            if claimable_count > 0 and preview_pool_rewards is not None
+            else []
+        )
         reward_status = _format_reward_status(claimable_count)
         if section.counts_for_completion:
             print(f"Complecao: {unlocked_count}/{total_fish} ({completion:.0f}%)")
@@ -423,6 +508,8 @@ def _show_fish_bestiary_section(
             print("Peixes [Hunt] nao contam para a complecao da pool.")
         if reward_status:
             print(reward_status)
+        for line in preview_lines:
+            print(line)
         if not ordered_fish:
             print("Nenhum peixe cadastrado.")
             input("\nEnter para voltar.")
@@ -445,6 +532,7 @@ def _show_fish_bestiary_section(
                 header_lines.append("Peixes [Hunt] nao contam para a complecao.")
             if reward_status:
                 header_lines.append(reward_status)
+            header_lines.extend(preview_lines)
             options = [
                 MenuOption(
                     str(idx),
@@ -586,8 +674,10 @@ def show_fish_bestiary(
     *,
     pending_global_reward_count: Optional[Callable[[], int]] = None,
     claim_global_rewards: Optional[Callable[[], List[str]]] = None,
+    preview_global_rewards: Optional[Callable[[], List[str]]] = None,
     pending_pool_reward_count: Optional[Callable[[str], int]] = None,
     claim_pool_rewards: Optional[Callable[[str], List[str]]] = None,
+    preview_pool_rewards: Optional[Callable[[str], List[str]]] = None,
 ):
     page = 0
     page_size = 10
@@ -613,9 +703,16 @@ def show_fish_bestiary(
             if pending_global_reward_count is not None
             else 0
         )
+        global_preview_lines = (
+            preview_global_rewards()
+            if global_claimable_count > 0 and preview_global_rewards is not None
+            else []
+        )
         reward_status = _format_reward_status(global_claimable_count)
         if reward_status:
             print(reward_status)
+        for line in global_preview_lines:
+            print(line)
         if not sections:
             print("Nenhuma secao cadastrada.")
             input("\nEnter para voltar.")
@@ -659,6 +756,7 @@ def show_fish_bestiary(
             ]
             if reward_status:
                 header_lines.append(reward_status)
+            header_lines.extend(global_preview_lines)
             print_menu_panel(
                 "BESTIARIO",
                 subtitle="Peixes por pool",
@@ -711,6 +809,7 @@ def show_fish_bestiary(
                 unlocked_fish,
                 pending_pool_reward_count=pending_pool_reward_count,
                 claim_pool_rewards=claim_pool_rewards,
+                preview_pool_rewards=preview_pool_rewards,
             )
             continue
 
@@ -784,6 +883,7 @@ def show_fish_bestiary(
             unlocked_fish,
             pending_pool_reward_count=pending_pool_reward_count,
             claim_pool_rewards=claim_pool_rewards,
+            preview_pool_rewards=preview_pool_rewards,
         )
 
 def show_rods_bestiary(
@@ -792,6 +892,7 @@ def show_rods_bestiary(
     *,
     pending_reward_count: Optional[Callable[[str], int]] = None,
     claim_rewards: Optional[Callable[[str], List[str]]] = None,
+    preview_rewards: Optional[Callable[[str], List[str]]] = None,
 ):
     countable_rods = [
         rod
@@ -808,9 +909,16 @@ def show_rods_bestiary(
         completion = (unlocked_count / total_rods * 100) if total_rods else 0
         print(f"Complecao: {unlocked_count}/{total_rods} ({completion:.0f}%)")
         claimable_count = pending_reward_count("rods") if pending_reward_count else 0
+        preview_lines = (
+            preview_rewards("rods")
+            if claimable_count > 0 and preview_rewards is not None
+            else []
+        )
         reward_status = _format_reward_status(claimable_count)
         if reward_status:
             print(reward_status)
+        for line in preview_lines:
+            print(line)
         if not rods:
             print("Nenhuma vara cadastrada.")
             input("\nEnter para voltar.")
@@ -840,6 +948,7 @@ def show_rods_bestiary(
             ]
             if reward_status:
                 header_lines.append(reward_status)
+            header_lines.extend(preview_lines)
             print_menu_panel(
                 "BESTIARIO",
                 subtitle="Varas adquiridas",
@@ -958,6 +1067,7 @@ def show_pools_bestiary(
     *,
     pending_reward_count: Optional[Callable[[str], int]] = None,
     claim_rewards: Optional[Callable[[str], List[str]]] = None,
+    preview_rewards: Optional[Callable[[str], List[str]]] = None,
 ):
     visible_pools = [
         pool
@@ -979,9 +1089,16 @@ def show_pools_bestiary(
         completion = (unlocked_count / total_pools * 100) if total_pools else 0
         print(f"Complecao: {unlocked_count}/{total_pools} ({completion:.0f}%)")
         claimable_count = pending_reward_count("pools") if pending_reward_count else 0
+        preview_lines = (
+            preview_rewards("pools")
+            if claimable_count > 0 and preview_rewards is not None
+            else []
+        )
         reward_status = _format_reward_status(claimable_count)
         if reward_status:
             print(reward_status)
+        for line in preview_lines:
+            print(line)
         if not visible_pools:
             print("Nenhuma pool cadastrada.")
             input("\nEnter para voltar.")
@@ -1011,6 +1128,7 @@ def show_pools_bestiary(
             ]
             if reward_status:
                 header_lines.append(reward_status)
+            header_lines.extend(preview_lines)
             print_menu_panel(
                 "BESTIARIO",
                 subtitle="Pools desbloqueadas",
@@ -1211,15 +1329,18 @@ def show_bestiary(
         for reward in selected_rewards:
             claim_notes = on_claim_bestiary_reward(reward)
             bestiary_reward_state.claimed.add(reward.reward_id)
-            notes.append(f"Recompensa: {reward.name}")
+            notes.append(f"Resgatado: {reward.name}")
             if claim_notes:
-                notes.extend(claim_notes)
+                notes.extend(f"  - {note}" for note in claim_notes)
             else:
-                notes.append("Recompensa resgatada!")
+                notes.append("  - Nenhum item aplicado.")
         return notes
 
     def claim_rewards_for_category(category: str) -> List[str]:
         return _claim_selected_rewards(list_claimable_rewards(category))
+
+    def preview_rewards_for_category(category: str) -> List[str]:
+        return _build_claim_preview_lines(list_claimable_rewards(category))
 
     def pending_fish_pool_rewards(pool_name: str) -> int:
         return len(list_claimable_rewards("fish", fish_target_pool=pool_name))
@@ -1229,11 +1350,21 @@ def show_bestiary(
             list_claimable_rewards("fish", fish_target_pool=pool_name)
         )
 
+    def preview_fish_pool_rewards(pool_name: str) -> List[str]:
+        return _build_claim_preview_lines(
+            list_claimable_rewards("fish", fish_target_pool=pool_name)
+        )
+
     def pending_fish_global_rewards() -> int:
         return len(list_claimable_rewards("fish", fish_global_only=True))
 
     def claim_fish_global_rewards() -> List[str]:
         return _claim_selected_rewards(
+            list_claimable_rewards("fish", fish_global_only=True)
+        )
+
+    def preview_fish_global_rewards() -> List[str]:
+        return _build_claim_preview_lines(
             list_claimable_rewards("fish", fish_global_only=True)
         )
 
@@ -1262,8 +1393,10 @@ def show_bestiary(
                 discovered_fish,
                 pending_global_reward_count=pending_fish_global_rewards,
                 claim_global_rewards=claim_fish_global_rewards,
+                preview_global_rewards=preview_fish_global_rewards,
                 pending_pool_reward_count=pending_fish_pool_rewards,
                 claim_pool_rewards=claim_fish_pool_rewards,
+                preview_pool_rewards=preview_fish_pool_rewards,
             )
             continue
 
@@ -1273,6 +1406,7 @@ def show_bestiary(
                 unlocked_rods,
                 pending_reward_count=pending_rewards_count,
                 claim_rewards=claim_rewards_for_category,
+                preview_rewards=preview_rewards_for_category,
             )
             continue
 
@@ -1282,6 +1416,7 @@ def show_bestiary(
                 unlocked_pools,
                 pending_reward_count=pending_rewards_count,
                 claim_rewards=claim_rewards_for_category,
+                preview_rewards=preview_rewards_for_category,
             )
             continue
 

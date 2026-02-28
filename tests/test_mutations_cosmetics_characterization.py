@@ -11,6 +11,7 @@ from utils.cosmetics import (
     UI_ICON_DEFINITIONS,
     UI_ICONS_ORDER,
     create_default_cosmetics_state,
+    equip_icon_color,
     equip_ui_color,
     equip_ui_icon,
     list_unlocked_ui_colors,
@@ -81,11 +82,13 @@ def test_cosmetics_state_roundtrip_and_order_characterization() -> None:
     assert DEFAULT_UI_COLOR_ID == UI_COLORS_ORDER[0]
     assert DEFAULT_UI_ICON_ID == UI_ICONS_ORDER[0]
     assert state.equipped_ui_color == DEFAULT_UI_COLOR_ID
+    assert state.equipped_icon_color == DEFAULT_UI_COLOR_ID
     assert state.equipped_ui_icon == DEFAULT_UI_ICON_ID
 
     assert unlock_ui_color(state, UI_COLORS_ORDER[1])
     assert unlock_ui_icon(state, UI_ICONS_ORDER[1])
     assert equip_ui_color(state, UI_COLORS_ORDER[1])
+    assert equip_icon_color(state, UI_COLORS_ORDER[1])
     assert equip_ui_icon(state, UI_ICONS_ORDER[1])
     assert not unlock_ui_color(state, "unknown_color")
     assert not unlock_ui_icon(state, "unknown_icon")
@@ -94,6 +97,7 @@ def test_cosmetics_state_roundtrip_and_order_characterization() -> None:
     restored = restore_cosmetics_state(serialized)
 
     assert restored.equipped_ui_color == UI_COLORS_ORDER[1]
+    assert restored.equipped_icon_color == UI_COLORS_ORDER[1]
     assert restored.equipped_ui_icon == UI_ICONS_ORDER[1]
     assert UI_COLORS_ORDER[1] in restored.unlocked_ui_colors
     assert UI_ICONS_ORDER[1] in restored.unlocked_ui_icons
@@ -108,4 +112,28 @@ def test_cosmetics_state_roundtrip_and_order_characterization() -> None:
     ]
     assert UI_COLORS_ORDER[1] in UI_COLOR_DEFINITIONS
     assert UI_ICONS_ORDER[1] in UI_ICON_DEFINITIONS
+
+
+def test_cosmetics_restore_migrates_missing_icon_color_to_ui_color() -> None:
+    state = create_default_cosmetics_state()
+    assert unlock_ui_color(state, UI_COLORS_ORDER[1])
+    assert equip_ui_color(state, UI_COLORS_ORDER[1])
+
+    serialized = serialize_cosmetics_state(state)
+    serialized.pop("equipped_icon_color", None)
+
+    restored = restore_cosmetics_state(serialized)
+    assert restored.equipped_ui_color == UI_COLORS_ORDER[1]
+    assert restored.equipped_icon_color == UI_COLORS_ORDER[1]
+
+
+def test_equip_icon_color_requires_unlocked_color() -> None:
+    state = create_default_cosmetics_state()
+    assert not equip_icon_color(state, "unknown_color")
+
+    target_color = UI_COLORS_ORDER[1]
+    assert not equip_icon_color(state, target_color)
+    assert unlock_ui_color(state, target_color)
+    assert equip_icon_color(state, target_color)
+    assert state.equipped_icon_color == target_color
 

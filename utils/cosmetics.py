@@ -136,6 +136,7 @@ class PlayerCosmeticsState:
     unlocked_ui_colors: Set[str] = field(default_factory=set)
     unlocked_ui_icons: Set[str] = field(default_factory=set)
     equipped_ui_color: str = DEFAULT_UI_COLOR_ID
+    equipped_icon_color: str = DEFAULT_UI_COLOR_ID
     equipped_ui_icon: str = DEFAULT_UI_ICON_ID
 
 
@@ -144,6 +145,7 @@ def create_default_cosmetics_state() -> PlayerCosmeticsState:
         unlocked_ui_colors={DEFAULT_UI_COLOR_ID},
         unlocked_ui_icons={DEFAULT_UI_ICON_ID},
         equipped_ui_color=DEFAULT_UI_COLOR_ID,
+        equipped_icon_color=DEFAULT_UI_COLOR_ID,
         equipped_ui_icon=DEFAULT_UI_ICON_ID,
     )
 
@@ -153,6 +155,7 @@ def serialize_cosmetics_state(state: PlayerCosmeticsState) -> Dict[str, object]:
         "unlocked_ui_colors": sorted(state.unlocked_ui_colors),
         "unlocked_ui_icons": sorted(state.unlocked_ui_icons),
         "equipped_ui_color": state.equipped_ui_color,
+        "equipped_icon_color": state.equipped_icon_color,
         "equipped_ui_icon": state.equipped_ui_icon,
     }
 
@@ -184,6 +187,15 @@ def restore_cosmetics_state(raw_state: object) -> PlayerCosmeticsState:
         and equipped_color in state.unlocked_ui_colors
     ):
         state.equipped_ui_color = equipped_color
+
+    equipped_icon_color = raw_state.get("equipped_icon_color")
+    if (
+        isinstance(equipped_icon_color, str)
+        and equipped_icon_color in state.unlocked_ui_colors
+    ):
+        state.equipped_icon_color = equipped_icon_color
+    else:
+        state.equipped_icon_color = state.equipped_ui_color
 
     equipped_icon = raw_state.get("equipped_ui_icon")
     if (
@@ -224,6 +236,13 @@ def equip_ui_icon(state: PlayerCosmeticsState, icon_id: str) -> bool:
     if icon_id not in state.unlocked_ui_icons:
         return False
     state.equipped_ui_icon = icon_id
+    return True
+
+
+def equip_icon_color(state: PlayerCosmeticsState, color_id: str) -> bool:
+    if color_id not in state.unlocked_ui_colors:
+        return False
+    state.equipped_icon_color = color_id
     return True
 
 

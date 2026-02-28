@@ -29,6 +29,8 @@ Use these IDs in reward payloads:
 - `desolate_silver`: Prata Desolada
 - `farseas_crimson`: Carmesim de Farseas
 - `cafeteria_mocha`: Mocha da Cafeteria
+- `solar_gold`: Ouro Solar
+- `glacial_cyan`: Ciano Glacial
 
 ## UI icons
 
@@ -54,3 +56,5 @@ Use these IDs in reward payloads:
 - `pool_desolatedeep`: Profundezas Desoladas
 - `pool_farseas_eye`: Olho de Farseas
 - `pool_cafeteria_coffee`: Xicara da Cafeteria
+- `pool_baiadosol`: Baia do Sol
+- `pool_snowcap`: Geleira Snowcap

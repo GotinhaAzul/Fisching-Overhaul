@@ -21,6 +21,8 @@
     {"icon_id": "pool_thedepths", "name": "As profundezas", "badge_lines": ["  ~~~~~~  ", "   \\  /   ", "    \\/    "]},
     {"icon_id": "pool_desolatedeep", "name": "Profundezas Desoladas", "badge_lines": ["  _|[]|_  ", " |  __  | ", " |_/  \\_| "]},
     {"icon_id": "pool_farseas_eye", "name": "Olho de Farseas", "badge_lines": ["  .-===-. ", " (  o o ) ", "  '-___-' "]},
-    {"icon_id": "pool_cafeteria_coffee", "name": "Xicara da Cafeteria", "badge_lines": ["  (____)  ", "  |____|) ", "   ||||   "]}
+    {"icon_id": "pool_cafeteria_coffee", "name": "Xicara da Cafeteria", "badge_lines": ["  (____)  ", "  |____|) ", "   ||||   "]},
+    {"icon_id": "pool_baiadosol", "name": "Baia do Sol", "badge_lines": ["  \\ | /  ", " -- O -- ", "  / | \\  "]},
+    {"icon_id": "pool_snowcap", "name": "Geleira Snowcap", "badge_lines": ["   /\\    ", "  /__\\   ", "  /\\_/\\  "]}
   ]
 }

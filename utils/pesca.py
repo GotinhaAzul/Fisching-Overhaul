@@ -31,6 +31,7 @@ from utils.cosmetics import (
     UI_COLOR_DEFINITIONS,
     UI_ICON_DEFINITIONS,
     create_default_cosmetics_state,
+    equip_icon_color,
     equip_ui_color,
     equip_ui_icon,
     list_unlocked_ui_colors,
@@ -1807,11 +1808,18 @@ def show_inventory(
         while True:
             clear_screen()
             active_color, active_icon = active_cosmetics_summary()
+            icon_color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_icon_color)
+            active_icon_color = (
+                icon_color_def.name
+                if icon_color_def is not None
+                else cosmetics_state.equipped_icon_color
+            )
             print_menu_panel(
                 "COSMETICOS",
                 subtitle="Visual da interface",
                 header_lines=[
                     f"Cor ativa: {active_color}",
+                    f"Cor do icone: {active_icon_color}",
                     f"Icone ativo: {active_icon}",
                     f"Cores desbloqueadas: {len(cosmetics_state.unlocked_ui_colors)}",
                     f"Icones desbloqueados: {len(cosmetics_state.unlocked_ui_icons)}",
@@ -1819,6 +1827,7 @@ def show_inventory(
                 options=[
                     MenuOption("1", "Equipar cor"),
                     MenuOption("2", "Equipar icone"),
+                    MenuOption("3", "Equipar cor do icone"),
                     MenuOption("0", "Voltar"),
                 ],
                 prompt="Escolha uma opcao:",
@@ -1911,6 +1920,48 @@ def show_inventory(
                     print("Nao foi possivel equipar esse icone.")
                 input("\nEnter para voltar.")
                 continue
+            if choice == "3":
+                unlocked_colors = list_unlocked_ui_colors(cosmetics_state)
+                if not unlocked_colors:
+                    print("Nenhuma cor desbloqueada.")
+                    input("\nEnter para voltar.")
+                    continue
+                clear_screen()
+                print_menu_panel(
+                    "COR DO ICONE",
+                    subtitle=f"Atual: {active_icon_color}",
+                    options=[
+                        MenuOption(
+                            str(idx),
+                            color.name,
+                            status="equipada"
+                            if color.color_id == cosmetics_state.equipped_icon_color
+                            else "",
+                        )
+                        for idx, color in enumerate(unlocked_colors, start=1)
+                    ],
+                    prompt="Digite o numero da cor:",
+                    show_badge=False,
+                )
+                selection = input("> ").strip()
+                if not selection.isdigit():
+                    print("Entrada invalida.")
+                    input("\nEnter para voltar.")
+                    continue
+                idx = int(selection)
+                if not (1 <= idx <= len(unlocked_colors)):
+                    print("Numero fora do intervalo.")
+                    input("\nEnter para voltar.")
+                    continue
+                selected = unlocked_colors[idx - 1]
+                if equip_icon_color(cosmetics_state, selected.color_id):
+                    if on_cosmetics_changed is not None:
+                        on_cosmetics_changed()
+                    print(f"Cor do icone equipada: {selected.name}.")
+                else:
+                    print("Nao foi possivel equipar essa cor para o icone.")
+                input("\nEnter para voltar.")
+                continue
             print("Opcao invalida.")
             input("\nEnter para voltar.")
 
@@ -1943,7 +1994,11 @@ def show_inventory(
             if equipped_bait_id:
                 options.append(MenuOption("3", "Desequipar isca", "Remover isca ativa"))
             options.append(
-                MenuOption(cosmetics_option_key, "Cosmeticos", "Cor da interface e icone")
+                MenuOption(
+                    cosmetics_option_key,
+                    "Cosmeticos",
+                    "Cor da interface, cor do icone e icone",
+                )
             )
             if total_pages > 1:
                 options.extend(
@@ -2584,10 +2639,16 @@ def main(dev_mode: bool = False):
     hunt_manager.start()
 
     def apply_active_cosmetics() -> None:
-        color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_ui_color)
+        ui_color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_ui_color)
+        icon_color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_icon_color)
         icon_def = UI_ICON_DEFINITIONS.get(cosmetics_state.equipped_ui_icon)
         set_ui_cosmetics(
-            accent_color=color_def.accent_color if color_def is not None else Fore.CYAN,
+            accent_color=ui_color_def.accent_color if ui_color_def is not None else Fore.CYAN,
+            icon_color=(
+                icon_color_def.accent_color
+                if icon_color_def is not None
+                else (ui_color_def.accent_color if ui_color_def is not None else Fore.CYAN)
+            ),
             badge_lines=icon_def.badge_lines if icon_def is not None else None,
         )
 
