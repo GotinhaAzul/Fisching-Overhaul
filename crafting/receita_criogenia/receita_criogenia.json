@@ -1,0 +1,33 @@
+{
+  "id": "criogenia_craft",
+  "rod_name": "Criogenia",
+  "name": "Espinhos de Gelo.",
+  "description": "Sinta seu sangue esfriar.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Geleira Snowcap"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Lúcio",
+        "count": 3
+      },
+      {
+        "type": "mutation",
+        "mutation_name": "Congelado",
+        "count": 1
+      },
+      {
+        "type": "money",
+        "amount": 3000
+      }
+    ]
+  }
+}

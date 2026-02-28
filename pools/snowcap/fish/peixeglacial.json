@@ -1,0 +1,10 @@
+{
+  "name": "Peixe Glacial",
+  "rarity": "Lendario",
+  "description": "O peixe glacial é um peixe de água salgada fria com corpo grande e largo e uma coloração rosa característica nas barbatanas. É um peixe extremamente raro e, por vezes, difícil de capturar para qualquer pescador. Pode ser encontrado com mais frequência nas cavernas de Snowcap durante a noite.s.",
+  "kg_min": 1.0,
+  "kg_max": 20.0,
+  "base_value": 120,
+  "sequence_len": 7,
+  "reaction_time_s": 1.7
+}

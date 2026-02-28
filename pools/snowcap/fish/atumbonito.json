@@ -1,0 +1,10 @@
+{
+  "name": "Atum-Bonito",
+  "rarity": "Incomum",
+  "description": "O atum-bonito pode ser pescado perto da Ilha Snowcap. São nadadores extremamente ágeis, o que lhes permite oferecer uma forte resistência aos pescadores.",
+  "kg_min": 3.0,
+  "kg_max": 7.0,
+  "base_value": 18,
+  "sequence_len": 5,
+  "reaction_time_s": 1.7
+}

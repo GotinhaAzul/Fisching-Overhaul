@@ -1,0 +1,10 @@
+{
+  "name": "Cinzento",
+  "rarity": "Comum",
+  "description": "Um peixe interessante de água fria, com escamas prateadas brilhantes e uma grande barbatana dorsal colorida que lhe é característica. É conhecido pela sua beleza e pela sua agilidade na água. O Cinzento é frequentemente encontrado em volta de Snowcap de dia, mas raramente à noite.",
+  "kg_min": 1.0,
+  "kg_max": 3.2,
+  "base_value": 6,
+  "sequence_len": 5,
+  "reaction_time_s": 2.6
+}

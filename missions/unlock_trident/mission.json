@@ -1,0 +1,29 @@
+{
+  "id": "trident_unlock",
+  "name": "As ruinas desoladas.",
+  "description": "As ruinas que cercam todo este lugar, na verdade, sao um grande esqueleto de algum peixe antigo ja morto. Seu cranio esta aberto, provavel causa de sua morte. Oque poderia ter matado algo tao grandioso?",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Madeira Lunar"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Fantasma de Salmoura"
+    },
+    {
+      "type": "deliver_mutation",
+      "count": 1,
+      "mutation_name": "Elétrico"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_rods",
+      "rod_names": ["Tridente"]
+    }
+  ]
+}

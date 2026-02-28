@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import random
+import sys
 import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
 
+from colorama import Fore, Style
 from utils.baits import BaitCrateDefinition, BaitDefinition
 from utils.crafting import (
     CraftingDefinition,
@@ -25,6 +27,8 @@ from utils.crafting import (
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
+from utils.menu_input import read_menu_choice
+from utils.modern_ui import MenuOption, print_menu_panel
 from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
@@ -905,94 +909,205 @@ def show_market(
             input("\nEnter para voltar.")
             return balance_local
 
-        print_spaced_lines([
-            "🔎 Appraise",
-            "Escolha um peixe para rerolar KG e mutacao.",
-            "Que a sorte esteja com voce!",
-        ])
-        for index, entry in enumerate(inventory, start=1):
-            value = calculate_entry_value(entry)
+        selected_index: Optional[int] = None
+        last_result: Optional[Dict[str, object]] = None
+        session_notes: List[str] = []
+        status_message = ""
+
+        def _format_change_text(delta_value: float, text: str) -> str:
+            if delta_value > 0:
+                return f"{Style.DIM}{Fore.GREEN}{text}{Style.RESET_ALL}"
+            if delta_value < 0:
+                return f"{Style.DIM}{Fore.RED}{text}{Style.RESET_ALL}"
+            return text
+
+        def _read_appraise_action() -> str:
+            if sys.stdin is not None and sys.stdin.isatty():
+                return read_menu_choice(
+                    "Escolha uma opcao: ",
+                    instant_keys={"t"},
+                ).strip().lower()
+            return input("Escolha uma opcao: ").strip().lower()
+
+        while True:
+            if selected_index is None:
+                clear_screen()
+                header_lines = [
+                    "=== Appraise ===",
+                    "Selecione um peixe uma vez e rerole rapidamente.",
+                    "0. Voltar",
+                ]
+                if status_message:
+                    header_lines.append(f"Aviso: {status_message}")
+                    status_message = ""
+                print_spaced_lines(header_lines)
+                for index, entry in enumerate(inventory, start=1):
+                    value = calculate_entry_value(entry)
+                    cost = _appraise_cost(entry)
+                    mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
+                    print(
+                        f"{index}. {entry.name} [{entry.rarity}] "
+                        f"({entry.kg:0.2f}kg | {mutation_label}) "
+                        f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
+                    )
+
+                selection = input("Digite o numero do peixe: ").strip()
+                if selection == "0":
+                    return balance_local
+                if not selection.isdigit():
+                    status_message = "Entrada invalida."
+                    continue
+
+                selected_candidate = int(selection) - 1
+                if not (0 <= selected_candidate < len(inventory)):
+                    status_message = "Numero fora do intervalo."
+                    continue
+
+                selected_index = selected_candidate
+                last_result = None
+                session_notes = []
+                status_message = ""
+                continue
+
+            if selected_index >= len(inventory):
+                selected_index = None
+                last_result = None
+                session_notes = []
+                status_message = "Peixe selecionado nao esta mais no inventario."
+                continue
+
+            entry = inventory[selected_index]
+            profile = fish_by_name.get(entry.name)
+            if not profile:
+                selected_index = None
+                last_result = None
+                session_notes = []
+                status_message = "Esse peixe nao pode ser avaliado agora."
+                continue
+
+            current_value = calculate_entry_value(entry)
             cost = _appraise_cost(entry)
-            mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-            print(
-                f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
+            mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
+            lines = [
+                f"Peixe: {entry.name} [{entry.rarity}]",
+                f"Atual: KG {entry.kg:0.2f} | Mutacao: {mutation_label}",
+                f"Valor estimado: {format_currency(current_value)}",
+                f"Custo do appraise: {format_currency(cost)}",
+                f"Saldo: {format_currency(balance_local)}",
+            ]
+            if last_result:
+                old_mutation = last_result["old_mutation"]
+                new_mutation = last_result["new_mutation"]
+                old_mutation_label = old_mutation if old_mutation else "Sem mutacao"
+                new_mutation_label = new_mutation if new_mutation else "Sem mutacao"
+                old_kg = float(last_result["old_kg"])
+                new_kg = float(last_result["new_kg"])
+                kg_delta = new_kg - old_kg
+                old_value = float(last_result["old_value"])
+                new_value = float(last_result["new_value"])
+                value_delta = new_value - old_value
+                kg_delta_label = _format_change_text(kg_delta, f"{kg_delta:+0.2f}kg")
+                value_delta_label = _format_change_text(value_delta, f"{value_delta:+.2f}")
+                lines.extend(
+                    [
+                        "",
+                        "Comparacao do ultimo appraise:",
+                        (
+                            f"ANTES  - KG {old_kg:0.2f} | "
+                            f"Mutacao: {old_mutation_label} | Valor: {format_currency(old_value)}"
+                        ),
+                        (
+                            f"DEPOIS - KG {new_kg:0.2f} | "
+                            f"Mutacao: {new_mutation_label} | Valor: {format_currency(new_value)}"
+                        ),
+                        f"Delta de KG: {kg_delta_label}",
+                        f"Delta de valor: {value_delta_label}",
+                    ]
+                )
+            if session_notes:
+                lines.append("")
+                lines.append("Notas:")
+                lines.extend(f"- {note}" for note in session_notes if note)
+
+            if status_message:
+                lines.append(f"Aviso: {status_message}")
+                status_message = ""
+
+            clear_screen()
+            print_menu_panel(
+                "Appraise",
+                header_lines=lines,
+                options=[
+                    MenuOption("T", "Appraise"),
+                    MenuOption("1", "Trocar peixe"),
+                    MenuOption("0", "Voltar"),
+                ],
+                prompt="Escolha uma opcao:",
+                show_badge=False,
             )
 
-        selection = input("Digite o numero do peixe: ").strip()
-        if not selection.isdigit():
-            print("Entrada invalida.")
-            input("\nEnter para voltar.")
-            return balance_local
+            choice = _read_appraise_action()
+            if choice == "0":
+                return balance_local
+            if choice == "1":
+                selected_index = None
+                last_result = None
+                session_notes = []
+                status_message = ""
+                continue
+            if choice != "t":
+                status_message = "Opcao invalida."
+                continue
 
-        selected_index = int(selection)
-        if not (1 <= selected_index <= len(inventory)):
-            print("Numero fora do intervalo.")
-            input("\nEnter para voltar.")
-            return balance_local
+            if balance_local < cost:
+                status_message = "Saldo insuficiente para appraise."
+                continue
 
-        entry = inventory[selected_index - 1]
-        profile = fish_by_name.get(entry.name)
-        if not profile:
-            print("Esse peixe nao pode ser avaliado agora.")
-            input("\nEnter para voltar.")
-            return balance_local
+            if entry.mutation_name:
+                confirm = input(
+                    f"{entry.name} possui mutacao {entry.mutation_name}. "
+                    "Appraise pode trocar ou remover a mutacao. Confirmar? (s/n): "
+                ).strip().lower()
+                if confirm != "s":
+                    status_message = "Appraise cancelado."
+                    continue
 
-        cost = _appraise_cost(entry)
-        if balance_local < cost:
-            print("Saldo insuficiente para appraise.")
-            input("\nEnter para voltar.")
-            return balance_local
+            old_kg = entry.kg
+            old_mutation = entry.mutation_name
+            old_value = calculate_entry_value(entry)
 
-        old_kg = entry.kg
-        old_mutation = entry.mutation_name
-        old_value = calculate_entry_value(entry)
+            balance_local -= cost
+            if on_money_spent:
+                on_money_spent(cost)
 
-        confirm = input(
-            f"Cobrar {format_currency(cost)} para rerolar {entry.name}. Confirmar? (s/n): "
-        ).strip().lower()
-        if confirm != "s":
-            return balance_local
+            entry.kg = random.uniform(profile.kg_min, profile.kg_max)
+            appraise_mutations = (
+                filter_mutations_for_rod(available_mutations, equipped_rod.name)
+                if equipped_rod is not None
+                else list(available_mutations)
+            )
+            mutation = choose_mutation(appraise_mutations)
+            entry.mutation_name = mutation.name if mutation else None
+            entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
+            entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
+            new_value = calculate_entry_value(entry)
 
-        balance_local -= cost
-        if on_money_spent:
-            on_money_spent(cost)
+            last_result = {
+                "old_kg": old_kg,
+                "new_kg": entry.kg,
+                "old_mutation": old_mutation,
+                "new_mutation": entry.mutation_name,
+                "old_value": old_value,
+                "new_value": new_value,
+            }
+            status_message = "Appraise concluido."
+            session_notes = []
 
-        entry.kg = random.uniform(profile.kg_min, profile.kg_max)
-        appraise_mutations = (
-            filter_mutations_for_rod(available_mutations, equipped_rod.name)
-            if equipped_rod is not None
-            else list(available_mutations)
-        )
-        mutation = choose_mutation(appraise_mutations)
-        entry.mutation_name = mutation.name if mutation else None
-        entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
-        entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
-        new_value = calculate_entry_value(entry)
-
-        old_mutation_label = old_mutation if old_mutation else "Sem mutacao"
-        new_mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
-        value_delta = new_value - old_value
-        print_spaced_lines([
-            "✅ Appraise concluido!",
-            f"KG: {old_kg:0.2f} -> {entry.kg:0.2f}",
-            f"Mutacao: {old_mutation_label} -> {new_mutation_label}",
-            (
-                f"Valor estimado: {format_currency(old_value)} -> {format_currency(new_value)} "
-                f"({value_delta:+.2f})"
-            ),
-        ])
-
-        if on_appraise_completed:
-            notes = on_appraise_completed(entry)
-            if notes:
-                print("")
-                for note in notes:
-                    print(note)
-        _refresh_crafting_unlocks()
-
-        input("\nEnter para voltar.")
-        return balance_local
+            if on_appraise_completed:
+                notes = on_appraise_completed(entry)
+                if notes:
+                    session_notes.extend(note for note in notes if note)
+            _refresh_crafting_unlocks()
 
     def _handle_crafting_action(
         current_balance: float,

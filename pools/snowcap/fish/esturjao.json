@@ -1,0 +1,10 @@
+{
+  "name": "Esturjão",
+  "rarity": "Raro",
+  "description": "Um peixe grande e antigo, com corpo longo e blindado e placas ósseas características. Os esturjões são conhecidos por seu tamanho e força, o que os torna um desafio para pescar.",
+  "kg_min": 10.0,
+  "kg_max": 15.0,
+  "base_value": 65,
+  "sequence_len": 6,
+  "reaction_time_s": 1.8
+}

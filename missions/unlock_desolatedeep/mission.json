@@ -22,7 +22,7 @@
     },
     {
       "type": "unlock_missions",
-      "mission_ids": ["brinepool_unlock"]
+      "mission_ids": ["brinepool_unlock", "trident_unlock"]
     }
   ]
 }

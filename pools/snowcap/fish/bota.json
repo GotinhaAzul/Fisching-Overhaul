@@ -1,0 +1,10 @@
+{
+  "name": "Bota",
+  "rarity": "Comum",
+  "description": "Quem deixaria isso no oceano? Parece estar em ótimo estado também. Uma bota comum, deve ter caído de um barco... Ou alguém deve ter caído de um barco... Seja como for, agora é sua!",
+  "kg_min": 0.7,
+  "kg_max": 1.2,
+  "base_value": 4,
+  "sequence_len": 4,
+  "reaction_time_s": 2.5
+}

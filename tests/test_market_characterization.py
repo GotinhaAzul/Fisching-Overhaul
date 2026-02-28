@@ -228,7 +228,7 @@ def test_show_market_appraise_flow_characterization(monkeypatch) -> None:
     monkeypatch.setattr(market.random, "uniform", lambda _a, _b: 2.8)
     monkeypatch.setattr(market, "filter_mutations_for_rod", lambda mutations, _rod_name: list(mutations))
     monkeypatch.setattr(market, "choose_mutation", lambda _mutations: mutation)
-    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "s", "", "0"]))
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "t", "0", "0"]))
 
     original_value = calculate_entry_value(entry)
     expected_cost = max(1.0, original_value * 0.35)
@@ -253,6 +253,152 @@ def test_show_market_appraise_flow_characterization(monkeypatch) -> None:
     assert entry.mutation_name == "Albino"
     assert entry.mutation_xp_multiplier == 1.5
     assert entry.mutation_gold_multiplier == 1.1
+
+
+def test_show_market_appraise_quick_repeat_same_fish_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    entry = InventoryEntry(name=fish.name, rarity=fish.rarity, kg=2.0, base_value=fish.base_value)
+    inventory = [entry]
+
+    kg_rolls = iter([2.4, 2.9])
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.random, "uniform", lambda _a, _b: next(kg_rolls))
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "t", "t", "0", "0"]))
+
+    original_value = calculate_entry_value(entry)
+    expected_first_cost = max(1.0, original_value * 0.35)
+    value_after_first = calculate_entry_value(
+        InventoryEntry(name=fish.name, rarity=fish.rarity, kg=2.4, base_value=fish.base_value)
+    )
+    expected_second_cost = max(1.0, value_after_first * 0.35)
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=100.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        equipped_rod=starter,
+    )
+
+    assert level == 1
+    assert xp == 0
+    assert balance == 100.0 - expected_first_cost - expected_second_cost
+    assert entry.kg == 2.9
+    assert entry.mutation_name is None
+    assert entry.mutation_xp_multiplier == 1.0
+    assert entry.mutation_gold_multiplier == 1.0
+
+
+def test_show_market_appraise_mutation_confirmation_cancel_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    entry = InventoryEntry(
+        name=fish.name,
+        rarity=fish.rarity,
+        kg=2.0,
+        base_value=fish.base_value,
+        mutation_name="Albino",
+        mutation_xp_multiplier=1.5,
+        mutation_gold_multiplier=1.1,
+    )
+    inventory = [entry]
+    money_spent: list[float] = []
+
+    def _unexpected_uniform(_a: float, _b: float) -> float:
+        raise AssertionError("Appraise should not reroll KG when mutation confirmation is canceled.")
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.random, "uniform", _unexpected_uniform)
+    monkeypatch.setattr(
+        market,
+        "choose_mutation",
+        lambda _mutations: (_ for _ in ()).throw(
+            AssertionError("Appraise should not reroll mutation when confirmation is canceled.")
+        ),
+    )
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "t", "n", "0", "0"]))
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=50.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        equipped_rod=starter,
+        on_money_spent=money_spent.append,
+    )
+
+    assert level == 1
+    assert xp == 0
+    assert balance == 50.0
+    assert money_spent == []
+    assert entry.kg == 2.0
+    assert entry.mutation_name == "Albino"
+    assert entry.mutation_xp_multiplier == 1.5
+    assert entry.mutation_gold_multiplier == 1.1
+
+
+def test_show_market_appraise_mutation_confirmation_accept_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    entry = InventoryEntry(
+        name=fish.name,
+        rarity=fish.rarity,
+        kg=2.0,
+        base_value=fish.base_value,
+        mutation_name="Albino",
+        mutation_xp_multiplier=1.5,
+        mutation_gold_multiplier=1.1,
+    )
+    inventory = [entry]
+    mutation = Mutation(
+        name="Noir",
+        description="",
+        xp_multiplier=1.6,
+        gold_multiplier=1.2,
+        chance=1.0,
+        required_rods=(),
+    )
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.random, "uniform", lambda _a, _b: 2.6)
+    monkeypatch.setattr(market, "filter_mutations_for_rod", lambda mutations, _rod_name: list(mutations))
+    monkeypatch.setattr(market, "choose_mutation", lambda _mutations: mutation)
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "t", "s", "0", "0"]))
+
+    original_value = calculate_entry_value(entry)
+    expected_cost = max(1.0, original_value * 0.35)
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=80.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[mutation],
+        equipped_rod=starter,
+    )
+
+    assert level == 1
+    assert xp == 0
+    assert balance == 80.0 - expected_cost
+    assert entry.kg == 2.6
+    assert entry.mutation_name == "Noir"
+    assert entry.mutation_xp_multiplier == 1.6
+    assert entry.mutation_gold_multiplier == 1.2
 
 
 def test_show_market_bait_crate_flow_characterization(monkeypatch) -> None:

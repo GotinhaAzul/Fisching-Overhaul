@@ -1,0 +1,9 @@
+{
+  "name": "Criogenico",
+  "description": "Congele a propia essencia de um peixe..",
+  "xp_multiplier": 1.1,
+  "gold_multiplier": 1.25,
+  "chance_percent": 15,
+  "required_rods": ["Criogenia"]
+
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Geleira Snowcap",
+  "description": "Frio...! Muuuito frioo!.",
+ "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 49,
+    "Incomum": 35,
+    "Raro": 16,
+    "Epico": 6,
+    "Lendario": 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Criogenia",
+  "luck": 0.1,
+  "kg_max": 130.0,
+  "control": 0.4,
+  "description": "Usa de frio extremo para congelar (quase) completamente os peixes, eles nao tem chance!",
+  "price": 0,
+  "unlocked_default": false,
+  "can_slam": true,
+  "slam_chance": 0.1,
+  "slam_time_bonus": 0.5
+}

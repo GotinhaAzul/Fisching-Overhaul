@@ -1,0 +1,11 @@
+{
+  "name": "Tridente",
+  "luck": 0.22,
+  "kg_max": 150.0,
+  "control": 0.7,
+  "description": "A arma usada para matar oque um dia ja foi uma besta marinha.",
+  "price": 9000,
+  "can_slash": true,
+  "slash_chance": 0.10,
+  "slash_power": 1
+}

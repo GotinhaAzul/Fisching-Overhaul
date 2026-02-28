@@ -1,0 +1,10 @@
+{
+  "name": "Truta do Artico",
+  "rarity": "Incomum",
+  "description": "A truta do artico é um peixe impressionante, conhecido pela sua barriga de cor vermelho-alaranjada vibrante e pela boca comprida. Pode ser encontrado nas águas frias e salgadas de Snowcap.",
+  "kg_min": 1.0,
+  "kg_max": 3.0,
+  "base_value": 22,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

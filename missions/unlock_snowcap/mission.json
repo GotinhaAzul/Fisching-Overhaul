@@ -1,0 +1,22 @@
+{
+  "id": "snowcap_unlock",
+  "name": "A grande geleira.",
+  "description": "Isso vem te incomodando faz um tempo... o sol aquece todo o mar, mas essa geleira nunca muda.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "spend_money",
+      "amount": 1200
+    },
+    {
+      "type": "level",
+      "level": 5
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Geleira Snowcap"]
+    }
+  ]
+}

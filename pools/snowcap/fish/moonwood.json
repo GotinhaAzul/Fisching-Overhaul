@@ -1,0 +1,10 @@
+{
+  "name": "Madeira Lunar",
+  "rarity": "Lendario",
+  "description": "Esta madeira resistente suportou aos invernos mais rigorosos, sua força foi forjada sob o pálido brilho da lua. Uma energia estranha sai desse artefato.",
+  "kg_min": 0.8,
+  "kg_max": 1.0,
+  "base_value": 120,
+  "sequence_len": 4,
+  "reaction_time_s": 1.3
+}
