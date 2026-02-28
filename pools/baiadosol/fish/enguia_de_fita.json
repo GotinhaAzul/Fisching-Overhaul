@@ -1,0 +1,10 @@
+{
+  "name": "Enguia-de-fita",
+  "rarity": "Epico",
+  "description": "Uma criatura longa, sinuosa e extraordinariamente colorida que espreita em tocas estreitas no recife. Ela emerge apenas parcialmente para capturar presas desavisadas que passam por perto, exibindo movimentos que lembram uma fita de seda ondulando ao vento. Sua natureza esquiva e a força de seu corpo alongado tornam a luta pela captura um desafio técnico exaustivo e imprevisível.",
+  "kg_min": 2.0,
+  "kg_max": 5.0,
+  "base_value": 120,
+  "sequence_len": 7,
+  "reaction_time_s": 1.8
+}

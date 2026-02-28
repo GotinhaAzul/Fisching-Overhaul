@@ -1,0 +1,10 @@
+{
+  "name": "Arraia-manta",
+  "rarity": "Lendario",
+  "description": "Uma enorme e majestosa criatura marinha que desliza pelas águas da Baía do Sol com movimentos de 'asas' amplos e rítmicos. Sua presença é imponente, evocando uma sensação de reverência em qualquer pescador que tenha a sorte de encontrá-la. A Arraia-manta não luta com agressividade bruta, mas sim com uma força monumental e mergulhos profundos que testam os limites de qualquer equipamento de pesca.",
+  "kg_min": 15.0,
+  "kg_max": 40.0,
+  "base_value": 135,
+  "sequence_len": 9,
+  "reaction_time_s": 2.0
+}

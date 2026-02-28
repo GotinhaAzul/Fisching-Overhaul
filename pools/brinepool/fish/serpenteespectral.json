@@ -3,7 +3,7 @@
   "rarity": "Lendario",
   "description": "A Serpente Espectral é uma espécie de serpente marinha agressiva e gigantesca. Ela possui uma exomembrana translúcida que cobre o interior do corpo, além de quatro olhos bioluminescentes. Costuma espreitar nas profundezas da Piscina de Salmoura, onde se alimenta de microorganismos. Apesar de sua dieta específica, possui muitos dentes e mandíbulas afiadas, além de um crânio em forma de martelo, que utiliza para repelir facilmente ameaças invasoras. Quando fisgada, oferece uma luta intensa, mesmo para os pescadores mais experientes.",
   "kg_min": 25.0,
-  "kg_max": 55.0,
+  "kg_max": 105.0,
   "base_value": 180,
   "sequence_len": 12,
   "reaction_time_s": 2.0

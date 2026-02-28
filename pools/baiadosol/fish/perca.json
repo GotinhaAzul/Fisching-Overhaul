@@ -1,0 +1,10 @@
+{
+  "name": "Perca",
+  "rarity": "Comum",
+  "description": "Peixe de água costeira bastante comum, conhecido por suas listras verticais escuras e comportamento surpreendentemente agressivo ao morder a isca. A Perca da Baía costuma patrulhar áreas rasas em busca de pequenos crustáceos, demonstrando uma vitalidade que desafia seu tamanho médio. Sua captura é direta, mas exige atenção ao movimento rápido inicial.",
+  "kg_min": 0.5,
+  "kg_max": 1.5,
+  "base_value": 8,
+  "sequence_len": 3,
+  "reaction_time_s": 2.8
+}

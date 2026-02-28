@@ -2,8 +2,8 @@
   "name": "Lula Gigante",
   "rarity": "Lendario",
   "description": "Um ser gigante das profundezas do oceano, relatos dizem que derrubava barcos de pesca para se alimentar. As vezes, se aproximam da superficie durante a noite.",
-  "kg_min": 50,
-  "kg_max": 200,
+  "kg_min": 100,
+  "kg_max": 900,
   "base_value": 1500,
   "sequence_len": 18,
   "reaction_time_s": 4.0

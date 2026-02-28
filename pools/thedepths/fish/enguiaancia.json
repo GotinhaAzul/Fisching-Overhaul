@@ -3,7 +3,7 @@
   "rarity": "Epico",
   "description": "A Enguia Ancia e vista como uma reliquia viva das camadas mais antigas das profundezas. Marcas luminosas percorrem seu corpo como cicatrizes energeticas, brilhando mais forte quando ela percebe ameaca. Costuma circular perto de estruturas afundadas, onde caca peixes menores e invertebrados resistentes. Sua forca nao vem apenas do tamanho, mas da resistencia fora do comum durante o combate na linha.",
   "kg_min": 5.0,
-  "kg_max": 10.0,
+  "kg_max": 12.0,
   "base_value": 95,
   "sequence_len": 8,
   "reaction_time_s": 1.6

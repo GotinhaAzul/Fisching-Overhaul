@@ -2,8 +2,8 @@
   "name": "Dragao do Profundo",
   "rarity": "Lendario",
   "description": "Deixou de ser um peixe a seculos. Com duas barbatanas que se extendem como asas para o lado, ergue-se da agua por longos periodos de tempo em busca de presas. Luta de forma implacavel contra qualquer pescador que ousar levar um anzol contra ele.",
-  "kg_min": 50,
-  "kg_max": 250,
+  "kg_min": 150,
+  "kg_max": 750,
   "base_value": 1600,
   "sequence_len": 20,
   "reaction_time_s": 5.0

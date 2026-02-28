@@ -2,8 +2,8 @@
   "name": "Agua-Viva Imperatriz",
   "rarity": "Lendario",
   "description": "A água-viva imperatriz é uma espécie muito unica e incrivelmente rara, encontrada apenas nas águas escuras das Profundezas Desoladas. Elas carregam consigo uma estalactite que utilizam como mecanismo de defesa contra suas presas. São extremamente eletrizantes ao toque, o que as torna uma captura perigosa para a maioria dos pescadores.",
-  "kg_min": 60,
-  "kg_max": 120,
+  "kg_min": 90,
+  "kg_max": 220,
   "base_value": 1400,
   "sequence_len": 15,
   "reaction_time_s": 3.9

@@ -1,0 +1,10 @@
+{
+  "name": "Polvo-Dumbo",
+  "rarity": "Lendario",
+  "description": "Um habitante raríssimo das partes mais profundas da baía, este pequeno polvo possui nadadeiras que lembram orelhas de elefante, as quais utiliza para 'voar' graciosamente pela coluna d'água. Sua aparência dócil esconde uma inteligência superior e uma capacidade de camuflagem que o torna quase impossível de detectar. Encontrá-lo é um evento lendário, e sua captura exige uma precisão milimétrica e calma absoluta.",
+  "kg_min": 2.0,
+  "kg_max": 5.0,
+  "base_value": 125,
+  "sequence_len": 9,
+  "reaction_time_s": 2.3
+}

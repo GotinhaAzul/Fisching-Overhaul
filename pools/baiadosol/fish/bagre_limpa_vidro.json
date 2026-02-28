@@ -1,0 +1,10 @@
+{
+  "name": "Bagre limpa-vidro",
+  "rarity": "Raro",
+  "description": "Um peixe de fundo especializado, dotado de uma boca em formato de ventosa que utiliza para se fixar firmemente em superfícies rochosas e corais. Ele desempenha um papel vital no ecossistema da baía, alimentando-se de algas e detritos que se acumulam no leito marinho. Ao ser fisgado, tenta se ancorar no fundo, exigindo que o pescador aplique uma força constante para desprendê-lo de sua base.",
+  "kg_min": 0.5,
+  "kg_max": 2.0,
+  "base_value": 50,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

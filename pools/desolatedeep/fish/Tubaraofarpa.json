@@ -2,8 +2,8 @@
   "name": "Tubarao Farpa",
   "rarity": "Lendario",
   "description": "O Tubarao Farpa e um apex predador das Profundezas Desoladas, reconhecido pelo focinho reforcado e fileiras de dentes serrilhados. Sua mandibula exerce forca suficiente para romper cascos e destrocar madeira encharcada em poucos movimentos. Costuma circular em zonas abertas da ruina e atacar por impulso quando detecta vibracoes intensas na agua. Uma vez fisgado, entra em corrida longa e violenta, exigindo equipamento firme e total controle da linha.",
-  "kg_min": 20.0,
-  "kg_max": 30.5,
+  "kg_min": 30.0,
+  "kg_max": 70.5,
   "base_value": 160,
   "sequence_len": 10,
   "reaction_time_s": 2.0

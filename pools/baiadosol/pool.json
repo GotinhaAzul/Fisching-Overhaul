@@ -1,0 +1,12 @@
+{
+  "name": "Baia do Sol",
+  "description": "Uma baía radiante onde o sol reflete intensamente nas águas cristalinas, abrigando uma fauna tropical vibrante e diversificada.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 58,
+    "Incomum": 22,
+    "Raro": 12,
+    "Epico": 6,
+    "Lendario": 2
+  }
+}

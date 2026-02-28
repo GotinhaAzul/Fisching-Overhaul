@@ -1,0 +1,10 @@
+{
+  "name": "Sardinha",
+  "rarity": "Comum",
+  "description": "Um peixe minúsculo e simples, extremamente comum nas águas calmas da Baía do Sol. Sua pele prateada reflete a luz solar intensamente enquanto nadam em grandes cardumes coordenados. É frequentemente capturado por iniciantes devido à sua abundância e raramente oferece resistência física, sendo ideal para quem está começando a praticar a arte da pesca.",
+  "kg_min": 0.1,
+  "kg_max": 0.3,
+  "base_value": 5,
+  "sequence_len": 2,
+  "reaction_time_s": 3.0
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Peixe-palhaço",
+  "rarity": "Incomum",
+  "description": "Este peixe tropical vibrante é famoso por sua coloração laranja e branca. Vive em uma simbiose fascinante com anêmonas venenosas, usando seus tentáculos como um abrigo seguro e impenetrável contra predadores maiores. Na Baía do Sol, eles podem ser vistos ziguezagueando entre os recifes pouco profundos, exibindo uma agilidade notável que exige reflexos rápidos do pescador.",
+  "kg_min": 0.2,
+  "kg_max": 0.6,
+  "base_value": 18,
+  "sequence_len": 4,
+  "reaction_time_s": 2.5
+}

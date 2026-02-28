@@ -3,7 +3,7 @@
   "rarity": "Lendario",
   "description": "O Artefato-Espiral nao se comporta como uma captura comum: ele pulsa em ciclos e parece responder ao fluxo da agua ao redor. Sua estrutura mistura metal antigo e materia organica, sugerindo origem desconhecida nas camadas profundas de Vertigo. O peso irregular confunde ate pescadores experientes, porque a tracao muda de intensidade sem aviso. Quem consegue retira-lo da agua costuma relatar um zumbido baixo vindo do centro da espiral.",
   "kg_min": 15.0,
-  "kg_max": 30.5,
+  "kg_max": 30.0,
   "base_value": 150,
   "sequence_len": 10,
   "reaction_time_s": 2.7

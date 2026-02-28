@@ -1,0 +1,26 @@
+{
+  "id": "unlock_baiadosol",
+  "name": "Rumo à Baía do Sol",
+  "description": "Dizem que as águas da Baía do Sol brilham tanto quanto o ouro. Alcance o nível 7 e prepare 900$ para financiar sua expedição a este paraíso tropical.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "level",
+      "level": 7
+    },
+    {
+      "type": "spend_money",
+      "amount": 900
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 500
+    },
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Baia do Sol"]
+    }
+  ]
+}
