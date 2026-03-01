@@ -223,7 +223,9 @@ def _fish_label(
     if fish.name not in unlocked_fish:
         return "???"
     if fish.name not in completion_fish_names:
-        return f"{fish.name} [#FF6666](Hunt)[/#FF6666]"
+        if use_modern_ui():
+            return f"{fish.name} [#FF6666](Hunt)[/#FF6666]"
+        return f"{fish.name} (Hunt)"
     return fish.name
 
 

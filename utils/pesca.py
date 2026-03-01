@@ -58,6 +58,7 @@ from utils.crafting import (
 )
 from utils.modern_ui import (
     MenuOption,
+    console,
     is_unicode_enabled,
     print_menu_panel,
     render_fishing_hud_line,
@@ -670,7 +671,12 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
                 prompt="Digite o numero da pool:",
                 show_badge=False,
             )
-            choice = input("> ").strip().lower()
+            choice = read_menu_choice(
+                "> ",
+                instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
+                if page_slice.total_pages > 1
+                else set(),
+            ).lower()
             if not choice:
                 print("Entrada invalida. Digite apenas o numero da pool.")
                 continue
@@ -709,7 +715,12 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
             print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina ({page + 1}/{page_slice.total_pages})")
             print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior ({page + 1}/{page_slice.total_pages})")
 
-        choice = input("Digite o numero da pool: ").strip().lower()
+        choice = read_menu_choice(
+            "Digite o numero da pool: ",
+            instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
+            if page_slice.total_pages > 1
+            else set(),
+        ).lower()
         if not choice:
             print("Entrada invalida. Digite apenas o numero da pool.")
             continue
@@ -2172,14 +2183,14 @@ def show_inventory(
                         if rod_page_slice.total_pages > 1
                         else set(),
                     ).lower()
+                    rod_page, moved = apply_page_hotkey(
+                        selection,
+                        rod_page,
+                        rod_page_slice.total_pages,
+                    )
+                    if moved:
+                        continue
                     if not selection.isdigit():
-                        rod_page, moved = apply_page_hotkey(
-                            selection,
-                            rod_page,
-                            rod_page_slice.total_pages,
-                        )
-                        if moved:
-                            continue
                         print("Entrada invalida.")
                         input("\nEnter para voltar.")
                         continue
@@ -2332,13 +2343,13 @@ def show_inventory(
                 if not selection.isdigit():
                     print("Entrada invalida.")
                     input("\nEnter para voltar.")
-                    break
+                    continue
 
                 idx = int(selection)
                 if not (1 <= idx <= len(rods_on_page)):
                     print("Numero fora do intervalo.")
                     input("\nEnter para voltar.")
-                    break
+                    continue
 
                 equipped_rod = rods_on_page[idx - 1]
                 print(f"Vara equipada: {equipped_rod.name}.")
@@ -2684,9 +2695,9 @@ def run_fishing_round(
                 if is_hunt_fish
                 else fish.name
             )
-            print(f"🎣 Você pescou: {fish_name_label} [{fish.rarity}] - {caught_kg:0.2f}kg")
+            console.print(f"🎣 Você pescou: {fish_name_label} [{fish.rarity}] - {caught_kg:0.2f}kg")
             if first_catch:
-                print(f"📘 Primeira captura registrada no bestiário: {fish_name_label}!")
+                console.print(f"📘 Primeira captura registrada no bestiário: {fish_name_label}!")
             if mutation:
                 print(
                     "🧬 Mutação: "

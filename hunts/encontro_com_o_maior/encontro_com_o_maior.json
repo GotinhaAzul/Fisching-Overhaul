@@ -4,7 +4,7 @@
   "pool_name": "Ponto Zero",
   "duration_minutes": 5,
   "check_interval_seconds": 60,
-  "disturbance_per_catch": 5,
+  "disturbance_per_catch": 1,
   "disturbance_max": 3500,
   "rarity_chances": {
     "Raro": 6,
@@ -12,5 +12,5 @@
     "Mitico": 5
   },
   "cooldown_minutes": 8,
-  "disturbance_decay_per_check": 2
+  "disturbance_decay_per_check": 1
 }
