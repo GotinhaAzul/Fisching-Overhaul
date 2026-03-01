@@ -13,8 +13,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
-from colorama import Fore, Style
-from colorama import init as colorama_init
 from pynput import keyboard
 
 from utils.baits import BaitDefinition, build_bait_lookup, load_bait_crates
@@ -2484,7 +2482,7 @@ def run_fishing_round(
             )
             level, xp, level_ups = apply_xp_gain(level, xp, gained_xp)
             fish_name_label = (
-                f"{Fore.RED}{fish.name}{Style.RESET_ALL}"
+                f"[#F08080]{fish.name}[/#F08080]"
                 if is_hunt_fish
                 else fish.name
             )
@@ -2530,7 +2528,7 @@ def main(dev_mode: bool = False):
     if hasattr(sys.stdout, "reconfigure"):
         # Prevent UnicodeEncodeError on terminals using legacy encodings.
         sys.stdout.reconfigure(errors="replace")
-    colorama_init(autoreset=True)
+
     random.seed()
 
     base_dir = Path(__file__).resolve().parent.parent / "pools"
@@ -2643,11 +2641,11 @@ def main(dev_mode: bool = False):
         icon_color_def = UI_COLOR_DEFINITIONS.get(cosmetics_state.equipped_icon_color)
         icon_def = UI_ICON_DEFINITIONS.get(cosmetics_state.equipped_ui_icon)
         set_ui_cosmetics(
-            accent_color=ui_color_def.accent_color if ui_color_def is not None else Fore.CYAN,
+            accent_color=ui_color_def.accent_color if ui_color_def is not None else "#87CEEB",
             icon_color=(
                 icon_color_def.accent_color
                 if icon_color_def is not None
-                else (ui_color_def.accent_color if ui_color_def is not None else Fore.CYAN)
+                else (ui_color_def.accent_color if ui_color_def is not None else "#87CEEB")
             ),
             badge_lines=icon_def.badge_lines if icon_def is not None else None,
         )

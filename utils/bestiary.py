@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, Set, TYPE_CHECKING
 
-from colorama import Fore, Style
-
 from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, print_menu_panel, use_modern_ui
 from utils.pagination import (
@@ -225,7 +223,7 @@ def _fish_label(
     if fish.name not in unlocked_fish:
         return "???"
     if fish.name not in completion_fish_names:
-        return f"{fish.name} {Fore.RED}(Hunt){Style.RESET_ALL}"
+        return f"{fish.name} [#F08080](Hunt)[/#F08080]"
     return fish.name
 
 

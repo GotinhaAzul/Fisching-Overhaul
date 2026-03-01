@@ -11,7 +11,7 @@ from urllib.parse import unquote, urlparse
 
 
 DEPENDENCIAS_OBRIGATORIAS = {
-    "colorama": "colorama",
+    "rich": "rich",
     "pynput": "pynput",
 }
 COMANDO_FISCHING = "fisching"

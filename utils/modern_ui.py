@@ -3,11 +3,13 @@ from __future__ import annotations
 import os
 import re
 import sys
-import textwrap
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence
 
-from colorama import Fore, Style
+from rich.console import Console
+from rich.panel import Panel
+from rich.style import Style as RichStyle
+from rich.text import Text
 
 
 UI_THEME_ENV_VAR = "FISCHING_UI_THEME"
@@ -21,9 +23,11 @@ _DEFAULT_BADGE = (
     " ( o.o ) ",
     "  > ^ <  ",
 )
-_active_accent_color = Fore.CYAN
-_active_icon_color = Fore.CYAN
+_active_accent_color = "#87CEEB"
+_active_icon_color = "#87CEEB"
 _active_badge_lines: Sequence[str] = _DEFAULT_BADGE
+
+console = Console(highlight=False)
 
 
 @dataclass(frozen=True)
@@ -50,40 +54,6 @@ def _pad(text: str, width: int) -> str:
     return text + (" " * (width - visual_len))
 
 
-def _wrap_line(text: str, width: int) -> List[str]:
-    if width <= 0:
-        return [""]
-    if not text:
-        return [""]
-
-    plain_text = _strip_ansi(text)
-    if len(plain_text) <= width:
-        return [text]
-
-    indent_match = re.match(r"^\s*", plain_text)
-    indent = indent_match.group(0) if indent_match else ""
-    subsequent_indent = indent if 0 < len(indent) < width else ""
-
-    wrapped = textwrap.wrap(
-        plain_text,
-        width=width,
-        subsequent_indent=subsequent_indent,
-        break_long_words=True,
-        break_on_hyphens=False,
-    )
-    return wrapped or [""]
-
-
-def _frame_block(lines: Iterable[str], width: int) -> List[str]:
-    top = "+" + ("-" * width) + "+"
-    bottom = "+" + ("-" * width) + "+"
-    body: List[str] = []
-    for line in lines:
-        for wrapped_line in _wrap_line(line, width):
-            body.append(f"|{_pad(wrapped_line, width)}|")
-    return [top, *body, bottom]
-
-
 def _ascii_badge() -> List[str]:
     return list(_active_badge_lines)
 
@@ -99,7 +69,7 @@ def set_ui_cosmetics(
     if isinstance(accent_color, str) and accent_color:
         _active_accent_color = accent_color
     else:
-        _active_accent_color = Fore.CYAN
+        _active_accent_color = "#87CEEB"
     if isinstance(icon_color, str) and icon_color:
         _active_icon_color = icon_color
     else:
@@ -113,20 +83,54 @@ def set_ui_cosmetics(
     _active_badge_lines = tuple(normalized_badge) if normalized_badge else _DEFAULT_BADGE
 
 
+def _render_badge_colored() -> List[str]:
+    """Render badge lines with icon color applied, returned as pre-rendered ANSI strings."""
+    badge = _ascii_badge()
+    
+    badge_text = Text()
+    for i, line in enumerate(badge):
+        badge_text.append(line, style=_active_icon_color)
+        if i < len(badge) - 1:
+            badge_text.append("\n")
+            
+    panel = Panel(
+        badge_text,
+        border_style=_active_icon_color,
+        expand=False,
+        padding=(0, 1),
+    )
+    
+    with console.capture() as cap:
+        console.print(panel)
+    return cap.get().rstrip("\n").splitlines()
+
+
 def _merge_badge(
-    menu_block: Sequence[str],
-    badge_block: Sequence[str],
+    panel_lines: List[str],
+    badge_lines_rendered: List[str],
     *,
     badge_left: bool,
 ) -> List[str]:
+    badge_width = max(_visible_len(line) for line in badge_lines_rendered) if badge_lines_rendered else 0
+    panel_width = max(_visible_len(line) for line in panel_lines) if panel_lines else 0
+    max_lines = max(len(panel_lines), len(badge_lines_rendered))
+    
     merged: List[str] = []
-    badge_width = _visible_len(badge_block[0]) if badge_block else 0
-    for idx, line in enumerate(menu_block):
-        badge_line = badge_block[idx] if idx < len(badge_block) else (" " * badge_width)
-        if badge_left:
-            merged.append(f"{badge_line}  {line}")
+    for idx in range(max_lines):
+        if idx < len(badge_lines_rendered):
+            badge_line = badge_lines_rendered[idx]
         else:
-            merged.append(f"{line}  {badge_line}")
+            badge_line = " " * badge_width
+            
+        if idx < len(panel_lines):
+            panel_line = panel_lines[idx]
+        else:
+            panel_line = " " * panel_width
+            
+        if badge_left:
+            merged.append(f"{badge_line}  {panel_line}")
+        else:
+            merged.append(f"{panel_line}  {badge_line}")
     return merged
 
 
@@ -136,14 +140,14 @@ def use_modern_ui() -> bool:
 
 
 def format_option_line(option: MenuOption, *, dim_hints: bool = True) -> str:
-    line = f"[{option.key:<2}] {option.label}"
+    line = f"\\[{option.key:<2}] {option.label}"
     if option.hint:
         hint = f" - {option.hint}"
-        line = f"{line}{Style.DIM}{hint}{Style.RESET_ALL}" if dim_hints else f"{line}{hint}"
+        line = f"{line}[dim]{hint}[/dim]" if dim_hints else f"{line}{hint}"
     if option.status:
         line = f"{line} ({option.status})"
     if not option.enabled:
-        line = f"{Style.DIM}{line}{Style.RESET_ALL}"
+        line = f"[dim]{line}[/dim]"
     return line
 
 
@@ -160,42 +164,50 @@ def render_menu_panel(
     badge_left: bool = True,
     show_divider: bool = True,
 ) -> List[str]:
-    lines: List[str] = []
-    title_line = f"{Style.BRIGHT}{_active_accent_color}{title}{Style.RESET_ALL}"
-    if subtitle:
-        title_line = (
-            f"{title_line}  "
-            f"{Style.DIM}{Fore.WHITE}{subtitle}{Style.RESET_ALL}"
-        )
-    lines.append(title_line)
+    body_parts: List[str] = []
 
     if header_lines:
-        lines.extend(header_lines)
+        body_parts.extend(header_lines)
 
     option_lines = [format_option_line(option) for option in (options or [])]
     if option_lines and show_divider:
-        lines.append("-" * width)
-    lines.extend(option_lines)
+        body_parts.append(f"[{_active_accent_color}]{'─' * (width - 4)}[/]")
+    body_parts.extend(option_lines)
 
     if footer_lines:
-        if lines and lines[-1] != "":
-            lines.append("")
-        lines.extend(footer_lines)
+        if body_parts and body_parts[-1] != "":
+            body_parts.append("")
+        body_parts.extend(footer_lines)
 
     if prompt:
-        lines.append("")
-        lines.append(f"{_active_accent_color}{prompt}{Style.RESET_ALL}")
+        body_parts.append("")
+        body_parts.append(f"[{_active_accent_color}]{prompt}[/]")
 
-    panel_block = _frame_block(lines, width)
+    body_text = "\n".join(body_parts)
+
+    panel_title = f"[bold {_active_accent_color}]{title}[/]"
+    if subtitle:
+        panel_title = f"{panel_title}  [dim white]{subtitle}[/]"
+
+    panel = Panel(
+        body_text,
+        title=panel_title,
+        title_align="left",
+        border_style=_active_accent_color,
+        width=width,
+        padding=(0, 1),
+    )
+
+    with console.capture() as capture:
+        console.print(panel)
+    rendered = capture.get().rstrip("\n")
+    panel_lines = rendered.splitlines()
+
     if not show_badge:
-        return panel_block
+        return panel_lines
 
-    badge_block = _frame_block(_ascii_badge(), 9)
-    badge_block = [
-        f"{_active_icon_color}{line}{Style.RESET_ALL}"
-        for line in badge_block
-    ]
-    return _merge_badge(panel_block, badge_block, badge_left=badge_left)
+    badge_rendered = _render_badge_colored()
+    return _merge_badge(panel_lines, badge_rendered, badge_left=badge_left)
 
 
 def print_menu_panel(*args, **kwargs) -> None:
@@ -230,17 +242,19 @@ def render_fishing_hud_line(
     filled = int(bar_len * ratio)
     bar = ("=" * filled) + ("." * (bar_len - filled))
     if ratio > 0.6:
-        bar_color = Fore.GREEN
+        bar_color = "green"
     elif ratio > 0.3:
-        bar_color = Fore.YELLOW
+        bar_color = "yellow"
     else:
-        bar_color = Fore.RED
+        bar_color = "red"
 
-    return (
-        "\r"
-        f"{Style.BRIGHT}{_active_accent_color}HUD{Style.RESET_ALL} "
-        f"| Seq: {seq_str:<26} "
-        f"| Time: {bar_color}[{bar}]{Style.RESET_ALL} {time_left:0.2f}s "
-        f"| Hits: {typed_count}/{len(seq)} "
-        "| ESC sai"
-    )
+    hud_text = Text()
+    hud_text.append("HUD", style=f"bold {_active_accent_color}")
+    hud_text.append(f" | Seq: {seq_str:<26} ")
+    hud_text.append(f"| Time: [{bar}] {time_left:0.2f}s ", style=bar_color)
+    hud_text.append(f"| Hits: {typed_count}/{len(seq)} ")
+    hud_text.append("| ESC sai")
+
+    with console.capture() as capture:
+        console.print(hud_text, end="")
+    return "\r" + capture.get()

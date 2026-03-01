@@ -1,17 +1,19 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from colorama import Fore, Style
+from rich.text import Text
+
+from utils.modern_ui import console
 
 
 RARITY_COLORS: Dict[str, str] = {
-    "Comum": Fore.LIGHTGREEN_EX,
-    "Incomum": Fore.GREEN,
-    "Raro": Fore.LIGHTBLUE_EX,
-    "Epico": Fore.MAGENTA,
-    "Lendario": Fore.YELLOW,
-    "Secreto": Fore.LIGHTBLACK_EX,
-    "Apex": Fore.LIGHTRED_EX,
+    "Comum": "#98FB98",
+    "Incomum": "#66CDAA",
+    "Raro": "#6CA6CD",
+    "Epico": "#B4A7D6",
+    "Lendario": "#F4D58D",
+    "Secreto": "#A8A8A8",
+    "Apex": "#F08080",
 }
 
 
@@ -37,16 +39,16 @@ def format_inventory_entry(
     entry: InventoryEntry,
     hunt_fish_names: Optional[set[str]] = None,
 ) -> str:
-    color = RARITY_COLORS.get(entry.rarity, Fore.WHITE)
+    color = RARITY_COLORS.get(entry.rarity, "#F0F0F0")
     is_hunt_entry = entry.is_hunt or (
         bool(hunt_fish_names) and entry.name in hunt_fish_names
     )
-    fish_name_color = Fore.RED if is_hunt_entry else color
+    fish_name_color = "#F08080" if is_hunt_entry else color
     mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
     return (
-        f"{index}. {color}[{entry.rarity}] "
-        f"{fish_name_color}{entry.name}{color} "
-        f"({entry.kg:0.2f}kg){mutation_label}{Style.RESET_ALL}"
+        f"[{color}]\\[{entry.rarity}] "
+        f"[{fish_name_color}]{entry.name}[/] "
+        f"[{color}]({entry.kg:0.2f}kg){mutation_label}[/]"
     )
 
 
@@ -57,9 +59,9 @@ def render_inventory(
     start_index: int = 1,
 ):
     if show_title:
-        print("\nInventário:")
+        console.print("\n[bold]Inventário:[/bold]")
     if not inventory:
-        print("- vazio -")
+        console.print("[dim]- vazio -[/dim]")
         return
     for idx, entry in enumerate(inventory, start=start_index):
-        print(format_inventory_entry(idx, entry, hunt_fish_names=hunt_fish_names))
+        console.print(f"{idx}. {format_inventory_entry(idx, entry, hunt_fish_names=hunt_fish_names)}")

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Sequence, Set
-
-from colorama import Fore
 
 
 @dataclass(frozen=True)
@@ -25,13 +24,9 @@ class UIIconDefinition:
 _CATALOG_DIR = Path(__file__).resolve().parent.parent / "cosmetics_catalog"
 _COLOR_CATALOG_PATH = _CATALOG_DIR / "ui_colors.json"
 _ICON_CATALOG_PATH = _CATALOG_DIR / "ui_icons.json"
-_DEFAULT_ACCENT_COLOR = Fore.CYAN
+_DEFAULT_ACCENT_COLOR = "#87CEEB"
 
-_FORE_COLORS_BY_NAME: Dict[str, str] = {
-    name: value
-    for name, value in vars(Fore).items()
-    if name.isupper() and isinstance(value, str)
-}
+_HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def _load_catalog_items(path: Path, root_key: str) -> List[Dict[str, object]]:
@@ -53,20 +48,20 @@ def _load_ui_colors() -> tuple[List[str], Dict[str, UIColorDefinition]]:
     for item in _load_catalog_items(_COLOR_CATALOG_PATH, "colors"):
         color_id = item.get("color_id")
         name = item.get("name")
-        accent_color_name = item.get("accent_color")
+        accent_color_raw = item.get("accent_color")
         if not isinstance(color_id, str) or not color_id:
             continue
         if not isinstance(name, str) or not name:
             continue
         accent_color = (
-            _FORE_COLORS_BY_NAME.get(accent_color_name)
-            if isinstance(accent_color_name, str)
-            else None
+            accent_color_raw
+            if isinstance(accent_color_raw, str) and _HEX_COLOR_RE.match(accent_color_raw)
+            else _DEFAULT_ACCENT_COLOR
         )
         definitions[color_id] = UIColorDefinition(
             color_id=color_id,
             name=name,
-            accent_color=accent_color or _DEFAULT_ACCENT_COLOR,
+            accent_color=accent_color,
         )
         order.append(color_id)
     return order, definitions
@@ -99,9 +94,9 @@ def _load_ui_icons() -> tuple[List[str], Dict[str, UIIconDefinition]]:
 
 def _fallback_color_catalog() -> tuple[List[str], Dict[str, UIColorDefinition]]:
     fallback = UIColorDefinition(
-        color_id="ocean_blue",
-        name="Azul Oceano",
-        accent_color=Fore.CYAN,
+        color_id="clear_sky",
+        name="Céu Claro",
+        accent_color=_DEFAULT_ACCENT_COLOR,
     )
     return [fallback.color_id], {fallback.color_id: fallback}
 
