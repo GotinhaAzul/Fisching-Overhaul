@@ -4,6 +4,16 @@ from pathlib import Path
 from typing import List
 
 
+def _normalize_probability(raw_value: object) -> float:
+    try:
+        chance = float(raw_value)
+    except (TypeError, ValueError):
+        return 0.0
+    if chance > 1.0:
+        chance /= 100.0
+    return max(0.0, min(1.0, chance))
+
+
 @dataclass(frozen=True)
 class Rod:
     name: str
@@ -18,6 +28,13 @@ class Rod:
     can_slam: bool = False
     slam_chance: float = 0.0
     slam_time_bonus: float = 0.0
+    can_recover: bool = False
+    recover_chance: float = 0.0
+    can_dupe: bool = False
+    dupe_chance: float = 0.0
+    can_alter: bool = False
+    timecount: float = 0.0
+    hardcount: float = 0.0
     unlocked_default: bool = False
     unlocks_with_pool: str = ""
     counts_for_bestiary_completion: bool = True
@@ -65,11 +82,18 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 description=data.get("description", ""),
                 price=float(data.get("price", 0.0)),
                 can_slash=bool(data.get("can_slash", False)),
-                slash_chance=float(data.get("slash_chance", 0.0)),
+                slash_chance=_normalize_probability(data.get("slash_chance", 0.0)),
                 slash_power=max(1, int(data.get("slash_power", 1))),
                 can_slam=bool(data.get("can_slam", False)),
-                slam_chance=float(data.get("slam_chance", 0.0)),
+                slam_chance=_normalize_probability(data.get("slam_chance", 0.0)),
                 slam_time_bonus=float(data.get("slam_time_bonus", 0.0)),
+                can_recover=bool(data.get("can_recover", False)),
+                recover_chance=_normalize_probability(data.get("recover_chance", 0.0)),
+                can_dupe=bool(data.get("can_dupe", False)),
+                dupe_chance=_normalize_probability(data.get("dupe_chance", 0.0)),
+                can_alter=bool(data.get("can_alter", False)),
+                timecount=float(data.get("timecount", data.get("time_count", 0.0))),
+                hardcount=float(data.get("hardcount", data.get("hard_count", 0.0))),
                 unlocked_default=bool(data.get("unlocked_default", False)),
                 unlocks_with_pool=unlocks_with_pool,
                 counts_for_bestiary_completion=counts_for_bestiary_completion,

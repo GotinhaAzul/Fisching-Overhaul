@@ -1,0 +1,10 @@
+{
+  "name": "Andarilho das Nebulosas",
+  "rarity": "Epico",
+  "description": "O Andarilho das Nebulosas se desloca com suavidade quase sem friccao, deixando um rastro de particulas brilhantes atras de si. Ele evita confronto direto e forca perseguidores a cometerem excesso de correcoes. Seu rastro luminoso costuma desaparecer de repente, como se dobrasse o proprio espaco.",
+  "kg_min": 18.0,
+  "kg_max": 38.0,
+  "base_value": 110,
+  "sequence_len": 11,
+  "reaction_time_s": 1.6
+}

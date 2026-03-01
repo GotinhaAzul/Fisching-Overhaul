@@ -1,0 +1,8 @@
+{
+  "name": "Prismatico",
+  "description": "A luz da Vara Prisma refrata no peixe e deixa escamas multicoloridas.",
+  "xp_multiplier": 0.9,
+  "gold_multiplier": 1.4,
+  "chance_percent": 15,
+  "required_rods": ["Prisma"]
+}

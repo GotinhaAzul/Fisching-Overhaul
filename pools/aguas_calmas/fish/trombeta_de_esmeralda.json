@@ -1,0 +1,10 @@
+{
+  "name": "Trombeta de Esmeralda",
+  "rarity": "Incomum",
+  "description": "Com focinho alongado, esse peixe extrai nutrientes de fendas finas entre cristais e rochas compactas. Ele permanece calmo por longos periodos e acelera apenas para reposicionar territorio. Quando ameacado, se esconde entre formacoes minerais quase sem alterar o fluxo da agua.",
+  "kg_min": 6.4,
+  "kg_max": 14.0,
+  "base_value": 152,
+  "sequence_len": 6,
+  "reaction_time_s": 2.3
+}

@@ -1,0 +1,34 @@
+{
+  "id": "pool_zenite_abissal_100",
+  "name": "Olho do Zenite Abissal",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "Zenite Abissal"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "ui_color",
+      "color_id": "mariana_void"
+    },
+    {
+      "type": "ui_icon",
+      "icon_id": "pool_zenite_abissal"
+    },
+    {
+      "type": "money",
+      "amount": 3120
+    },
+    {
+      "type": "xp",
+      "amount": 1750
+    },
+    {
+      "type": "bait",
+      "bait_id": "expensive_bait_crate/cabeca_de_tubarao",
+      "amount": 6
+    }
+  ]
+}

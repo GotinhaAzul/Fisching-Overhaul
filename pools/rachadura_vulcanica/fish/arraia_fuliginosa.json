@@ -1,0 +1,10 @@
+{
+  "name": "Arraia Fuliginosa",
+  "rarity": "Raro",
+  "description": "As barbatanas dessa arraia expelem um vapor escuro que a camufla no leito vulcanico por alguns segundos. Ela patrulha em circulos largos e so revela sua silhueta quando ja esta muito perto da presa. Quando a visibilidade cai, usa esse vapor para cercar cardumes antes do bote.",
+  "kg_min": 5.8,
+  "kg_max": 13.6,
+  "base_value": 102,
+  "sequence_len": 6,
+  "reaction_time_s": 2.2
+}

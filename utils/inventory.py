@@ -12,6 +12,7 @@ RARITY_COLORS: Dict[str, str] = {
     "Raro": "#6CA6CD",
     "Epico": "#B4A7D6",
     "Lendario": "#F4D58D",
+    "Mitico": "#B56CFF",
     "Secreto": "#A8A8A8",
     "Apex": "#F08080",
 }
@@ -43,7 +44,7 @@ def format_inventory_entry(
     is_hunt_entry = entry.is_hunt or (
         bool(hunt_fish_names) and entry.name in hunt_fish_names
     )
-    fish_name_color = "#F08080" if is_hunt_entry else color
+    fish_name_color = "#FF6666" if is_hunt_entry else color
     mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
     return (
         f"[{color}]\\[{entry.rarity}] "

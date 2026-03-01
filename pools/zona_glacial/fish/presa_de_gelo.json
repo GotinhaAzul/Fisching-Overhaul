@@ -1,0 +1,10 @@
+{
+  "name": "Presa-de-Gelo",
+  "rarity": "Comum",
+  "description": "Conhecido por raspar pequenos blocos de gelo para afiar os dentes, esse peixe patrulha margens frias e rasas. Sua mordida e curta, mas extremamente precisa quando encontra abertura. Ele costuma marcar rotas fixas perto das margens onde a camada de gelo e mais fina.",
+  "kg_min": 2.3,
+  "kg_max": 5.9,
+  "base_value": 74,
+  "sequence_len": 5,
+  "reaction_time_s": 2.85
+}

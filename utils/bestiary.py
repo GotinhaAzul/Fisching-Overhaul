@@ -223,7 +223,7 @@ def _fish_label(
     if fish.name not in unlocked_fish:
         return "???"
     if fish.name not in completion_fish_names:
-        return f"{fish.name} [#F08080](Hunt)[/#F08080]"
+        return f"{fish.name} [#FF6666](Hunt)[/#FF6666]"
     return fish.name
 
 

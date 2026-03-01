@@ -1,0 +1,37 @@
+{
+  "id": "marianas_parte_4",
+  "name": "Fossa das Marianas: Tranquilidade e Equilibrio",
+  "description": "A grande abertura a sua frente exige por 3 sacrificios.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Leviata de Magma"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Leviata Congelado"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Anguila Coroada"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 4000
+    },
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Aguas Calmas"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["marianas_parte_5"]
+    }
+  ]
+}

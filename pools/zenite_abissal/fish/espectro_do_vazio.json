@@ -1,0 +1,10 @@
+{
+  "name": "Espectro do Vazio",
+  "rarity": "Epico",
+  "description": "Quase imaterial, o Espectro do Vazio emite uma luz fria que parece sugar contraste do ambiente. Ele executa deslocamentos suaves e longos, como se deslizasse fora da agua. Muitos relatos dizem que sua presenca deixa a agua estranhamente quieta por varios minutos.",
+  "kg_min": 13.5,
+  "kg_max": 28.0,
+  "base_value": 198,
+  "sequence_len": 10,
+  "reaction_time_s": 1.9
+}

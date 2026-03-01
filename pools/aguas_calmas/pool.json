@@ -1,0 +1,13 @@
+{
+  "name": "Aguas Calmas",
+  "description": "Depois do caos, uma calmaria mineral e cristalina encobre criaturas raras que se movem como joias vivas.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 37,
+    "Incomum": 35,
+    "Raro": 18,
+    "Epico": 13,
+    "Lendario": 2,
+    "Mitico": 0.4
+  }
+}

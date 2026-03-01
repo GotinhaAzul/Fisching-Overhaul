@@ -1,0 +1,13 @@
+{
+  "name": "Ponto Zero",
+  "description": "O limite entre mar e vazio. A pressao e o silencio forcam capturas mais tecnicas e peixes mais valiosos.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 34,
+    "Incomum": 31,
+    "Raro": 19,
+    "Epico": 10,
+    "Lendario": 5,
+    "Mitico": 1
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Prisma",
+  "luck": 0.75,
+  "kg_max": 200,
+  "control": 0.0,
+  "description": "Uma vara com prisma no topo que reage a peixes em aguas claras e minerais.",
+  "price": 15000,
+  "unlocked_default": false,
+  "unlockswithpool": "Aguas Calmas"
+}

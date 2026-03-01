@@ -31,6 +31,11 @@ Use these IDs in reward payloads:
 - `cafeteria_mocha`: Mocha da Cafeteria
 - `solar_gold`: Ouro Solar
 - `glacial_cyan`: Ciano Glacial
+- `mariana_ember`: Brasa Mariana
+- `mariana_frost`: Geada Mariana
+- `mariana_void`: Vazio Mariana
+- `mariana_prism`: Prisma Mariana
+- `mariana_singularity`: Singularidade Mariana
 
 ## UI icons
 
@@ -58,3 +63,8 @@ Use these IDs in reward payloads:
 - `pool_cafeteria_coffee`: Xicara da Cafeteria
 - `pool_baiadosol`: Baia do Sol
 - `pool_snowcap`: Geleira Snowcap
+- `pool_rachadura_vulcanica`: Rachadura Vulcanica
+- `pool_zona_glacial`: Zona Glacial
+- `pool_zenite_abissal`: Zenite Abissal
+- `pool_aguas_calmas`: Aguas Calmas
+- `pool_ponto_zero`: Ponto Zero

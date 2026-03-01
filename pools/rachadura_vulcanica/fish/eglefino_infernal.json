@@ -1,0 +1,10 @@
+{
+  "name": "Eglefino Infernal",
+  "rarity": "Comum",
+  "description": "Robusto e territorial, o Eglefino Infernal nada rente ao basalto quente para economizar energia em correntes instaveis. Ele aproveita chuva e vapor para confundir presas menores e atacar em impulsos curtos. Esse padrao agressivo faz dele um competidor dominante nas faixas rasas da rachadura.",
+  "kg_min": 2.2,
+  "kg_max": 5.6,
+  "base_value": 64,
+  "sequence_len": 5,
+  "reaction_time_s": 2.9
+}

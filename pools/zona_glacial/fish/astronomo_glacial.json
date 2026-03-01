@@ -1,0 +1,10 @@
+{
+  "name": "Astronomo Glacial",
+  "rarity": "Incomum",
+  "description": "Imovel por longos periodos, o Astronomo Glacial fica orientado para cima observando luz atraves da camada de gelo. Ele economiza energia no frio intenso e acelera apenas para investidas oportunistas. Esse habito o mantem ativo mesmo em periodos longos de baixa luminosidade.",
+  "kg_min": 3.4,
+  "kg_max": 8.1,
+  "base_value": 87,
+  "sequence_len": 6,
+  "reaction_time_s": 2.5
+}

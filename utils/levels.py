@@ -12,6 +12,7 @@ RARITY_XP: Dict[str, int] = {
     "Raro": 35,
     "Epico": 60,
     "Lendario": 100,
+    "Mitico": 130,
 }
 
 

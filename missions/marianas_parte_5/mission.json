@@ -1,0 +1,38 @@
+{
+  "id": "marianas_parte_5",
+  "name": "Fossa das Marianas: O Fundo",
+  "description": "A pressão extrema aperta seus pulmões, não parece ser uma boa ideia ir mais a fundo sem saber sobre o lugar.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Rachadura Vulcanica",
+      "percent": 100
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Zona Glacial",
+      "percent": 100
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Zenite Abissal",
+      "percent": 100
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Aguas Calmas",
+      "percent": 100
+    },
+    {
+      "type": "spend_money",
+      "amount": 12000
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Ponto Zero"]
+    }
+  ]
+}

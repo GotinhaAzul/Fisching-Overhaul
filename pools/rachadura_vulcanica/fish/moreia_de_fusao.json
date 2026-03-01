@@ -1,0 +1,10 @@
+{
+  "name": "Moreia de Fusao",
+  "rarity": "Raro",
+  "description": "A Moreia de Fusao tem tecido quase semiliquido e parece mudar de forma quando cruza zonas de calor extremo. Ela tende a surgir durante clima instavel, quando pequenas descargas termicas agitam a agua. Por isso, raramente repete a mesma rota e surpreende ate predadores maiores.",
+  "kg_min": 6.2,
+  "kg_max": 15.2,
+  "base_value": 108,
+  "sequence_len": 6,
+  "reaction_time_s": 2.1
+}

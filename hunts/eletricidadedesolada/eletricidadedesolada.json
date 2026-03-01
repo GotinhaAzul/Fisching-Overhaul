@@ -9,7 +9,7 @@
   "rarity_chances": {
     "Raro": 6,
     "Epico": 5,
-    "Lendario": 3
+    "Mitico": 3
   },
   "cooldown_minutes": 8,
   "disturbance_decay_per_check": 2

@@ -23,6 +23,11 @@
     {"icon_id": "pool_farseas_eye", "name": "Olho de Farseas", "badge_lines": ["  .-===-. ", " (  o o ) ", "  '-___-' "]},
     {"icon_id": "pool_cafeteria_coffee", "name": "Xicara da Cafeteria", "badge_lines": ["  (____)  ", "  |____|) ", "   ||||   "]},
     {"icon_id": "pool_baiadosol", "name": "Baia do Sol", "badge_lines": ["  \\ | /  ", " -- O -- ", "  / | \\  "]},
-    {"icon_id": "pool_snowcap", "name": "Geleira Snowcap", "badge_lines": ["   /\\    ", "  /__\\   ", "  /\\_/\\  "]}
+    {"icon_id": "pool_snowcap", "name": "Geleira Snowcap", "badge_lines": ["   /\\    ", "  /__\\   ", "  /\\_/\\  "]},
+    {"icon_id": "pool_rachadura_vulcanica", "name": "Rachadura Vulcanica", "badge_lines": ["  /\\/\\   ", " _\\**/_  ", "  \\/\\/   "]},
+    {"icon_id": "pool_zona_glacial", "name": "Zona Glacial", "badge_lines": ["  _/\\_   ", " /_[]_\\  ", "   ||    "]},
+    {"icon_id": "pool_zenite_abissal", "name": "Zenite Abissal", "badge_lines": ["  .--.   ", " ( oo )  ", "  '--'   "]},
+    {"icon_id": "pool_aguas_calmas", "name": "Aguas Calmas", "badge_lines": ["  ~~~~~  ", " (~~~~~) ", "  ~~~~~  "]},
+    {"icon_id": "pool_ponto_zero", "name": "Ponto Zero", "badge_lines": ["  .:::.  ", " : (0) : ", "  ':::'  "]}
   ]
 }

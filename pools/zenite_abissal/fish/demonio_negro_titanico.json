@@ -1,0 +1,10 @@
+{
+  "name": "Demonio-Negro Titanico",
+  "rarity": "Comum",
+  "description": "Parece apenas uma bocarra flutuante no escuro, mas seu deslocamento e eficiente e silencioso. Ele consome tudo o que cruza sua rota e raramente recua depois do primeiro ataque. Por isso domina rotas profundas onde quase nenhuma presa consegue escapar.",
+  "kg_min": 4.5,
+  "kg_max": 11.4,
+  "base_value": 100,
+  "sequence_len": 5,
+  "reaction_time_s": 2.7
+}

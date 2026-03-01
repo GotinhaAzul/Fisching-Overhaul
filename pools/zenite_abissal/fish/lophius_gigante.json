@@ -1,0 +1,10 @@
+{
+  "name": "Lophius Gigante",
+  "rarity": "Comum",
+  "description": "Mesmo no abismo, o Lophius Gigante se mantem eficiente: usa um apendice luminoso para atrair presas desatentas. Ele permanece quase imovel e ataca so quando calcula distancia favoravel. Esse metodo de emboscada economiza energia e garante vantagem mesmo no escuro total.",
+  "kg_min": 4.0,
+  "kg_max": 9.8,
+  "base_value": 96,
+  "sequence_len": 5,
+  "reaction_time_s": 2.8
+}

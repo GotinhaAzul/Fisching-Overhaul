@@ -1,0 +1,16 @@
+{
+  "name": "Encontro com o Maior",
+  "description": "A criatura que habita o ponto mais profundo do mar observa cada captura em silencio.",
+  "pool_name": "Ponto Zero",
+  "duration_minutes": 5,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 5,
+  "disturbance_max": 3500,
+  "rarity_chances": {
+    "Raro": 6,
+    "Epico": 5,
+    "Mitico": 5
+  },
+  "cooldown_minutes": 8,
+  "disturbance_decay_per_check": 2
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Reliquia da Singularidade",
+  "rarity": "Lendario",
+  "description": "A Reliquia da Singularidade parece existir fora da linha comum do tempo, surgindo e desaparecendo no mesmo ponto. Sua presenca altera pequenas correntes e cria uma sensacao de peso no ambiente ao redor. Muitos pescadores relatam que, apos sua passagem, a agua permanece densa e silenciosa por alguns instantes.",
+  "kg_min": 42.0,
+  "kg_max": 95.0,
+  "base_value": 200,
+  "sequence_len": 14,
+  "reaction_time_s": 2.5
+}

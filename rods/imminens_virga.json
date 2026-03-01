@@ -1,0 +1,12 @@
+{
+  "name": "Imminens Virga",
+  "luck": 0.65,
+  "kg_max": 3000.0,
+  "control": -0.1,
+  "description": "Sentir dor significa um dia sentir prazer.",
+  "price": 11111,
+  "unlocked_default": false,
+  "can_slash": true,
+  "slash_chance": 0.09,
+  "slash_power": 2
+}

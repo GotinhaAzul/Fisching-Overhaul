@@ -24,7 +24,7 @@
     },
     {
       "type": "unlock_missions",
-      "mission_ids": ["vulcao_do_sol_unlock"]
+      "mission_ids": ["vulcao_do_sol_unlock", "marianas_prologo"]
     }
   ]
 }

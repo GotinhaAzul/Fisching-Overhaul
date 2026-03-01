@@ -1,0 +1,32 @@
+{
+  "id": "marianas_parte_3",
+  "name": "Fossa das Marianas: Calma Apos a Dor",
+  "description": "A pressao muda seu ritmo. Transfira a sua dor para um peixe ancestral.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Diabo-Marinho Ancestral"
+    },
+    {
+      "type": "deliver_mutation",
+      "count": 10,
+      "mutation_name": "Envenenado"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 1000
+    },
+    {
+      "type": "unlock_rods",
+      "rod_names": ["Imminens Virga"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["marianas_parte_4"]
+    }
+  ]
+}

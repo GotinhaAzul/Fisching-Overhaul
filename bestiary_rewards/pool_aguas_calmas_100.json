@@ -1,0 +1,34 @@
+{
+  "id": "pool_aguas_calmas_100",
+  "name": "Calmaria de Aguas Calmas",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "Aguas Calmas"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "ui_color",
+      "color_id": "mariana_prism"
+    },
+    {
+      "type": "ui_icon",
+      "icon_id": "pool_aguas_calmas"
+    },
+    {
+      "type": "money",
+      "amount": 3280
+    },
+    {
+      "type": "xp",
+      "amount": 1850
+    },
+    {
+      "type": "bait",
+      "bait_id": "expensive_bait_crate/camarao_safira",
+      "amount": 6
+    }
+  ]
+}

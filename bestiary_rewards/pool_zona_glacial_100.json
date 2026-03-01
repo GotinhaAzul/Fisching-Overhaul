@@ -1,0 +1,34 @@
+{
+  "id": "pool_zona_glacial_100",
+  "name": "Silencio da Zona Glacial",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "Zona Glacial"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "ui_color",
+      "color_id": "mariana_frost"
+    },
+    {
+      "type": "ui_icon",
+      "icon_id": "pool_zona_glacial"
+    },
+    {
+      "type": "money",
+      "amount": 2880
+    },
+    {
+      "type": "xp",
+      "amount": 1600
+    },
+    {
+      "type": "bait",
+      "bait_id": "expensive_bait_crate/flocos_modificados",
+      "amount": 5
+    }
+  ]
+}

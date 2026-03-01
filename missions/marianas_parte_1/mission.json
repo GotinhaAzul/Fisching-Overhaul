@@ -1,0 +1,32 @@
+{
+  "id": "marianas_parte_1",
+  "name": "Fossa das Marianas: O Calor Subterraneo",
+  "description": "A atividade termica aumenta e exige sacrificios locais para abrir passagem para o frio absoluto.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Couro-de-Magma"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Blenio das Bolhas"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 500
+    },
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Zona Glacial"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["marianas_parte_2"]
+    }
+  ]
+}

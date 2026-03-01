@@ -1,0 +1,13 @@
+{
+  "name": "Zenite Abissal",
+  "description": "Uma zona de pressao esmagadora e bioluminescencia rara, onde cada captura parece desafiar o proprio oceano.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 38,
+    "Incomum": 36,
+    "Raro": 18,
+    "Epico": 13,
+    "Lendario": 2,
+    "Mitico": 0.5
+  }
+}

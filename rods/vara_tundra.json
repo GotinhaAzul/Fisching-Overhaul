@@ -1,0 +1,12 @@
+{
+  "name": "Tundra",
+  "luck": 0.25,
+  "kg_max": 120,
+  "control": 0.2,
+  "description": "O frio do subterraneo materializado. Cria peixes do absoluto zero.",
+  "price": 2000,
+  "unlocked_default": false,
+  "unlockswithpool": "Zona Glacial",
+  "can_dupe": true,
+  "dupe_chance": 20
+}

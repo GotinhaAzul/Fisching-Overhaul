@@ -624,6 +624,8 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
         for pool in pools
         if pool.secret_entry_code
     }
+    page_size = 12
+    page = 0
 
     if use_modern_ui():
         if not available_pools and not secret_pools_by_code:
@@ -631,19 +633,44 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
 
         while True:
             clear_screen()
+            page_slice = get_page_slice(len(available_pools), page, page_size)
+            page = page_slice.page
+            available_on_page = available_pools[page_slice.start:page_slice.end]
             header_lines = [f"Disponiveis: {len(available_pools)}"]
+            if page_slice.total_pages > 1:
+                header_lines.append(
+                    f"Pagina {page + 1}/{page_slice.total_pages} ({page_slice.start + 1}-{page_slice.end})"
+                )
+            options = [
+                MenuOption(str(idx), pool.name, "Desbloqueada")
+                for idx, pool in enumerate(available_on_page, start=1)
+            ]
+            if page_slice.total_pages > 1:
+                options.extend(
+                    [
+                        MenuOption(
+                            PAGE_NEXT_KEY.upper(),
+                            "Proxima pagina",
+                            f"Pools {page + 1}/{page_slice.total_pages}",
+                            enabled=page < page_slice.total_pages - 1,
+                        ),
+                        MenuOption(
+                            PAGE_PREV_KEY.upper(),
+                            "Pagina anterior",
+                            f"Pools {page + 1}/{page_slice.total_pages}",
+                            enabled=page > 0,
+                        ),
+                    ]
+                )
             print_menu_panel(
                 "POOLS",
                 subtitle="Escolha onde pescar",
                 header_lines=header_lines,
-                options=[
-                    MenuOption(str(idx), pool.name, "Desbloqueada")
-                    for idx, pool in enumerate(available_pools, start=1)
-                ],
+                options=options,
                 prompt="Digite o numero da pool:",
                 show_badge=False,
             )
-            choice = input("> ").strip()
+            choice = input("> ").strip().lower()
             if not choice:
                 print("Entrada invalida. Digite apenas o numero da pool.")
                 continue
@@ -653,24 +680,36 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
                 unlocked_pools.add(secret_pool.name)
                 return secret_pool
 
+            page, moved = apply_page_hotkey(choice, page, page_slice.total_pages)
+            if moved:
+                continue
+
             if not choice.isdigit():
                 print("Entrada invalida. Digite apenas o numero da pool.")
                 continue
 
             idx = int(choice)
-            if 1 <= idx <= len(available_pools):
-                return available_pools[idx - 1]
+            if 1 <= idx <= len(available_on_page):
+                return available_on_page[idx - 1]
 
             print("Numero fora do intervalo. Tente novamente.")
 
-    print("Escolha uma pool para pescar:")
-    for idx, pool in enumerate(available_pools, start=1):
-        print(f"{idx}. {pool.name}")
     if not available_pools and not secret_pools_by_code:
         raise RuntimeError("Nenhuma pool desbloqueada.")
 
     while True:
-        choice = input("Digite o numero da pool: ").strip()
+        clear_screen()
+        page_slice = get_page_slice(len(available_pools), page, page_size)
+        page = page_slice.page
+        available_on_page = available_pools[page_slice.start:page_slice.end]
+        print("Escolha uma pool para pescar:")
+        for idx, pool in enumerate(available_on_page, start=1):
+            print(f"{idx}. {pool.name}")
+        if page_slice.total_pages > 1:
+            print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina ({page + 1}/{page_slice.total_pages})")
+            print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior ({page + 1}/{page_slice.total_pages})")
+
+        choice = input("Digite o numero da pool: ").strip().lower()
         if not choice:
             print("Entrada invalida. Digite apenas o numero da pool.")
             continue
@@ -680,13 +719,17 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
             unlocked_pools.add(secret_pool.name)
             return secret_pool
 
+        page, moved = apply_page_hotkey(choice, page, page_slice.total_pages)
+        if moved:
+            continue
+
         if not choice.isdigit():
             print("Entrada invalida. Digite apenas o numero da pool.")
             continue
 
         idx = int(choice)
-        if 1 <= idx <= len(available_pools):
-            return available_pools[idx - 1]
+        if 1 <= idx <= len(available_on_page):
+            return available_on_page[idx - 1]
 
         print("Numero fora do intervalo. Tente novamente.")
 
@@ -2078,36 +2121,76 @@ def show_inventory(
                 continue
 
             if choice == "1":
+                rod_page_size = 12
+                rod_page = 0
                 while True:
                     clear_screen()
+                    rod_page_slice = get_page_slice(len(owned_rods), rod_page, rod_page_size)
+                    rod_page = rod_page_slice.page
+                    rods_on_page = owned_rods[rod_page_slice.start:rod_page_slice.end]
+                    options = [
+                        MenuOption(
+                            str(idx),
+                            rod.name,
+                            format_rod_stats(rod),
+                            status="equipada" if rod.name == equipped_rod.name else "",
+                        )
+                        for idx, rod in enumerate(rods_on_page, start=1)
+                    ]
+                    if rod_page_slice.total_pages > 1:
+                        options.extend(
+                            [
+                                MenuOption(
+                                    PAGE_NEXT_KEY.upper(),
+                                    "Proxima pagina",
+                                    f"Varas {rod_page + 1}/{rod_page_slice.total_pages}",
+                                    enabled=rod_page < rod_page_slice.total_pages - 1,
+                                ),
+                                MenuOption(
+                                    PAGE_PREV_KEY.upper(),
+                                    "Pagina anterior",
+                                    f"Varas {rod_page + 1}/{rod_page_slice.total_pages}",
+                                    enabled=rod_page > 0,
+                                ),
+                            ]
+                        )
                     print_menu_panel(
                         "EQUIPAR VARA",
-                        subtitle=f"Atual: {equipped_rod.name}",
-                        options=[
-                            MenuOption(
-                                str(idx),
-                                rod.name,
-                                format_rod_stats(rod),
-                                status="equipada" if rod.name == equipped_rod.name else "",
-                            )
-                            for idx, rod in enumerate(owned_rods, start=1)
-                        ],
+                        subtitle=(
+                            f"Atual: {equipped_rod.name} | "
+                            f"Pagina {rod_page + 1}/{rod_page_slice.total_pages}"
+                        )
+                        if rod_page_slice.total_pages > 1
+                        else f"Atual: {equipped_rod.name}",
+                        options=options,
                         prompt="Digite o numero da vara:",
                         show_badge=False,
                     )
-                    selection = input("> ").strip()
+                    selection = read_menu_choice(
+                        "> ",
+                        instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
+                        if rod_page_slice.total_pages > 1
+                        else set(),
+                    ).lower()
                     if not selection.isdigit():
+                        rod_page, moved = apply_page_hotkey(
+                            selection,
+                            rod_page,
+                            rod_page_slice.total_pages,
+                        )
+                        if moved:
+                            continue
                         print("Entrada invalida.")
                         input("\nEnter para voltar.")
                         continue
 
                     idx = int(selection)
-                    if not (1 <= idx <= len(owned_rods)):
+                    if not (1 <= idx <= len(rods_on_page)):
                         print("Numero fora do intervalo.")
                         input("\nEnter para voltar.")
                         continue
 
-                    equipped_rod = owned_rods[idx - 1]
+                    equipped_rod = rods_on_page[idx - 1]
                     print(f"Vara equipada: {equipped_rod.name}.")
                     input("\nEnter para voltar.")
                     break
@@ -2211,28 +2294,56 @@ def show_inventory(
             continue
 
         if choice == "1":
-            clear_screen()
-            print("Escolha a vara para equipar:")
-            for idx, rod in enumerate(owned_rods, start=1):
-                selected_marker = " (equipada)" if rod.name == equipped_rod.name else ""
-                print(f"{idx}. {rod.name} - {format_rod_stats(rod)}{selected_marker}")
-                print(f"   {rod.description}")
+            rod_page_size = 12
+            rod_page = 0
+            while True:
+                clear_screen()
+                rod_page_slice = get_page_slice(len(owned_rods), rod_page, rod_page_size)
+                rod_page = rod_page_slice.page
+                rods_on_page = owned_rods[rod_page_slice.start:rod_page_slice.end]
+                print("Escolha a vara para equipar:")
+                for idx, rod in enumerate(rods_on_page, start=1):
+                    selected_marker = " (equipada)" if rod.name == equipped_rod.name else ""
+                    print(f"{idx}. {rod.name} - {format_rod_stats(rod)}{selected_marker}")
+                    print(f"   {rod.description}")
+                if rod_page_slice.total_pages > 1:
+                    print(
+                        f"{PAGE_NEXT_KEY.upper()}. Proxima pagina de varas "
+                        f"({rod_page + 1}/{rod_page_slice.total_pages})"
+                    )
+                    print(
+                        f"{PAGE_PREV_KEY.upper()}. Pagina anterior de varas "
+                        f"({rod_page + 1}/{rod_page_slice.total_pages})"
+                    )
 
-            selection = input("Digite o numero da vara: ").strip()
-            if not selection.isdigit():
-                print("Entrada invalida.")
+                selection = read_menu_choice(
+                    "Digite o numero da vara: ",
+                    instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
+                    if rod_page_slice.total_pages > 1
+                    else set(),
+                ).lower()
+                rod_page, moved = apply_page_hotkey(
+                    selection,
+                    rod_page,
+                    rod_page_slice.total_pages,
+                )
+                if moved:
+                    continue
+                if not selection.isdigit():
+                    print("Entrada invalida.")
+                    input("\nEnter para voltar.")
+                    break
+
+                idx = int(selection)
+                if not (1 <= idx <= len(rods_on_page)):
+                    print("Numero fora do intervalo.")
+                    input("\nEnter para voltar.")
+                    break
+
+                equipped_rod = rods_on_page[idx - 1]
+                print(f"Vara equipada: {equipped_rod.name}.")
                 input("\nEnter para voltar.")
-                continue
-
-            idx = int(selection)
-            if not (1 <= idx <= len(owned_rods)):
-                print("Numero fora do intervalo.")
-                input("\nEnter para voltar.")
-                continue
-
-            equipped_rod = owned_rods[idx - 1]
-            print(f"Vara equipada: {equipped_rod.name}.")
-            input("\nEnter para voltar.")
+                break
             continue
 
         if choice == "2":
@@ -2297,6 +2408,8 @@ def run_fishing_round(
     on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation]], None]] = None,
 ) -> tuple[int, int, Optional[str]]:
     recent_catch_times: deque[float] = deque()
+    pending_reengage_fish_name: Optional[str] = None
+    pending_reengage_hunt_flag = False
 
     def prune_recent_catch_times(now_s: float) -> None:
         while recent_catch_times and now_s - recent_catch_times[0] > PACE_WINDOW_S:
@@ -2381,13 +2494,56 @@ def run_fishing_round(
             combined_weights = selected_pool.rarity_weights
 
         rod_luck = effective_luck * (event_def.luck_multiplier if event_def else 1.0)
-        fish = selected_pool.choose_fish(
-            eligible_fish,
-            rod_luck,
-            rarity_weights_override=combined_weights,
-        )
-        is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
+        reused_fish_attempt = False
+        fish: FishProfile
+        if pending_reengage_fish_name:
+            matching_fish = next(
+                (candidate for candidate in eligible_fish if candidate.name == pending_reengage_fish_name),
+                None,
+            )
+            if matching_fish is not None:
+                fish = matching_fish
+                is_hunt_fish = pending_reengage_hunt_flag
+                reused_fish_attempt = True
+            else:
+                pending_reengage_fish_name = None
+                pending_reengage_hunt_flag = False
+                fish = selected_pool.choose_fish(
+                    eligible_fish,
+                    rod_luck,
+                    rarity_weights_override=combined_weights,
+                )
+                is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
+        else:
+            fish = selected_pool.choose_fish(
+                eligible_fish,
+                rod_luck,
+                rarity_weights_override=combined_weights,
+            )
+            is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
+
+        pending_reengage_fish_name = None
+        pending_reengage_hunt_flag = False
+
         attempt = fish.generate_attempt()
+        attempt_sequence = list(attempt.sequence)
+        if equipped_rod.can_alter and equipped_rod.hardcount != 0:
+            hard_multiplier = max(-90.0, equipped_rod.hardcount) / 100.0
+            delta_keys = int(round(len(attempt_sequence) * hard_multiplier))
+            if delta_keys > 0:
+                for _ in range(delta_keys):
+                    attempt_sequence.append(random.choice(attempt.allowed_keys))
+            elif delta_keys < 0:
+                attempt_sequence = attempt_sequence[: max(1, len(attempt_sequence) + delta_keys)]
+
+        altered_time_limit_s = attempt.time_limit_s
+        if equipped_rod.can_alter and equipped_rod.timecount != 0:
+            altered_time_limit_s *= max(0.1, 1.0 + (equipped_rod.timecount / 100.0))
+        attempt = FishingAttempt(
+            sequence=attempt_sequence,
+            time_limit_s=altered_time_limit_s,
+            allowed_keys=attempt.allowed_keys,
+        )
         now_s = time.monotonic()
         prune_recent_catch_times(now_s)
         pace_multiplier = _reel_time_multiplier_from_pace(len(recent_catch_times))
@@ -2410,7 +2566,7 @@ def run_fishing_round(
 
         consumed_bait_name: Optional[str] = None
         consumed_bait_remaining = 0
-        if active_bait and equipped_bait_id:
+        if not reused_fish_attempt and active_bait and equipped_bait_id:
             consumed_bait_name = active_bait.name
             consumed_bait_remaining = max(0, bait_inventory.get(equipped_bait_id, 0) - 1)
             if consumed_bait_remaining <= 0:
@@ -2426,6 +2582,8 @@ def run_fishing_round(
                 f"Isca consumida: {consumed_bait_name} "
                 f"(restante: {consumed_bait_remaining})"
             )
+        if reused_fish_attempt:
+            print("Efeito Recuperar ativado: tentando fisgar o mesmo peixe novamente.")
 
         if pace_multiplier < 1.0:
             print(
@@ -2493,6 +2651,22 @@ def run_fishing_round(
                     is_hunt=is_hunt_fish,
                 )
             )
+            dupe_triggered = False
+            if equipped_rod.can_dupe and equipped_rod.dupe_chance > 0:
+                if random.random() <= equipped_rod.dupe_chance:
+                    inventory.append(
+                        InventoryEntry(
+                            name=fish.name,
+                            rarity=fish.rarity,
+                            kg=caught_kg,
+                            base_value=fish.base_value,
+                            mutation_name=mutation_name,
+                            mutation_xp_multiplier=mutation_xp_multiplier,
+                            mutation_gold_multiplier=mutation_gold_multiplier,
+                            is_hunt=is_hunt_fish,
+                        )
+                    )
+                    dupe_triggered = True
             if on_fish_caught:
                 on_fish_caught(fish, mutation)
             if hunt_manager:
@@ -2519,6 +2693,8 @@ def run_fishing_round(
                     f"{mutation.name} (x{mutation_xp_multiplier:0.2f} XP | "
                     f"x{mutation_gold_multiplier:0.2f} Gold)"
                 )
+            if dupe_triggered:
+                print("🔁 Efeito de duplicacao ativado: uma copia do peixe foi para o inventario.")
             print(f"✨ Ganhou {gained_xp} XP.")
             if level_ups:
                 print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
@@ -2527,6 +2703,20 @@ def run_fishing_round(
             print(f"Sequência era: {' '.join(attempt.sequence)}")
             if result.typed:
                 print(f"Você digitou:  {' '.join(result.typed)}")
+
+            recover_triggered = (
+                equipped_rod.can_recover
+                and equipped_rod.recover_chance > 0
+                and result.reason != "Saiu da pesca (ESC)"
+                and random.random() <= equipped_rod.recover_chance
+            )
+            if recover_triggered:
+                pending_reengage_fish_name = fish.name
+                pending_reengage_hunt_flag = is_hunt_fish
+                print("♻️ Efeito Recuperar ativado: o peixe vai engajar novamente.")
+                flush_runtime_notifications()
+                flush_input_buffer()
+                continue
 
         flush_runtime_notifications()
         flush_input_buffer()
@@ -3128,5 +3318,3 @@ def main(dev_mode: bool = False):
 
 if __name__ == "__main__":
     main()
-
-

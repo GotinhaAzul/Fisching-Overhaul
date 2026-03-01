@@ -1,0 +1,37 @@
+{
+  "id": "marianas_parte_2",
+  "name": "Fossa das Marianas: Frio Absoluto",
+  "description": "No gelo profundo, avançara quem domina a captura precisa e consegue entregar uma presa com assinatura criogenica.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Peixe-Vidro"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Predador do Artico"
+    },
+    {
+      "type": "deliver_mutation",
+      "count": 1,
+      "mutation_name": "Criogenico"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 800
+    },
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Zenite Abissal"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["marianas_parte_3"]
+    }
+  ]
+}

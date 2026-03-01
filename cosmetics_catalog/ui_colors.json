@@ -134,6 +134,31 @@
       "color_id": "sunset_orange",
       "name": "Laranja Sunset",
       "accent_color": "#FF4500"
+    },
+    {
+      "color_id": "mariana_ember",
+      "name": "Brasa Mariana",
+      "accent_color": "#FF5E3A"
+    },
+    {
+      "color_id": "mariana_frost",
+      "name": "Geada Mariana",
+      "accent_color": "#7FD4FF"
+    },
+    {
+      "color_id": "mariana_void",
+      "name": "Vazio Mariana",
+      "accent_color": "#3C4B8A"
+    },
+    {
+      "color_id": "mariana_prism",
+      "name": "Prisma Mariana",
+      "accent_color": "#7CF2D1"
+    },
+    {
+      "color_id": "mariana_singularity",
+      "name": "Singularidade Mariana",
+      "accent_color": "#E8E8FF"
     }
   ]
 }

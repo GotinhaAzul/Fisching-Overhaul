@@ -1,0 +1,10 @@
+{
+  "name": "Couro-de-Magma",
+  "rarity": "Comum",
+  "description": "As placas externas desse peixe lembram rocha vitrificada, protegendo seu corpo de cinzas abrasivas e de calor repentino. Ele costuma se esconder em bolsos de agua super aquecida e sair apenas para disputas rapidas por alimento. Esse comportamento oportunista o torna presenca constante nas bordas mais quentes da fenda.",
+  "kg_min": 2.8,
+  "kg_max": 7.2,
+  "base_value": 69,
+  "sequence_len": 5,
+  "reaction_time_s": 2.8
+}

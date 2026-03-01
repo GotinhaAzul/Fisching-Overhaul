@@ -1,0 +1,10 @@
+{
+  "name": "Coridora de Cristal",
+  "rarity": "Epico",
+  "description": "Totalmente translucida, a Coridora de Cristal revela uma estrutura interna mineral rara e extremamente resistente. Ela percorre o fundo em trajetos calculados e evita confrontos ate ter vantagem absoluta. Por isso, costuma dominar corredores estreitos onde outras especies evitam entrar.",
+  "kg_min": 11.0,
+  "kg_max": 24.0,
+  "base_value": 232,
+  "sequence_len": 10,
+  "reaction_time_s": 1.75
+}

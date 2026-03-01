@@ -1,0 +1,13 @@
+{
+  "name": "Zona Glacial",
+  "description": "Um corredor submerso de gelo antigo, com agua densa e silenciosa que abriga predadores adaptados ao frio extremo.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 40,
+    "Incomum": 40,
+    "Raro": 14,
+    "Epico": 11,
+    "Lendario": 2,
+    "Mitico": 0.5
+  }
+}

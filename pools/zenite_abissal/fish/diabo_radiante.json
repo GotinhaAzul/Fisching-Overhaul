@@ -1,0 +1,10 @@
+{
+  "name": "Diabo-Radiante",
+  "rarity": "Raro",
+  "description": "Tres apendices bioluminescentes pulsantes tornam o Diabo-Radiante visivel por um instante e invisivel no seguinte. Ele usa essa oscilacao para atrair e desorientar cardumes menores em agua escura. Essa oscilacao constante permite controlar encontros sem revelar sua posicao por muito tempo.",
+  "kg_min": 7.8,
+  "kg_max": 18.2,
+  "base_value": 140,
+  "sequence_len": 6,
+  "reaction_time_s": 2.15
+}

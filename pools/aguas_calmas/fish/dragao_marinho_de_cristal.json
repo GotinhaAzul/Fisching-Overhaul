@@ -1,0 +1,10 @@
+{
+  "name": "Dragao-Marinho de Cristal",
+  "rarity": "Mitico",
+  "description": "Guardiao mitico da calmaria, o Dragao-Marinho de Cristal circula regioes onde minerais raros afloram do fundo. Sua estrutura alongada dobra a luz em reflexos multicoloridos que escondem sua real distancia. Relatos locais dizem que sua aparicao antecede periodos de agua excepcionalmente transparente.",
+  "kg_min": 220.0,
+  "kg_max": 710.0,
+  "base_value": 2450,
+  "sequence_len": 22,
+  "reaction_time_s": 6.0
+}

@@ -1,8 +1,8 @@
 {
   "name": "Vara Cristal",
-  "luck": 0.15,
-  "kg_max": 20,
-  "control": -0.4,
+  "luck": 0.24,
+  "kg_max": 40,
+  "control": -0.3,
   "description": "Delicada, fina, dificil de lidar.",
   "price": 6000,
   "unlocked_default": false,

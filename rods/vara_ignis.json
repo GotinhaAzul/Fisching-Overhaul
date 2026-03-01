@@ -1,0 +1,12 @@
+{
+  "name": "Ignis",
+  "luck": 0.15,
+  "kg_max": 120,
+  "control": 0.7,
+  "description": "O calor do subterraneo materializado. Nascer novamente das chamas!",
+  "price": 2000,
+  "unlocked_default": false,
+  "unlockswithpool": "Rachadura Vulcanica",
+  "can_recover": true,
+  "recover_chance": 20
+}

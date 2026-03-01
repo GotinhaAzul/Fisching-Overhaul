@@ -1,0 +1,31 @@
+{
+  "id": "marianas_prologo",
+  "name": "Fossa das Marianas: Prologo",
+  "description": "Antes de atravessar a fenda, voce precisa provar preparo: quebrar a pedra, pagar o custo e explodir o caminho com um peixe de fogo.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "spend_money",
+      "amount": 2000
+    },
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Banshee Ignea"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 300
+    },
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Rachadura Vulcanica"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["marianas_parte_1"]
+    }
+  ]
+}

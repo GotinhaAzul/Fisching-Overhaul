@@ -1,0 +1,10 @@
+{
+  "name": "Quimera de Cristal",
+  "rarity": "Lendario",
+  "description": "Com escamas prismatizadas, a Quimera de Cristal refrata qualquer feixe de luz em padroes quase hipnoticos. Ela muda o angulo do corpo para apagar sua propria sombra e desaparecer no fundo claro. Quando a luz muda, seus reflexos transformam o corpo em silhuetas quase irreais.",
+  "kg_min": 18.0,
+  "kg_max": 40.0,
+  "base_value": 305,
+  "sequence_len": 11,
+  "reaction_time_s": 1.75
+}

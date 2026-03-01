@@ -11,7 +11,7 @@
   "rewards": [
     {
       "type": "money",
-      "amount": 2500
+      "amount": 1000
     },
     {
       "type": "xp",

@@ -1,0 +1,13 @@
+{
+  "name": "Rachadura Vulcanica",
+  "description": "Uma fenda vulcanica ativa no fundo do mar, onde cinzas, vapor e correntes quentes moldam um ecossistema brutal.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 40,
+    "Incomum": 40,
+    "Raro": 14,
+    "Epico": 11,
+    "Lendario": 2,
+    "Mitico": 0.5
+  }
+}

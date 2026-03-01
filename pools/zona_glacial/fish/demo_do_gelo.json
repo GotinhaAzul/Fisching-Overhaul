@@ -1,0 +1,10 @@
+{
+  "name": "Demo-do-Gelo",
+  "rarity": "Raro",
+  "description": "De silhueta agressiva, o Demo-do-Gelo costuma aparecer quando frentes frias alteram subitamente a visibilidade da agua. Ele usa arranques diagonais para quebrar o ritmo de perseguicao de qualquer predador. A presenca dele costuma coincidir com periodos de gelo instavel e corrente agitada.",
+  "kg_min": 6.0,
+  "kg_max": 14.5,
+  "base_value": 111,
+  "sequence_len": 6,
+  "reaction_time_s": 2.2
+}

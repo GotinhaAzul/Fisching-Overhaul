@@ -1,0 +1,10 @@
+{
+  "name": "Leviata de Magma",
+  "rarity": "Mitico",
+  "description": "O Leviata de Magma e tratado como entidade ancestral da fenda: metade lenda, metade forca geologica viva. Sua passagem desloca sedimentos incandescentes e altera a temperatura local de forma imediata. Apesar de rarissimo, seu surgimento e associado a tremores e mudancas bruscas nas correntes da regiao.",
+  "kg_min": 140.0,
+  "kg_max": 520.0,
+  "base_value": 1850,
+  "sequence_len": 22,
+  "reaction_time_s": 7.2
+}
