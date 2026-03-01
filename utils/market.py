@@ -27,7 +27,7 @@ from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
 from utils.menu_input import read_menu_choice
-from utils.modern_ui import MenuOption, print_menu_panel
+from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel
 from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
@@ -776,6 +776,74 @@ def show_market(
         return balance_local
 
     def _handle_buy_rod_action(current_balance: float) -> float:
+        def _rod_summary_lines(rod: Optional[Rod], *, title: str) -> List[str]:
+            luck_symbol = get_ui_symbol("LUCK")
+            if rod is None:
+                return [
+                    title,
+                    "Nome: Nenhuma",
+                    f"{luck_symbol}: Nenhuma",
+                    "KG Max: Nenhuma",
+                    "Controle: Nenhuma",
+                ]
+            return [
+                title,
+                f"Nome: {rod.name}",
+                f"{luck_symbol}: {rod.luck:+.0%}",
+                f"KG Max: {rod.kg_max:g}",
+                f"Controle: {rod.control:+.1f}s",
+            ]
+
+        def _clip_cell(text: str, cell_width: int) -> str:
+            if len(text) <= cell_width:
+                return text
+            if cell_width <= 3:
+                return text[:cell_width]
+            return text[: cell_width - 3] + "..."
+
+        def _merge_columns(
+            left_lines: Sequence[str],
+            right_lines: Sequence[str],
+            *,
+            cell_width: int = 34,
+        ) -> List[str]:
+            merged: List[str] = []
+            max_rows = max(len(left_lines), len(right_lines))
+            for row in range(max_rows):
+                left_text = _clip_cell(left_lines[row], cell_width) if row < len(left_lines) else ""
+                right_text = _clip_cell(right_lines[row], cell_width) if row < len(right_lines) else ""
+                merged.append(f"{left_text:<{cell_width}} | {right_text}")
+            return merged
+
+        def _show_rod_inspection_panel(selected_rod: Rod) -> bool:
+            clear_screen()
+            equipped_lines = _rod_summary_lines(equipped_rod, title="EQUIPPED_ROD")
+            selected_lines = _rod_summary_lines(selected_rod, title="SELECTED_ROD")
+            comparison_lines = _merge_columns(equipped_lines, selected_lines)
+            flavor_text = selected_rod.description.strip() or "-"
+
+            print_menu_panel(
+                "Inspecao de Vara",
+                breadcrumb="MERCADO > VARAS",
+                header_lines=[
+                    "Compare antes de confirmar:",
+                    "",
+                    *comparison_lines,
+                    "",
+                    f"[dim]{flavor_text}[/dim]",
+                    "",
+                    f"[bold yellow]Preco: {format_currency(selected_rod.price)}[/bold yellow]",
+                ],
+                options=[
+                    MenuOption("S", "Confirmar compra"),
+                    MenuOption("N", "Cancelar"),
+                ],
+                prompt="Confirmar compra? (S/N):",
+                show_badge=False,
+                width=92,
+            )
+            return input("> ").strip().lower() == "s"
+
         balance_local = current_balance
         clear_screen()
         owned_rod_names = {rod.name for rod in owned_rods}
@@ -803,13 +871,36 @@ def show_market(
             input("\nEnter para voltar.")
             return balance_local
 
-        print_spaced_lines(["Varas disponiveis:"])
-        for index, rod in enumerate(rods_for_sale, start=1):
-            print(format_rod_entry(index, rod))
-            print(f"   {rod.description}")
-            print()
+        luck_symbol = get_ui_symbol("LUCK")
+        rod_options = [
+            MenuOption(
+                str(index),
+                f"{rod.name} - {format_currency(rod.price)}",
+                hint=(
+                    f"{luck_symbol} {rod.luck:+.0%} | "
+                    f"KGMax {rod.kg_max:g} | Controle {rod.control:+.1f}s"
+                ),
+            )
+            for index, rod in enumerate(rods_for_sale, start=1)
+        ]
+        rod_options.append(MenuOption("0", "Voltar"))
 
-        selection = input("Digite o numero da vara: ").strip()
+        print_menu_panel(
+            "Varas da Loja",
+            breadcrumb="MERCADO > VARAS",
+            header_lines=[
+                f"Saldo atual: {format_currency(balance_local)}",
+                "Selecione uma vara para inspecionar detalhes.",
+            ],
+            options=rod_options,
+            prompt="Digite o numero da vara:",
+            show_badge=False,
+            width=92,
+        )
+
+        selection = input("> ").strip()
+        if selection == "0":
+            return balance_local
         if not selection.isdigit():
             print("Entrada invalida.")
             input("\nEnter para voltar.")
@@ -824,6 +915,11 @@ def show_market(
         rod = rods_for_sale[selected_index - 1]
         if balance_local < rod.price:
             print("Saldo insuficiente.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        if not _show_rod_inspection_panel(rod):
+            print("Compra cancelada.")
             input("\nEnter para voltar.")
             return balance_local
 

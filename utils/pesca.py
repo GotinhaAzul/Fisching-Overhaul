@@ -58,8 +58,10 @@ from utils.crafting import (
 )
 from utils.modern_ui import (
     MenuOption,
+    is_unicode_enabled,
     print_menu_panel,
     render_fishing_hud_line,
+    set_unicode_enabled,
     set_ui_cosmetics,
     use_modern_ui,
 )
@@ -1065,6 +1067,7 @@ def show_dev_save_editor(
 
         if use_modern_ui():
             clear_screen()
+            unicode_status = "Ativo" if is_unicode_enabled() else "Inativo"
             print_menu_panel(
                 "DEV TOOLS",
                 subtitle="Editor de save",
@@ -1077,6 +1080,7 @@ def show_dev_save_editor(
                     f"Isca equipada: {equipped_bait_name}",
                     f"Unidades de isca: {total_bait_units}",
                     f"Pool atual: {selected_pool.name}",
+                    f"Unicode symbols: {unicode_status}",
                 ],
                 options=[
                     MenuOption("1", "Set saldo", "Define saldo manualmente"),
@@ -1095,6 +1099,7 @@ def show_dev_save_editor(
                     MenuOption("14", "Force hunt", "Inicia uma hunt manualmente"),
                     MenuOption("15", "Force event", "Inicia um evento manualmente"),
                     MenuOption("16", "Add bait", "Adiciona isca ao inventario"),
+                    MenuOption("17", "Unicode symbols", "Define true/false"),
                     MenuOption("0", "Voltar", "Retorna ao menu principal"),
                 ],
                 prompt="Escolha uma opcao:",
@@ -1102,6 +1107,7 @@ def show_dev_save_editor(
             choice = input("> ").strip()
         else:
             clear_screen()
+            unicode_status = "Ativo" if is_unicode_enabled() else "Inativo"
             print("=== Dev Tools: Editor de save ===")
             print(f"Saldo: ${balance:0.2f}")
             print(f"Nivel: {level} | XP: {xp}/{xp_required_for_level(level)}")
@@ -1111,6 +1117,7 @@ def show_dev_save_editor(
             print(f"Isca equipada: {equipped_bait_name}")
             print(f"Unidades de isca: {total_bait_units}")
             print(f"Pool atual: {selected_pool.name}")
+            print(f"Unicode symbols: {unicode_status}")
             print("\n1. Set saldo")
             print("2. Set nivel")
             print("3. Set XP")
@@ -1127,6 +1134,7 @@ def show_dev_save_editor(
             print("14. Force hunt")
             print("15. Force event")
             print("16. Add bait")
+            print("17. Unicode symbols")
             print("0. Voltar")
             choice = input("Escolha uma opcao: ").strip()
 
@@ -1694,6 +1702,22 @@ def show_dev_save_editor(
             if equip_now == "s":
                 equipped_bait_id = selected_bait.bait_id
             print(f"Isca adicionada: {quantity_to_add}x {selected_bait.name}.")
+            time.sleep(1)
+            continue
+
+        if choice == "17":
+            current_status = "true" if is_unicode_enabled() else "false"
+            set_value = input(
+                f"Unicode atual = {current_status}. Ativar unicode? (s/n): "
+            ).strip().lower()
+            if set_value == "s":
+                set_unicode_enabled(True)
+                print("Unicode symbols definido para true.")
+            elif set_value == "n":
+                set_unicode_enabled(False)
+                print("Unicode symbols definido para false.")
+            else:
+                print("Opcao invalida.")
             time.sleep(1)
             continue
 

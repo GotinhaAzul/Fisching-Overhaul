@@ -15,6 +15,7 @@ from rich.text import Text
 UI_THEME_ENV_VAR = "FISCHING_UI_THEME"
 UI_THEME_MODERN = "modern"
 UI_THEME_LEGACY = "legacy"
+UI_UNICODE_ENV_VAR = "FISCHING_USE_UNICODE"
 DEFAULT_PANEL_WIDTH = 64
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
@@ -29,6 +30,21 @@ _active_badge_lines: Sequence[str] = _DEFAULT_BADGE
 
 console = Console(highlight=False)
 
+_UNICODE_UI_SYMBOLS = {
+    "PROGRESS_FULL": "■",
+    "PROGRESS_EMPTY": "□",
+    "REQ_DONE": "●",
+    "REQ_TODO": "○",
+    "LUCK": "Luck",
+}
+_ASCII_UI_SYMBOLS = {
+    "PROGRESS_FULL": "#",
+    "PROGRESS_EMPTY": "-",
+    "REQ_DONE": "*",
+    "REQ_TODO": "o",
+    "LUCK": "Luck",
+}
+
 
 @dataclass(frozen=True)
 class MenuOption:
@@ -37,6 +53,69 @@ class MenuOption:
     hint: str = ""
     enabled: bool = True
     status: str = ""
+
+
+def _read_bool_env(var_name: str, *, default: bool) -> bool:
+    raw_value = os.getenv(var_name)
+    if raw_value is None:
+        return default
+
+    normalized = raw_value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _stdout_supports_unicode() -> bool:
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        for symbol in _UNICODE_UI_SYMBOLS.values():
+            symbol.encode(encoding)
+        return True
+    except UnicodeEncodeError:
+        return False
+    except LookupError:
+        return False
+
+
+USE_UNICODE = _read_bool_env(UI_UNICODE_ENV_VAR, default=_stdout_supports_unicode())
+_UNICODE_OVERRIDE: Optional[bool] = None
+
+
+def is_unicode_enabled() -> bool:
+    if _UNICODE_OVERRIDE is not None:
+        return _UNICODE_OVERRIDE
+    return USE_UNICODE
+
+
+def set_unicode_enabled(enabled: bool) -> None:
+    global _UNICODE_OVERRIDE
+    _UNICODE_OVERRIDE = bool(enabled)
+    os.environ[UI_UNICODE_ENV_VAR] = "1" if _UNICODE_OVERRIDE else "0"
+
+
+def get_ui_symbol(key: str) -> str:
+    normalized = key.strip().upper()
+    symbol_map = _UNICODE_UI_SYMBOLS if is_unicode_enabled() else _ASCII_UI_SYMBOLS
+    return symbol_map.get(normalized, normalized)
+
+
+def render_progress_bar(current: int, total: int, width: int = 10) -> str:
+    safe_width = max(1, int(width))
+    safe_current = max(0, int(current))
+    safe_total = max(0, int(total))
+
+    if safe_total <= 0:
+        fill_ratio = 1.0 if safe_current > 0 else 0.0
+    else:
+        fill_ratio = min(1.0, safe_current / safe_total)
+
+    filled = int(fill_ratio * safe_width)
+    full_symbol = get_ui_symbol("PROGRESS_FULL")
+    empty_symbol = get_ui_symbol("PROGRESS_EMPTY")
+    return f"[{full_symbol * filled}{empty_symbol * (safe_width - filled)}]"
 
 
 def _strip_ansi(text: str) -> str:
@@ -154,6 +233,7 @@ def format_option_line(option: MenuOption, *, dim_hints: bool = True) -> str:
 def render_menu_panel(
     title: str,
     *,
+    breadcrumb: str = "",
     subtitle: str = "",
     header_lines: Optional[Sequence[str]] = None,
     options: Optional[Sequence[MenuOption]] = None,
@@ -165,6 +245,11 @@ def render_menu_panel(
     show_divider: bool = True,
 ) -> List[str]:
     body_parts: List[str] = []
+
+    if breadcrumb:
+        body_parts.append(f"[dim]{breadcrumb}[/dim]")
+        if header_lines:
+            body_parts.append("")
 
     if header_lines:
         body_parts.extend(header_lines)

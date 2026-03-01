@@ -8,6 +8,9 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.levels import apply_xp_gain
+from utils.menu_input import read_menu_choice
+from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel, render_progress_bar
+from utils.pagination import PAGE_NEXT_KEY, PAGE_PREV_KEY, apply_page_hotkey, get_page_slice
 from utils.requirements_common import (
     collect_countable_fish_names,
     completion_percent,
@@ -21,7 +24,7 @@ from utils.requirements_common import (
     safe_int,
     seconds_from_requirement,
 )
-from utils.ui import clear_screen, print_spaced_lines
+from utils.ui import clear_screen
 
 if TYPE_CHECKING:
     from utils.pesca import FishProfile, FishingPool
@@ -346,135 +349,187 @@ def show_missions_menu(
 ) -> Tuple[int, int, float]:
     _sync_unlock_baselines(state)
     mission_by_id = {mission.mission_id: mission for mission in missions}
-    while True:
-        update_mission_completions(
-            missions,
-            state,
-            progress,
-            level=level,
-            pools=pools,
-            discovered_fish=discovered_fish,
-        )
-        ordered = sorted(
-            (
-                mission
-                for mission in mission_by_id.values()
-                if mission.mission_id in state.unlocked
-                and mission.mission_id not in state.claimed
-            ),
-            key=lambda mission: mission.name,
-        )
+    mission_page_size = 6
+    current_tab = "active"
+    tab_pages = {"active": 0, "history": 0}
 
-        clear_screen()
-        print_spaced_lines([
-            "📜 === Missões ===",
-            f"Concluídas: {len(state.completed)} | Disponíveis: {len(ordered)}",
-        ])
+    def _read_mission_choice(total_pages: int) -> str:
+        instant_keys = {"t"}
+        if total_pages > 1:
+            instant_keys.update({PAGE_PREV_KEY, PAGE_NEXT_KEY})
+        return read_menu_choice("> ", instant_keys=instant_keys).strip().lower()
 
-        if not ordered:
-            print("Nenhuma missão pendente no momento.")
-            input("\nEnter para voltar.")
-            return level, xp, balance
-        for idx, mission in enumerate(ordered, start=1):
-            status = _format_mission_status(mission, state)
-            print(f"{idx}. {mission.name} {status}")
+    def _format_requirement_line(
+        label: str,
+        current: int,
+        target: int,
+        done: bool,
+        *,
+        dim: bool,
+    ) -> str:
+        status_symbol = get_ui_symbol("REQ_DONE" if done else "REQ_TODO")
+        if target > 0:
+            line = (
+                f"{status_symbol} {label} ({current}/{target}) "
+                f"{render_progress_bar(current, target)}"
+            )
+        else:
+            line = f"{status_symbol} {label}"
+        if dim:
+            return f"[dim]{line}[/dim]"
+        return line
 
-        print("0. Voltar")
-        choice = input("Escolha uma missão: ").strip()
+    def _format_mystery_reward(reward: Dict[str, object]) -> Optional[str]:
+        reward_type = reward.get("type")
+        if reward_type in {"unlock_rods", "unlock_pools", "unlock_missions"}:
+            return "[!] Equipamento Novo"
+        return None
 
-        if choice == "0":
-            return level, xp, balance
-        if not choice.isdigit():
-            print("Entrada inválida.")
-            input("\nEnter para voltar.")
-            continue
-
-        idx = int(choice)
-        if not (1 <= idx <= len(ordered)):
-            print("Número fora do intervalo.")
-            input("\nEnter para voltar.")
-            continue
-
-        mission = ordered[idx - 1]
-        baseline_progress = _mission_baseline_progress(state, mission.mission_id)
-        completed_baseline = state.unlocked_completed_counts.get(mission.mission_id, 0)
-
-        clear_screen()
-        print(f"=== {mission.name} ===")
-        if mission.description:
-            print(mission.description)
-        print("\nRequisitos:")
-        for requirement in mission.requirements:
-            label, current, target, done = _format_requirement(
-                requirement,
+    def _show_mission_detail(mission: MissionDefinition, *, history_mode: bool) -> None:
+        nonlocal level, xp, balance
+        while True:
+            update_mission_completions(
+                missions,
+                state,
                 progress,
-                state.completed,
-                mission.mission_id,
-                baseline_progress=baseline_progress,
-                completed_baseline=completed_baseline,
                 level=level,
                 pools=pools,
                 discovered_fish=discovered_fish,
             )
-            status = "✅" if done else "⏳"
-            print(f"- {label} ({current}/{target}) {status}")
+            baseline_progress = _mission_baseline_progress(state, mission.mission_id)
+            completed_baseline = state.unlocked_completed_counts.get(mission.mission_id, 0)
 
-        print("\nRecompensas:")
-        visible_rewards = [
-            reward
-            for reward in mission.rewards
-            if reward.get("type") in {"money", "xp", "fish"}
-        ]
-        if visible_rewards:
-            for reward in visible_rewards:
-                print(f"- {_format_reward(reward)}")
-        else:
-            print("- Recompensas ocultas")
+            requirement_lines: List[str] = []
+            for requirement in mission.requirements:
+                label, current, target, done = _format_requirement(
+                    requirement,
+                    progress,
+                    state.completed,
+                    mission.mission_id,
+                    baseline_progress=baseline_progress,
+                    completed_baseline=completed_baseline,
+                    level=level,
+                    pools=pools,
+                    discovered_fish=discovered_fish,
+                )
+                requirement_lines.append(
+                    _format_requirement_line(
+                        label,
+                        current,
+                        target,
+                        done,
+                        dim=history_mode,
+                    )
+                )
+            if not requirement_lines:
+                requirement_lines.append("[dim]- Nenhum requisito[/dim]" if history_mode else "- Nenhum requisito")
 
+            if history_mode:
+                visible_rewards = [_format_reward(reward) for reward in mission.rewards]
+                reward_lines = (
+                    [f"[dim]- {reward_line}[/dim]" for reward_line in visible_rewards]
+                    if visible_rewards
+                    else ["[dim]- Sem recompensas[/dim]"]
+                )
+            else:
+                mystery_rewards: List[str] = []
+                for reward in mission.rewards:
+                    hidden_line = _format_mystery_reward(reward)
+                    if hidden_line is not None:
+                        mystery_rewards.append(hidden_line)
+                    else:
+                        mystery_rewards.append(_format_reward(reward))
+                reward_lines = (
+                    [f"- {reward_line}" for reward_line in mystery_rewards]
+                    if mystery_rewards
+                    else ["- [!] Recompensa Misteriosa"]
+                )
 
-        mission_actions = _build_mission_actions(
-            mission,
-            progress,
-            state.completed,
-            baseline_progress=baseline_progress,
-            completed_baseline=completed_baseline,
-            level=level,
-            pools=pools,
-            discovered_fish=discovered_fish,
-        )
-        can_claim_reward = mission.mission_id in state.completed and mission.mission_id not in state.claimed
+            header_lines: List[str] = []
+            if mission.description:
+                if history_mode:
+                    header_lines.append(f"[dim]{mission.description}[/dim]")
+                else:
+                    header_lines.append(mission.description)
+                header_lines.append("")
+            header_lines.append("Requisitos:")
+            header_lines.extend(requirement_lines)
+            header_lines.append("")
+            header_lines.append("Recompensas:")
+            header_lines.extend(reward_lines)
 
-        if mission_actions or can_claim_reward:
-            print("\nAções:")
+            options: List[MenuOption] = []
             action_map: Dict[str, str] = {}
-            option_number = 1
+            if not history_mode:
+                mission_actions = _build_mission_actions(
+                    mission,
+                    progress,
+                    state.completed,
+                    baseline_progress=baseline_progress,
+                    completed_baseline=completed_baseline,
+                    level=level,
+                    pools=pools,
+                    discovered_fish=discovered_fish,
+                )
+                can_claim_reward = (
+                    mission.mission_id in state.completed
+                    and mission.mission_id not in state.claimed
+                )
+                option_number = 1
+
+                deliver_requirements = (
+                    mission_actions.get("deliver_fish", [])
+                    + mission_actions.get("deliver_mutation", [])
+                    + mission_actions.get("deliver_fish_with_mutation", [])
+                )
+                if deliver_requirements:
+                    key = str(option_number)
+                    action_map[key] = "deliver_fish"
+                    options.append(MenuOption(key, "Entregar peixe para a missão"))
+                    option_number += 1
+                if mission_actions.get("spend_money"):
+                    key = str(option_number)
+                    action_map[key] = "spend_money"
+                    options.append(MenuOption(key, "Pagar dinheiro para a missão"))
+                    option_number += 1
+                if can_claim_reward:
+                    key = str(option_number)
+                    action_map[key] = "claim_reward"
+                    options.append(MenuOption(key, "Resgatar recompensa"))
+            options.append(MenuOption("0", "Voltar"))
+
+            clear_screen()
+            tab_label = "HISTORY" if history_mode else "ACTIVE"
+            print_menu_panel(
+                "MISSAO",
+                breadcrumb=f"JORNADA > MISSOES > {tab_label}",
+                subtitle=mission.name,
+                header_lines=header_lines,
+                options=options,
+                prompt="Escolha uma opcao:",
+                show_badge=False,
+                width=90,
+            )
+
+            choice = input("> ").strip().lower()
+            if choice == "0":
+                return
+            if history_mode:
+                print("Opcao invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            action = action_map.get(choice)
+            if not action:
+                print("Opcao invalida.")
+                input("\nEnter para voltar.")
+                continue
 
             deliver_requirements = (
                 mission_actions.get("deliver_fish", [])
                 + mission_actions.get("deliver_mutation", [])
                 + mission_actions.get("deliver_fish_with_mutation", [])
             )
-            if deliver_requirements:
-                key = str(option_number)
-                action_map[key] = "deliver_fish"
-                print(f"{key}. Entregar peixe para a missão")
-                option_number += 1
-            if mission_actions.get("spend_money"):
-                key = str(option_number)
-                action_map[key] = "spend_money"
-                print(f"{key}. Pagar dinheiro para a missão")
-                option_number += 1
-            if can_claim_reward:
-                key = str(option_number)
-                action_map[key] = "claim_reward"
-                print(f"{key}. Resgatar recompensa")
-
-            print("0. Voltar")
-            selection = input("Escolha uma opção: ").strip()
-            action = action_map.get(selection)
-            if not action:
-                continue
-
             if action == "deliver_fish":
                 if _deliver_fish_for_mission(
                     deliver_requirements,
@@ -520,9 +575,113 @@ def show_missions_menu(
                 else:
                     print("Recompensa resgatada!")
                 input("\nEnter para voltar.")
+                return
+
+    while True:
+        update_mission_completions(
+            missions,
+            state,
+            progress,
+            level=level,
+            pools=pools,
+            discovered_fish=discovered_fish,
+        )
+        active_missions = sorted(
+            (
+                mission
+                for mission in mission_by_id.values()
+                if mission.mission_id in state.unlocked
+                and mission.mission_id not in state.claimed
+            ),
+            key=lambda mission: mission.name,
+        )
+        history_missions = sorted(
+            (
+                mission
+                for mission in mission_by_id.values()
+                if mission.mission_id in state.claimed
+            ),
+            key=lambda mission: mission.name,
+        )
+        tab_missions = active_missions if current_tab == "active" else history_missions
+
+        page_slice = get_page_slice(
+            len(tab_missions),
+            tab_pages[current_tab],
+            mission_page_size,
+        )
+        tab_pages[current_tab] = page_slice.page
+        paged_missions = tab_missions[page_slice.start:page_slice.end]
+
+        clear_screen()
+        options: List[MenuOption] = []
+        for idx, mission in enumerate(paged_missions, start=1):
+            status = _format_mission_status(mission, state)
+            if current_tab == "history":
+                options.append(MenuOption(str(idx), f"[dim]{mission.name} {status}[/dim]"))
+            else:
+                options.append(MenuOption(str(idx), f"{mission.name} {status}"))
+
+        if page_slice.has_prev:
+            options.append(MenuOption(PAGE_PREV_KEY.upper(), "Anterior"))
+        if page_slice.has_next:
+            options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proximo"))
+        options.append(MenuOption("T", "Alternar ACTIVE/HISTORY"))
+        options.append(MenuOption("0", "Voltar"))
+
+        header_lines = [
+            f"Concluidas: {len(state.completed)} | Resgatadas: {len(state.claimed)}",
+            f"Aba atual: {current_tab.upper()}  ([T] alternar)",
+            f"Pagina {page_slice.page + 1}/{page_slice.total_pages}",
+        ]
+        if not paged_missions:
+            if current_tab == "active":
+                header_lines.append("Nenhuma missao ativa no momento.")
+            else:
+                header_lines.append("[dim]Nenhuma missao no historico.[/dim]")
+
+        print_menu_panel(
+            "MISSOES",
+            breadcrumb="JORNADA > MISSOES",
+            subtitle=current_tab.upper(),
+            header_lines=header_lines,
+            options=options,
+            prompt="Escolha uma missao:",
+            show_badge=False,
+        )
+        choice = _read_mission_choice(page_slice.total_pages)
+
+        if choice == "0":
+            return level, xp, balance
+        if choice == "t":
+            current_tab = "history" if current_tab == "active" else "active"
             continue
 
-        input("\nEnter para voltar.")
+        next_page, moved = apply_page_hotkey(
+            choice,
+            tab_pages[current_tab],
+            page_slice.total_pages,
+        )
+        if moved:
+            tab_pages[current_tab] = next_page
+            continue
+
+        if not choice.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            continue
+
+        idx = int(choice)
+        if not (1 <= idx <= len(paged_missions)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            continue
+
+        selected_mission = paged_missions[idx - 1]
+        _show_mission_detail(
+            selected_mission,
+            history_mode=current_tab == "history",
+        )
 
 
 def apply_mission_rewards(

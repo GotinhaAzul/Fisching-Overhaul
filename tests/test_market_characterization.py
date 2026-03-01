@@ -146,7 +146,7 @@ def test_show_market_buy_rod_flow_characterization(monkeypatch) -> None:
     owned_rods = [starter]
 
     monkeypatch.setattr(market, "clear_screen", lambda: None)
-    monkeypatch.setattr("builtins.input", _InputFeeder(["2", "1", "", "0"]))
+    monkeypatch.setattr("builtins.input", _InputFeeder(["2", "1", "s", "", "0"]))
 
     balance, level, xp = market.show_market(
         inventory=[],
