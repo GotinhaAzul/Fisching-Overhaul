@@ -4,7 +4,7 @@
   "description": "Mestre da aproximacao silenciosa, o Predador do Artico usa a penumbra do gelo para atacar sem aviso. Sua leitura de campo e excelente, escolhendo presas isoladas antes de acelerar com violencia. Depois do ataque, desaparece entre sombras azuladas antes que a agua volte a se acalmar.",
   "kg_min": 14.0,
   "kg_max": 31.0,
-  "base_value": 178,
+  "base_value": 100,
   "sequence_len": 9,
   "reaction_time_s": 1.85
 }

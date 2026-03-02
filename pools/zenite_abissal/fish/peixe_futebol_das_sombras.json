@@ -4,7 +4,7 @@
   "description": "Resistente a pressao esmagadora, ele se move com calma de sentinela e raramente gasta energia sem motivo. A anatomia compacta favorece viradas curtas e controle total do proprio eixo. Quando ameacado, recolhe movimento e desaparece quase por completo na escuridao.",
   "kg_min": 8.4,
   "kg_max": 19.8,
-  "base_value": 146,
+  "base_value": 84,
   "sequence_len": 6,
   "reaction_time_s": 2.1
 }

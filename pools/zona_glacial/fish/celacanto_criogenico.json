@@ -4,7 +4,7 @@
   "description": "Esse celacanto sobreviveu por eras em bolsos de agua quase parada, preservado por temperaturas extremas. Sua estrutura ossea densa garante estabilidade em profundidades frias e pressurizadas. Esse isolamento prolongado preservou comportamentos antigos raros em outras especies.",
   "kg_min": 8.0,
   "kg_max": 20.0,
-  "base_value": 124,
+  "base_value": 79,
   "sequence_len": 6,
   "reaction_time_s": 2.15
 }

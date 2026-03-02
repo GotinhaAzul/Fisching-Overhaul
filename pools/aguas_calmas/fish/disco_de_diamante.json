@@ -4,7 +4,7 @@
   "description": "As escamas do Disco de Diamante refletem a luz com intensidade extrema e criam flashes que atrapalham a leitura de distancia. Ele costuma manter altura constante antes de mudar a direcao sem aviso. Esses claroes repentinos tambem servem para desorientar rivais durante disputas por territorio.",
   "kg_min": 6.0,
   "kg_max": 13.2,
-  "base_value": 148,
+  "base_value": 27,
   "sequence_len": 6,
   "reaction_time_s": 2.35
 }

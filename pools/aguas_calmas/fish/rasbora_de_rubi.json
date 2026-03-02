@@ -4,7 +4,7 @@
   "description": "Pequena, veloz e escarlate, a Rasbora de Rubi se desloca em pares e muda de profundidade em segundos. Seu brilho fica mais intenso em agua fria, especialmente em noites longas. Esse padrao ajuda o cardume a escapar rapido de ameacas repentinas.",
   "kg_min": 3.0,
   "kg_max": 7.4,
-  "base_value": 170,
+  "base_value": 88,
   "sequence_len": 6,
   "reaction_time_s": 2.0
 }

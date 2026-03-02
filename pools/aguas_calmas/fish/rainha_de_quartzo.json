@@ -4,7 +4,7 @@
   "description": "Elegante e serena, a Rainha de Quartzo nada em trajetorias amplas entre estruturas cristalinas rasas. Seu brilho suave ajuda a orientar cardumes menores em agua limpa. Sua presenca costuma indicar areas de agua estavel e alta transparencia.",
   "kg_min": 5.2,
   "kg_max": 11.6,
-  "base_value": 130,
+  "base_value": 11,
   "sequence_len": 5,
   "reaction_time_s": 2.7
 }

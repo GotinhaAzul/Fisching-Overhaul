@@ -4,7 +4,7 @@
   "description": "O Escalo Sombrio prefere claridade difusa e usa o contraste do gelo para desaparecer na meia-luz. Ele patrulha por muito tempo sem atacar, aguardando falha de distancia da presa. Esse padrao irregular reduz o gasto de energia e dificulta a previsao de seus movimentos.",
   "kg_min": 2.8,
   "kg_max": 7.2,
-  "base_value": 83,
+  "base_value": 23,
   "sequence_len": 6,
   "reaction_time_s": 2.6
 }

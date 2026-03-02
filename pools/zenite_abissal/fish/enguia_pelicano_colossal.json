@@ -4,7 +4,7 @@
   "description": "Sua mandibula expansiva permite engolir presas muito maiores do que o esperado para seu porte aparente. A Enguia-Pelicano Colossal aproveita o escuro total para surpreender alvos em deslocamento vertical. Com esse alcance, domina colunas verticais onde outras especies evitam cacar.",
   "kg_min": 6.0,
   "kg_max": 14.6,
-  "base_value": 118,
+  "base_value": 26,
   "sequence_len": 6,
   "reaction_time_s": 2.35
 }

@@ -4,7 +4,7 @@
   "description": "Quase transparente, o Peixe-Vidro revela orgaos e vasos como se flutuassem em agua pura. Ele costuma nadar proximo a placas de gelo para dificultar a leitura de contorno pelos predadores. Essa transparencia ajuda o cardume a atravessar aguas abertas sem chamar atencao.",
   "kg_min": 1.8,
   "kg_max": 4.5,
-  "base_value": 70,
+  "base_value": 9,
   "sequence_len": 5,
   "reaction_time_s": 2.95
 }

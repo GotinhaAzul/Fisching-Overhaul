@@ -626,7 +626,6 @@ def show_missions_menu(
             options.append(MenuOption(PAGE_PREV_KEY.upper(), "Anterior"))
         if page_slice.has_next:
             options.append(MenuOption(PAGE_NEXT_KEY.upper(), "Proximo"))
-        options.append(MenuOption("T", "Alternar ACTIVE/HISTORY"))
         options.append(MenuOption("0", "Voltar"))
 
         header_lines = [

@@ -4,7 +4,7 @@
   "description": "Esse vigia silencioso patrulha limites de pressao extrema e responde apenas a mudancas anormais no ambiente. Ele mede distancia antes de atacar, mantendo sempre rota de fuga preparada. Esse comportamento metodico faz dele um guardiao natural das fronteiras do Ponto Zero.",
   "kg_min": 11.0,
   "kg_max": 22.0,
-  "base_value": 80,
+  "base_value": 92,
   "sequence_len": 8,
   "reaction_time_s": 1.9
 }

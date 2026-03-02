@@ -4,7 +4,7 @@
   "description": "Apesar da aparencia de crustaceo lento, o Isopode Polar reage com surpreendente explosao quando perturbado. Sua armadura segmentada dissipa impacto e dificulta a perda de energia termica. Esse impulso repentino ajuda a escapar de predadores em areas de gelo quebradico.",
   "kg_min": 7.5,
   "kg_max": 18.0,
-  "base_value": 118,
+  "base_value": 77,
   "sequence_len": 6,
   "reaction_time_s": 2.25
 }

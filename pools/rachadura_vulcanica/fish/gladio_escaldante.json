@@ -4,7 +4,7 @@
   "description": "Predador de alta velocidade, o Gladio Escaldante usa seu rostro para abrir caminho em correntes quentes e turbulentas. Em dias de calor, a agua ao redor do ataque chega a borbulhar por segundos. Quando acelera, atravessa cardumes inteiros antes que a agua volte a se estabilizar.",
   "kg_min": 12.0,
   "kg_max": 24.0,
-  "base_value": 165,
+  "base_value": 94,
   "sequence_len": 9,
   "reaction_time_s": 1.9
 }

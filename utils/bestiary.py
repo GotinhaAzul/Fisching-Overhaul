@@ -87,6 +87,19 @@ def _pool_hidden_until_unlocked(pool: "FishingPool") -> bool:
     return bool(getattr(pool, "hidden_from_bestiary_until_unlocked", False))
 
 
+def _order_pools_for_bestiary(
+    pools: Sequence["FishingPool"],
+    unlocked_pools: Set[str],
+) -> List["FishingPool"]:
+    return sorted(
+        pools,
+        key=lambda pool: (
+            pool.name not in unlocked_pools,
+            pool.name.casefold(),
+        ),
+    )
+
+
 def _fish_counts_for_completion(fish: "FishProfile") -> bool:
     return bool(getattr(fish, "counts_for_bestiary_completion", True))
 
@@ -1069,11 +1082,14 @@ def show_pools_bestiary(
     claim_rewards: Optional[Callable[[str], List[str]]] = None,
     preview_rewards: Optional[Callable[[str], List[str]]] = None,
 ):
-    visible_pools = [
-        pool
-        for pool in pools
-        if not (_pool_hidden_until_unlocked(pool) and pool.name not in unlocked_pools)
-    ]
+    visible_pools = _order_pools_for_bestiary(
+        [
+            pool
+            for pool in pools
+            if not (_pool_hidden_until_unlocked(pool) and pool.name not in unlocked_pools)
+        ],
+        unlocked_pools,
+    )
     countable_pools = [
         pool
         for pool in visible_pools

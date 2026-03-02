@@ -166,6 +166,33 @@ def test_show_pools_bestiary_pagination_flow_characterization(monkeypatch) -> No
     assert feeder.calls == feeder.total_expected
 
 
+def test_show_pools_bestiary_orders_unlocked_before_locked(monkeypatch) -> None:
+    pools = [
+        _DummyPool("Zulu", [_DummyFish("Fish Z")], Path("zulu")),
+        _DummyPool("Alpha", [_DummyFish("Fish A")], Path("alpha")),
+        _DummyPool("Echo", [_DummyFish("Fish E")], Path("echo")),
+        _DummyPool("Beta", [_DummyFish("Fish B")], Path("beta")),
+    ]
+    unlocked = {"Echo", "Beta"}
+    feeder = _ChoiceFeeder(["0"])
+    observed_order: list[str] = []
+    original_slice = bestiary._slice_paged_items
+
+    def spy_slice(items, page, page_size):  # type: ignore[no-untyped-def]
+        observed_order[:] = [pool.name for pool in items]
+        return original_slice(items, page, page_size)
+
+    monkeypatch.setattr(bestiary, "use_modern_ui", lambda: False)
+    monkeypatch.setattr(bestiary, "clear_screen", lambda: None)
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    monkeypatch.setattr(bestiary, "_read_choice", feeder)
+    monkeypatch.setattr(bestiary, "_slice_paged_items", spy_slice)
+
+    bestiary.show_pools_bestiary(pools, unlocked)
+
+    assert observed_order == ["Beta", "Echo", "Alpha", "Zulu"]
+
+
 def test_new_pool_rewards_require_exact_pool_name_matching() -> None:
     rewards_dir = Path(__file__).resolve().parent.parent / "bestiary_rewards"
     rewards = load_bestiary_rewards(rewards_dir)

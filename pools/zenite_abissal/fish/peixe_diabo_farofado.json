@@ -4,7 +4,7 @@
   "description": "Com filamentos sensoriais desgrenhados, esse peixe detecta micro correntes e vibracoes a grande distancia. Ele circula lentamente ate definir vetor de ataque, depois acelera de forma seca. Esse comportamento paciente o torna um dos cacadores mais eficientes da zona.",
   "kg_min": 5.2,
   "kg_max": 12.7,
-  "base_value": 112,
+  "base_value": 25,
   "sequence_len": 6,
   "reaction_time_s": 2.45
 }

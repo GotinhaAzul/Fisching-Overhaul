@@ -4,7 +4,7 @@
   "description": "As cores desse peixe mudam continuamente conforme o angulo da luz e da corrente, confundindo predadores e pescadores. Ele morde corais moles e reaproveita minerais para reforcar o bico. Os fragmentos que ele tritura acabam enriquecendo o leito cristalino ao redor.",
   "kg_min": 8.1,
   "kg_max": 17.5,
-  "base_value": 176,
+  "base_value": 89,
   "sequence_len": 6,
   "reaction_time_s": 2.1
 }

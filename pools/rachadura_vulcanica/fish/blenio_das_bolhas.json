@@ -4,7 +4,7 @@
   "description": "Esse blenio lendario desenvolveu glandulas termicas que liberam bolhas superaquecidas para afastar competidores maiores. Ele ocupa cavidades estreitas e aparece pouco, quase sempre sozinho. Nas horas mais quentes, libera bolhas em sequencia para defender territorio e espantar intrusos.",
   "kg_min": 16.0,
   "kg_max": 34.0,
-  "base_value": 290,
+  "base_value": 188,
   "sequence_len": 11,
   "reaction_time_s": 1.8
 }

@@ -4,7 +4,7 @@
   "description": "Pequeno e prateado, o Alevino de Eter parece condensar luz no proprio corpo enquanto cruza correntes frias. Ele reage rapido a movimentos bruscos e usa guinadas curtas para escapar. Mesmo comum, e parte essencial da cadeia alimentar que sustenta os maiores predadores da area.",
   "kg_min": 2.4,
   "kg_max": 6.2,
-  "base_value": 12,
+  "base_value": 13,
   "sequence_len": 6,
   "reaction_time_s": 2.3
 }

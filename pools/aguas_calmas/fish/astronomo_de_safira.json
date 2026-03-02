@@ -4,7 +4,7 @@
   "description": "Esse raro contempla a coluna d'agua como se seguisse um mapa de estrelas invisivel aos demais. Seu azul profundo muda com o angulo da luz, escondendo-o de perseguidores menos atentos. Ele costuma surgir em noites limpas, quando o reflexo das estrelas atravessa a superficie.",
   "kg_min": 8.5,
   "kg_max": 18.8,
-  "base_value": 182,
+  "base_value": 90,
   "sequence_len": 6,
   "reaction_time_s": 2.05
 }

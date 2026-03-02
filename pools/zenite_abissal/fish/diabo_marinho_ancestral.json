@@ -4,7 +4,7 @@
   "description": "Forma final dos predadores abissais, o Diabo-Marinho Ancestral combina paciencia, alcance e explosao em um unico ciclo de caca. Seu corpo carrega cicatrizes de eras de pressao e disputa por territorio extremo. Cada investida segue um ciclo preciso de espera, aproximacao e explosao.",
   "kg_min": 24.0,
   "kg_max": 52.0,
-  "base_value": 360,
+  "base_value": 204,
   "sequence_len": 12,
   "reaction_time_s": 1.7
 }

@@ -4,7 +4,7 @@
   "description": "Mesmo imaturo, esse predador ja demonstra agressividade extrema e controle de territorio no escuro absoluto. Ele investe em linha reta e muda o angulo no ultimo instante para evitar contragolpe. Mesmo jovem, ja disputa territorio com predadores muito maiores.",
   "kg_min": 14.0,
   "kg_max": 30.0,
-  "base_value": 204,
+  "base_value": 110,
   "sequence_len": 9,
   "reaction_time_s": 1.8
 }

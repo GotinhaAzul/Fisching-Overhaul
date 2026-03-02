@@ -4,7 +4,7 @@
   "description": "Quando surge em cardume, o Peixe-Prata Cintilante cria um fluxo visual parecido com metal liquido. Sua coordenacao coletiva fecha espacos entre individuos e confunde predadores maiores. Ao entardecer, o grupo muda de direcao em sincronia e cobre longas distancias sem se dispersar.",
   "kg_min": 22.0,
   "kg_max": 46.0,
-  "base_value": 395,
+  "base_value": 212,
   "sequence_len": 12,
   "reaction_time_s": 1.65
 }
