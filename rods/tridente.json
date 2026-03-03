@@ -1,9 +1,9 @@
 {
   "name": "Tridente",
-  "luck": 0.28,
+  "luck": 0.26,
   "kg_max": 150.0,
-  "control": 0.7,
-  "description": "A arma usada para matar oque um dia ja foi uma besta marinha.",
+  "control": 0.4,
+  "description": "A arma usada para matar oque um dia ja foi uma besta marinha. No entanto, seu poder parece ter desaparecido a anos.",
   "price": 9000,
   "can_slash": true,
   "slash_chance": 0.10,

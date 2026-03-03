@@ -21,6 +21,7 @@ from utils.missions import (
     _build_mission_actions,
     _check_requirement,
     _format_requirement,
+    restore_mission_progress,
 )
 
 
@@ -42,6 +43,7 @@ def _mission_context() -> tuple[MissionProgress, MissionProgress, list[_DummyPoo
     progress = MissionProgress(
         total_money_earned=200.0,
         total_money_spent=120.0,
+        total_mission_money_paid=35.0,
         fish_caught=5,
         fish_delivered=2,
         fish_sold=3,
@@ -58,6 +60,7 @@ def _mission_context() -> tuple[MissionProgress, MissionProgress, list[_DummyPoo
     baseline = MissionProgress(
         total_money_earned=50.0,
         total_money_spent=20.0,
+        total_mission_money_paid=5.0,
         fish_caught=1,
         fish_delivered=0,
         fish_sold=1,
@@ -143,6 +146,20 @@ def test_mission_requirement_formatting_characterization() -> None:
     )
     assert (current, target, done) == (100, 100, True)
 
+    req_spend = {"type": "spend_money", "amount": 25}
+    _, current, target, done = _format_requirement(
+        req_spend,
+        progress,
+        completed_missions,
+        "m_current",
+        baseline_progress=baseline,
+        completed_baseline=0,
+        level=7,
+        pools=pools,
+        discovered_fish=discovered,
+    )
+    assert (current, target, done) == (30, 25, True)
+
     assert _check_requirement(
         req_bestiary,
         progress,
@@ -154,6 +171,49 @@ def test_mission_requirement_formatting_characterization() -> None:
         pools=pools,
         discovered_fish=discovered,
     )
+
+
+def test_spend_money_ignores_generic_spending_characterization() -> None:
+    progress = MissionProgress(total_money_spent=400.0, total_mission_money_paid=0.0)
+    baseline = MissionProgress(total_money_spent=10.0, total_mission_money_paid=0.0)
+    pools = [_DummyPool(name="Lagoa Tranquila", fish_profiles=[_DummyFish("Tilapia")], folder=Path("lagoa"))]
+
+    _, current, target, done = _format_requirement(
+        {"type": "spend_money", "amount": 50},
+        progress,
+        completed_missions=set(),
+        current_mission_id="m_current",
+        baseline_progress=baseline,
+        completed_baseline=0,
+        level=1,
+        pools=pools,
+        discovered_fish=set(),
+    )
+    assert (current, target, done) == (0, 50, False)
+
+    progress.record_mission_money_paid(60.0)
+    _, current, target, done = _format_requirement(
+        {"type": "spend_money", "amount": 50},
+        progress,
+        completed_missions=set(),
+        current_mission_id="m_current",
+        baseline_progress=baseline,
+        completed_baseline=0,
+        level=1,
+        pools=pools,
+        discovered_fish=set(),
+    )
+    assert (current, target, done) == (60, 50, True)
+
+
+def test_restore_mission_progress_legacy_mission_payment_fallback_characterization() -> None:
+    legacy = restore_mission_progress({"total_money_spent": 123.0})
+    assert legacy.total_mission_money_paid == 123.0
+
+    explicit = restore_mission_progress(
+        {"total_money_spent": 123.0, "total_mission_money_paid": 9.0}
+    )
+    assert explicit.total_mission_money_paid == 9.0
 
 
 def test_build_mission_actions_characterization() -> None:
@@ -281,4 +341,3 @@ def test_has_any_pool_bestiary_full_completion_characterization() -> None:
     ]
     assert has_any_pool_bestiary_full_completion(pools, {"Tilapia", "Pacu"})
     assert not has_any_pool_bestiary_full_completion(pools, {"Tilapia"})
-

@@ -6,7 +6,7 @@
   "requirements": [
     {
       "type": "level",
-      "level": 20
+      "level": 18
     },
     {
       "type": "deliver_fish_with_mutation",

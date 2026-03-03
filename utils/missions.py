@@ -53,6 +53,7 @@ class MissionState:
 class MissionProgress:
     total_money_earned: float = 0.0
     total_money_spent: float = 0.0
+    total_mission_money_paid: float = 0.0
     fish_caught: int = 0
     fish_delivered: int = 0
     fish_sold: int = 0
@@ -74,6 +75,11 @@ class MissionProgress:
 
     def record_money_spent(self, amount: float) -> None:
         if amount > 0:
+            self.total_money_spent += amount
+
+    def record_mission_money_paid(self, amount: float) -> None:
+        if amount > 0:
+            self.total_mission_money_paid += amount
             self.total_money_spent += amount
 
     def record_fish_caught(self, fish_name: str, mutation_name: Optional[str]) -> None:
@@ -178,6 +184,7 @@ def serialize_mission_progress(progress: MissionProgress) -> Dict[str, object]:
     return {
         "total_money_earned": progress.total_money_earned,
         "total_money_spent": progress.total_money_spent,
+        "total_mission_money_paid": progress.total_mission_money_paid,
         "fish_caught": progress.fish_caught,
         "fish_delivered": progress.fish_delivered,
         "fish_sold": progress.fish_sold,
@@ -202,6 +209,9 @@ def restore_mission_progress(raw_progress: object) -> MissionProgress:
         return progress
     progress.total_money_earned = _safe_float(raw_progress.get("total_money_earned"))
     progress.total_money_spent = _safe_float(raw_progress.get("total_money_spent"))
+    progress.total_mission_money_paid = _safe_float(
+        raw_progress.get("total_mission_money_paid", raw_progress.get("total_money_spent"))
+    )
     progress.fish_caught = _safe_int(raw_progress.get("fish_caught"))
     progress.fish_delivered = _safe_int(raw_progress.get("fish_delivered"))
     progress.fish_sold = _safe_int(raw_progress.get("fish_sold"))
@@ -549,7 +559,7 @@ def show_missions_menu(
                 )
                 if amount > 0:
                     balance -= amount
-                    progress.record_money_spent(amount)
+                    progress.record_mission_money_paid(amount)
                     print(f"Pagamento de R$ {amount:0.2f} enviado para a missão.")
                 input("\nEnter para voltar.")
                 continue
@@ -926,7 +936,10 @@ def _required_spend_payment_amount(
     baseline_progress: MissionProgress,
 ) -> float:
     required_amount = 0.0
-    current = max(0.0, progress.total_money_spent - baseline_progress.total_money_spent)
+    current = max(
+        0.0,
+        progress.total_mission_money_paid - baseline_progress.total_mission_money_paid,
+    )
     for requirement in requirements:
         target = _safe_float(requirement.get("amount"))
         remaining = max(0.0, target - current)
@@ -964,7 +977,10 @@ def _format_spend_money_requirement(
     discovered_fish: Set[str],
 ) -> Tuple[str, int, int, bool]:
     target = int(_safe_float(requirement.get("amount")))
-    current = max(0, int(progress.total_money_spent - baseline_progress.total_money_spent))
+    current = max(
+        0,
+        int(progress.total_mission_money_paid - baseline_progress.total_mission_money_paid),
+    )
     return "Pagar dinheiro", current, target, current >= target
 
 

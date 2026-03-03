@@ -17,6 +17,10 @@
     {
       "type": "unlock_pools",
       "pool_names": ["Geleira Snowcap"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["helpafriend1"]
     }
   ]
 }

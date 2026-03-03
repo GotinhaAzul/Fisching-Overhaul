@@ -1,0 +1,10 @@
+{
+  "name": "Peixe de Neve",
+  "rarity": "Mitico",
+  "description": "Sério? Todos aqueles peixes para isso? Um boneco de neve em formato de peixe... Bem, o pinguim era bonitinho.",
+  "kg_min": 1.0,
+  "kg_max": 20.0,
+  "base_value": 500,
+  "sequence_len": 1,
+  "reaction_time_s": 2.5
+}

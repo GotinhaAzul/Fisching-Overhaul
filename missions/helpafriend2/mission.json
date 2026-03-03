@@ -1,0 +1,21 @@
+{
+  "id": "helpafriend2",
+  "name": "Pinguim... de novo?",
+  "description": "Muito bem, oque voce quer agora? Huh, Vai me ensinar a construir algo?",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 25,
+      "fish_name": "Peixe-palhaço"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "fish",
+      "fish_name": "Peixe de Neve",
+      "count": 1,
+      "kg": 5
+    }
+  ]
+}

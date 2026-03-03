@@ -1,0 +1,11 @@
+{
+  "name": "Vara da Amizade",
+  "luck": 0.155,
+  "kg_max": 15.5,
+  "control": 0.155,
+  "description": "Amigos!",
+  "price": 950,
+  "unlocked_default": false,
+  "slam_chance": 0.65,
+  "slam_time_bonus": 0.05
+}

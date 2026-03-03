@@ -1,7 +1,7 @@
 {
   "id": "marianas_prologo",
   "name": "Fossa das Marianas: Prologo",
-  "description": "Antes de atravessar a fenda, voce precisa provar preparo: quebrar a pedra, pagar o custo e explodir o caminho com um peixe de fogo.",
+  "description": "Detritos cobrem a fenda. Pesque e use de um peixe para explodir as rochas e abrir caminho.",
   "starts_unlocked": false,
   "requirements": [
     {

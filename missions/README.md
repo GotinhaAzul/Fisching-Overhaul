@@ -24,7 +24,7 @@ Cada missão fica em uma pasta com um `mission.json`. Isso facilita adicionar, r
 | Tipo | Campos | O que faz |
 |------|--------|-----------|
 | `earn_money` | `amount` | Total de dinheiro acumulado (ganho). |
-| `spend_money` | `amount` | Total de dinheiro gasto. |
+| `spend_money` | `amount` | Dinheiro pago diretamente na opção "Pagar dinheiro para a missão". |
 | `level` | `level` | Alcançar um nível mínimo. |
 | `catch_fish` | `count`, `fish_name?` | Capturar peixes (geral ou específico). |
 | `deliver_fish` | `count`, `fish_name?` | Entregar peixes para missão (geral ou específico). |

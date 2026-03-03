@@ -1,0 +1,30 @@
+{
+  "id": "amizade_craft",
+  "rod_name": "Vara da Amizade",
+  "name": "A vara feita para amigos.",
+  "description": "O pinguim (Pablo), diz ter sonhado com essa receita, vale a pena dar uma olhad- ah...",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_quest",
+        "mission_id": "helpafriend2",
+        "state": "completed"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Peixe-Corda",
+        "count": 10
+      },
+      {
+        "type": "fish",
+        "fish_name": "Pedra",
+        "count": 15
+      }
+    ]
+  }
+}
