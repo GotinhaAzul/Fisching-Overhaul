@@ -291,6 +291,11 @@ def update_mission_completions(
     discovered_fish: Set[str],
 ) -> Set[str]:
     _sync_unlock_baselines(state)
+    _retroactively_unlock_missions_from_claimed_rewards(
+        missions,
+        state,
+        progress,
+    )
     newly_completed: Set[str] = set()
     for mission in missions:
         if mission.mission_id not in state.unlocked:
@@ -761,16 +766,52 @@ def apply_mission_rewards(
         elif reward_type == "unlock_missions":
             mission_ids = _extract_string_list(reward.get("mission_ids"))
             for mission_id in mission_ids:
-                if mission_id in state.unlocked:
-                    continue
-                state.unlocked.add(mission_id)
-                state.unlocked_progress_baselines[mission_id] = serialize_mission_progress(progress)
-                state.unlocked_completed_counts[mission_id] = len(
-                    {mid for mid in state.completed if mid != mission_id}
+                unlocked = _unlock_mission(
+                    mission_id,
+                    state,
+                    progress,
                 )
+                if not unlocked:
+                    continue
                 notes.append("📜 Nova missão desbloqueada!")
 
     return balance, level, xp, notes
+
+
+def _retroactively_unlock_missions_from_claimed_rewards(
+    missions: Sequence[MissionDefinition],
+    state: MissionState,
+    progress: MissionProgress,
+) -> Set[str]:
+    mission_by_id = {mission.mission_id: mission for mission in missions}
+    newly_unlocked: Set[str] = set()
+    for mission_id in state.claimed:
+        mission = mission_by_id.get(mission_id)
+        if mission is None:
+            continue
+        for reward in mission.rewards:
+            if reward.get("type") != "unlock_missions":
+                continue
+            for unlocked_mission_id in _extract_string_list(reward.get("mission_ids")):
+                if not _unlock_mission(unlocked_mission_id, state, progress):
+                    continue
+                newly_unlocked.add(unlocked_mission_id)
+    return newly_unlocked
+
+
+def _unlock_mission(
+    mission_id: str,
+    state: MissionState,
+    progress: MissionProgress,
+) -> bool:
+    if mission_id in state.unlocked:
+        return False
+    state.unlocked.add(mission_id)
+    state.unlocked_progress_baselines[mission_id] = serialize_mission_progress(progress)
+    state.unlocked_completed_counts[mission_id] = len(
+        {mid for mid in state.completed if mid != mission_id}
+    )
+    return True
 
 
 def _format_reward(reward: Dict[str, object]) -> str:

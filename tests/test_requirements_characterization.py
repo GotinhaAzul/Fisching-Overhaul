@@ -18,10 +18,12 @@ from utils.inventory import InventoryEntry
 from utils.missions import (
     MissionDefinition,
     MissionProgress,
+    MissionState,
     _build_mission_actions,
     _check_requirement,
     _format_requirement,
     restore_mission_progress,
+    update_mission_completions,
 )
 
 
@@ -239,6 +241,45 @@ def test_build_mission_actions_characterization() -> None:
         discovered_fish=discovered,
     )
     assert set(actions) == {"deliver_fish", "spend_money"}
+
+
+def test_claimed_unlock_rewards_retroactively_unlock_new_missions_characterization() -> None:
+    pools = [_DummyPool(name="Lagoa Tranquila", fish_profiles=[_DummyFish("Tilapia")], folder=Path("lagoa"))]
+    missions = [
+        MissionDefinition(
+            mission_id="m_old",
+            name="Missao Antiga",
+            description="",
+            requirements=[],
+            rewards=[{"type": "unlock_missions", "mission_ids": ["m_new"]}],
+            starts_unlocked=True,
+        ),
+        MissionDefinition(
+            mission_id="m_new",
+            name="Missao Nova",
+            description="",
+            requirements=[{"type": "catch_fish", "count": 1}],
+            rewards=[],
+        ),
+    ]
+    state = MissionState(unlocked={"m_old"}, completed={"m_old"}, claimed={"m_old"})
+    progress = MissionProgress(total_money_earned=321.0, fish_caught=0)
+
+    newly_completed = update_mission_completions(
+        missions,
+        state,
+        progress,
+        level=1,
+        pools=pools,
+        discovered_fish=set(),
+    )
+
+    assert "m_new" in state.unlocked
+    assert "m_new" not in newly_completed
+    assert restore_mission_progress(
+        state.unlocked_progress_baselines["m_new"]
+    ).total_money_earned == 321.0
+    assert state.unlocked_completed_counts["m_new"] == 1
 
 
 def test_crafting_unlock_and_delivery_characterization() -> None:

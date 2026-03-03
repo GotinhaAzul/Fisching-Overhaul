@@ -2887,6 +2887,11 @@ def main(dev_mode: bool = False):
         for event in events
         for fish in event.fish_profiles
     ]
+    event_mutation_profiles = [
+        mutation
+        for event in events
+        for mutation in event.mutations
+    ]
     hunt_fish_profiles = [
         fish
         for hunt in hunts
@@ -2897,6 +2902,12 @@ def main(dev_mode: bool = False):
         fish_by_name.setdefault(fish.name, fish)
     for fish in hunt_fish_profiles:
         fish_by_name.setdefault(fish.name, fish)
+
+    bestiary_mutations_by_name: Dict[str, Mutation] = {}
+    for mutation in [*available_mutations, *event_mutation_profiles]:
+        bestiary_mutations_by_name.setdefault(mutation.name, mutation)
+    bestiary_mutation_catalog = list(bestiary_mutations_by_name.values())
+
     update_mission_completions(
         missions,
         mission_state,
@@ -2938,6 +2949,26 @@ def main(dev_mode: bool = False):
     def get_inventory_mutation_counts() -> Dict[str, int]:
         rebuild_inventory_count_caches_if_needed()
         return inventory_mutation_counts_cache
+
+    def discovered_mutation_names() -> set[str]:
+        names: set[str] = set()
+        names.update(
+            mutation_name
+            for mutation_name, count in mission_progress.mutations_caught_by_name.items()
+            if count > 0 and mutation_name
+        )
+        names.update(
+            mutation_name
+            for mutation_name, count in mission_progress.mutations_delivered_by_name.items()
+            if count > 0 and mutation_name
+        )
+        names.update(
+            mutation_name
+            for mutation_name, count in crafting_progress.find_mutation_counts_by_name.items()
+            if count > 0 and mutation_name
+        )
+        names.update(get_inventory_mutation_counts())
+        return names
 
     def refresh_crafting_unlocks(print_notifications: bool = False) -> List[str]:
         newly_unlocked = update_crafting_unlocks(
@@ -3172,6 +3203,8 @@ def main(dev_mode: bool = False):
                     owned_rods,
                     unlocked_pools,
                     discovered_fish,
+                    available_mutations=bestiary_mutation_catalog,
+                    discovered_mutations=discovered_mutation_names(),
                     hunt_definitions=hunts,
                     regionless_fish_profiles=event_fish_profiles,
                     bestiary_rewards=bestiary_rewards,

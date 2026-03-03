@@ -23,6 +23,7 @@ from utils.cosmetics import UI_COLOR_DEFINITIONS, UI_ICON_DEFINITIONS
 
 if TYPE_CHECKING:
     from utils.hunts import HuntDefinition
+    from utils.mutations import Mutation
     from utils.pesca import FishProfile, FishingPool
 
 
@@ -175,6 +176,28 @@ def _section_completion(
     return unlocked_count, total, completion
 
 
+def _section_reward_completion(
+    section: FishBestiarySection,
+    unlocked_fish: Set[str],
+) -> tuple[int, int, float]:
+    if section.counts_for_completion:
+        return _section_completion(section, unlocked_fish)
+
+    reward_fish_names = {
+        fish.name
+        for fish in section.fish_profiles
+        if isinstance(getattr(fish, "name", None), str) and fish.name
+    }
+    total = len(reward_fish_names)
+    unlocked_count = sum(
+        1
+        for fish_name in reward_fish_names
+        if fish_name in unlocked_fish
+    )
+    completion = (unlocked_count / total * 100) if total else 0
+    return unlocked_count, total, completion
+
+
 def _fish_completion_snapshot(
     sections: Sequence[FishBestiarySection],
     unlocked_fish: Set[str],
@@ -195,9 +218,7 @@ def _fish_completion_snapshot(
 
     by_pool: Dict[str, float] = {}
     for section in sections:
-        if not section.counts_for_completion:
-            continue
-        _, _, section_percent = _section_completion(section, unlocked_fish)
+        _, _, section_percent = _section_reward_completion(section, unlocked_fish)
         by_pool[section.title] = section_percent
     return global_percent, by_pool
 
@@ -1257,12 +1278,159 @@ def show_pools_bestiary(
         input("\nEnter para voltar.")
 
 
+def show_mutations_bestiary(
+    mutations: List["Mutation"],
+    discovered_mutations: Set[str],
+) -> None:
+    ordered_mutations = sorted(
+        mutations,
+        key=lambda mutation: (mutation.name not in discovered_mutations, mutation.name),
+    )
+    page = 0
+    page_size = 10
+    while True:
+        clear_screen()
+        print("=== Bestiario: Mutacoes encontradas ===")
+        total_mutations = len(ordered_mutations)
+        unlocked_count = sum(
+            1
+            for mutation in ordered_mutations
+            if mutation.name in discovered_mutations
+        )
+        completion = (unlocked_count / total_mutations * 100) if total_mutations else 0
+        print(f"Complecao: {unlocked_count}/{total_mutations} ({completion:.0f}%)")
+        if not ordered_mutations:
+            print("Nenhuma mutacao cadastrada.")
+            input("\nEnter para voltar.")
+            return
+
+        page_items, page, total_pages = _slice_paged_items(
+            ordered_mutations,
+            page,
+            page_size,
+        )
+        if use_modern_ui():
+            clear_screen()
+            options = [
+                MenuOption(
+                    str(idx),
+                    mutation.name if mutation.name in discovered_mutations else "???",
+                )
+                for idx, mutation in enumerate(page_items, start=1)
+            ]
+            _add_pagination_options(options, total_pages)
+            options.append(MenuOption("0", "Voltar"))
+            print_menu_panel(
+                "BESTIARIO",
+                subtitle="Mutacoes encontradas",
+                header_lines=[
+                    f"Conclusao: {unlocked_count}/{total_mutations} ({completion:.0f}%)",
+                    f"Pagina {page + 1}/{total_pages}",
+                ],
+                options=options,
+                prompt="Escolha uma mutacao:",
+                show_badge=False,
+            )
+            choice = _read_choice("> ", total_pages)
+            if choice == "0":
+                return
+
+            page, moved = apply_page_hotkey(choice, page, total_pages)
+            if moved:
+                continue
+
+            if not choice.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            idx = int(choice)
+            if not (1 <= idx <= len(page_items)):
+                print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+
+            mutation = page_items[idx - 1]
+            if mutation.name not in discovered_mutations:
+                show_locked_entry()
+                continue
+
+            rod_requirement_line = (
+                ", ".join(mutation.required_rods)
+                if mutation.required_rods
+                else "Nenhuma"
+            )
+            clear_screen()
+            print_menu_panel(
+                "MUTACAO",
+                subtitle=mutation.name,
+                header_lines=[
+                    f"Descricao: {mutation.description or '-'}",
+                    f"Multiplicador XP: x{mutation.xp_multiplier:0.2f}",
+                    f"Multiplicador Gold: x{mutation.gold_multiplier:0.2f}",
+                    f"Chance base: {mutation.chance * 100:0.2f}%",
+                    f"Varas requeridas: {rod_requirement_line}",
+                ],
+                options=[MenuOption("0", "Voltar")],
+                prompt="Pressione Enter para voltar:",
+                show_badge=False,
+            )
+            input("> ")
+            continue
+
+        print(f"Pagina {page + 1}/{total_pages}\n")
+
+        for idx, mutation in enumerate(page_items, start=1):
+            label = mutation.name if mutation.name in discovered_mutations else "???"
+            print(f"{idx}. {label}")
+
+        _print_pagination_controls(total_pages)
+        print("0. Voltar")
+        choice = _read_choice("Escolha uma mutacao: ", total_pages)
+        if choice == "0":
+            return
+
+        page, moved = apply_page_hotkey(choice, page, total_pages)
+        if moved:
+            continue
+
+        if not choice.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            continue
+
+        idx = int(choice)
+        if not (1 <= idx <= len(page_items)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            continue
+
+        mutation = page_items[idx - 1]
+        if mutation.name not in discovered_mutations:
+            show_locked_entry()
+            continue
+
+        clear_screen()
+        print(f"=== {mutation.name} ===")
+        print(f"Descricao: {mutation.description or '-'}")
+        print(f"Multiplicador XP: x{mutation.xp_multiplier:0.2f}")
+        print(f"Multiplicador Gold: x{mutation.gold_multiplier:0.2f}")
+        print(f"Chance base: {mutation.chance * 100:0.2f}%")
+        if mutation.required_rods:
+            print(f"Varas requeridas: {', '.join(mutation.required_rods)}")
+        else:
+            print("Varas requeridas: Nenhuma")
+        input("\nEnter para voltar.")
+
+
 def show_bestiary(
     pools: List["FishingPool"],
     available_rods: List[Rod],
     owned_rods: List[Rod],
     unlocked_pools: Set[str],
     discovered_fish: Set[str],
+    available_mutations: Optional[Sequence["Mutation"]] = None,
+    discovered_mutations: Optional[Set[str]] = None,
     hunt_definitions: Optional[Sequence["HuntDefinition"]] = None,
     regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
     bestiary_rewards: Optional[Sequence[BestiaryRewardDefinition]] = None,
@@ -1279,6 +1447,11 @@ def show_bestiary(
     )
     sorted_rods = sorted(available_rods, key=lambda rod: rod.name)
     sorted_pools = sorted(pools, key=lambda pool: pool.name)
+    sorted_mutations = sorted(
+        available_mutations or [],
+        key=lambda mutation: mutation.name,
+    )
+    discovered_mutation_names = set(discovered_mutations or set())
 
     def list_claimable_rewards(
         category: str,
@@ -1394,6 +1567,7 @@ def show_bestiary(
             f"1. Peixes pescados {fish_status}".rstrip(),
             f"2. Varas adquiridas {rods_status}".rstrip(),
             f"3. Pools desbloqueadas {pools_status}".rstrip(),
+            "4. Mutacoes encontradas",
             "0. Voltar",
         ])
 
@@ -1433,6 +1607,13 @@ def show_bestiary(
                 pending_reward_count=pending_rewards_count,
                 claim_rewards=claim_rewards_for_category,
                 preview_rewards=preview_rewards_for_category,
+            )
+            continue
+
+        if choice == "4":
+            show_mutations_bestiary(
+                sorted_mutations,
+                discovered_mutation_names,
             )
             continue
 

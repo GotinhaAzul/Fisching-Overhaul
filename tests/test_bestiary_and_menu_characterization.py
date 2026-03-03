@@ -13,6 +13,7 @@ from utils.bestiary_rewards import (
     get_claimable_bestiary_rewards,
     load_bestiary_rewards,
 )
+from utils.mutations import Mutation
 from utils.rods import Rod
 
 
@@ -69,6 +70,17 @@ def _make_rod(name: str) -> Rod:
         control=0.0,
         description="",
         price=0.0,
+    )
+
+
+def _make_mutation(name: str) -> Mutation:
+    return Mutation(
+        name=name,
+        description="",
+        xp_multiplier=1.1,
+        gold_multiplier=1.2,
+        chance=0.05,
+        required_rods=(),
     )
 
 
@@ -166,6 +178,55 @@ def test_show_pools_bestiary_pagination_flow_characterization(monkeypatch) -> No
     assert feeder.calls == feeder.total_expected
 
 
+def test_show_mutations_bestiary_pagination_flow_characterization(monkeypatch) -> None:
+    mutations = [_make_mutation(f"Mut {index:02d}") for index in range(1, 13)]
+    discovered = {mutation.name for mutation in mutations}
+    feeder = _ChoiceFeeder([PAGE_NEXT_KEY, "0"])
+
+    monkeypatch.setattr(bestiary, "use_modern_ui", lambda: False)
+    monkeypatch.setattr(bestiary, "clear_screen", lambda: None)
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    monkeypatch.setattr(bestiary, "_read_choice", feeder)
+
+    bestiary.show_mutations_bestiary(mutations, discovered)
+    assert feeder.calls == feeder.total_expected
+
+
+def test_show_bestiary_mutations_menu_route_characterization(monkeypatch) -> None:
+    rods = [_make_rod("Vara Bambu")]
+    pools = [
+        _DummyPool(
+            name="Lagoa Tranquila",
+            fish_profiles=[_DummyFish("Tilapia")],
+            folder=Path("lagoa"),
+        )
+    ]
+    called: dict[str, bool] = {"mutations": False}
+
+    def fake_show_mutations(mutations, discovered):  # type: ignore[no-untyped-def]
+        called["mutations"] = True
+        assert [mutation.name for mutation in mutations] == ["Albino", "Noir"]
+        assert discovered == {"Albino"}
+
+    menu_inputs = iter(["4", "0"])
+
+    monkeypatch.setattr(bestiary, "clear_screen", lambda: None)
+    monkeypatch.setattr("builtins.input", lambda _prompt="": next(menu_inputs))
+    monkeypatch.setattr(bestiary, "show_mutations_bestiary", fake_show_mutations)
+
+    bestiary.show_bestiary(
+        pools=pools,
+        available_rods=rods,
+        owned_rods=rods,
+        unlocked_pools={pool.name for pool in pools},
+        discovered_fish={"Tilapia"},
+        available_mutations=[_make_mutation("Noir"), _make_mutation("Albino")],
+        discovered_mutations={"Albino"},
+    )
+
+    assert called["mutations"] is True
+
+
 def test_show_pools_bestiary_orders_unlocked_before_locked(monkeypatch) -> None:
     pools = [
         _DummyPool("Zulu", [_DummyFish("Fish Z")], Path("zulu")),
@@ -234,6 +295,45 @@ def test_new_pool_rewards_require_exact_pool_name_matching() -> None:
         pools_percent=0.0,
     )
     assert claimable_mismatch == []
+
+
+def test_non_counting_pool_completion_unlocks_pool_reward() -> None:
+    sections = [
+        bestiary.FishBestiarySection(
+            title="Farseas",
+            fish_profiles=[
+                _DummyFish("Plastico", counts_for_bestiary_completion=False),
+                _DummyFish("Sombra do Mar.", counts_for_bestiary_completion=False),
+            ],
+            completion_fish_names=set(),
+            counts_for_completion=False,
+        )
+    ]
+    fish_global_percent, fish_percent_by_pool = bestiary._fish_completion_snapshot(
+        sections,
+        {"Plastico", "Sombra do Mar."},
+    )
+    assert fish_global_percent == 0.0
+    assert fish_percent_by_pool["Farseas"] == 100.0
+
+    reward = BestiaryRewardDefinition(
+        reward_id="pool_farseas_100",
+        name="Olhar de Farseas",
+        trigger_type="fish_bestiary",
+        threshold_percent=100.0,
+        target_pool="Farseas",
+        rewards=[],
+    )
+    claimable = get_claimable_bestiary_rewards(
+        [reward],
+        BestiaryRewardState(),
+        category="fish",
+        fish_global_percent=fish_global_percent,
+        fish_percent_by_pool=fish_percent_by_pool,
+        rods_percent=0.0,
+        pools_percent=0.0,
+    )
+    assert [reward.reward_id for reward in claimable] == ["pool_farseas_100"]
 
 
 def test_bestiary_reward_preview_line_includes_itemized_summary() -> None:
