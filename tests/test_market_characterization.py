@@ -140,6 +140,104 @@ def test_show_market_sell_individual_flow_characterization(monkeypatch) -> None:
     assert delivered_names == [fish.name]
 
 
+def test_show_market_sell_individual_blocks_unsellable_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    inventory = [
+        InventoryEntry(
+            name=fish.name,
+            rarity=fish.rarity,
+            kg=2.0,
+            base_value=fish.base_value,
+            is_unsellable=True,
+        )
+    ]
+    money_earned: list[float] = []
+    sold_names: list[str] = []
+    delivered_names: list[str] = []
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(
+        "builtins.input",
+        _InputFeeder(["1", "1", "1", "", "0"]),
+    )
+
+    balance, level, xp = market.show_market(
+        inventory,
+        0.0,
+        selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        on_money_earned=money_earned.append,
+        on_fish_sold=lambda entry: sold_names.append(entry.name),
+        on_fish_delivered=lambda entry: delivered_names.append(entry.name),
+    )
+
+    assert balance == 0.0
+    assert level == 1
+    assert xp == 0
+    assert len(inventory) == 1
+    assert inventory[0].name == fish.name
+    assert money_earned == []
+    assert sold_names == []
+    assert delivered_names == []
+
+
+def test_show_market_sell_all_keeps_unsellable_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    sellable = InventoryEntry(
+        name=fish.name,
+        rarity=fish.rarity,
+        kg=2.0,
+        base_value=fish.base_value,
+    )
+    unsellable = InventoryEntry(
+        name="Pacu de Missao",
+        rarity="Comum",
+        kg=1.0,
+        base_value=8.0,
+        is_unsellable=True,
+    )
+    inventory = [sellable, unsellable]
+    money_earned: list[float] = []
+    sold_names: list[str] = []
+    delivered_names: list[str] = []
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr("builtins.input", _InputFeeder(["1", "2", "", "0"]))
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=0.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        on_money_earned=money_earned.append,
+        on_fish_sold=lambda entry: sold_names.append(entry.name),
+        on_fish_delivered=lambda entry: delivered_names.append(entry.name),
+    )
+
+    expected_value = calculate_entry_value(sellable)
+    assert balance == expected_value
+    assert level == 1
+    assert xp == 0
+    assert len(inventory) == 1
+    assert inventory[0].name == "Pacu de Missao"
+    assert inventory[0].is_unsellable is True
+    assert money_earned == [expected_value]
+    assert sold_names == [fish.name]
+    assert delivered_names == [fish.name]
+
+
 def test_show_market_buy_rod_flow_characterization(monkeypatch) -> None:
     starter, premium = _make_rods()
     selected_pool, fish = _make_pool_and_fish()
@@ -164,6 +262,61 @@ def test_show_market_buy_rod_flow_characterization(monkeypatch) -> None:
     assert balance == 50.0
     assert level == 1
     assert xp == 0
+
+
+def test_show_market_pool_order_ignores_unsellable_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    inventory = [
+        InventoryEntry(
+            name=fish.name,
+            rarity=fish.rarity,
+            kg=2.0,
+            base_value=fish.base_value,
+            is_unsellable=True,
+        ),
+        InventoryEntry(name="Pacu", rarity="Comum", kg=1.0, base_value=8.0),
+    ]
+    pool_orders = {
+        selected_pool.name: market.PoolMarketOrder(
+            pool_name=selected_pool.name,
+            fish_name=fish.name,
+            rarity=fish.rarity,
+            required_count=1,
+            reward_money=30.0,
+            reward_xp=15,
+            expires_at=1_000_000_000.0,
+        )
+    }
+    sold_names: list[str] = []
+    delivered_names: list[str] = []
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.time, "time", lambda: 100.0)
+    monkeypatch.setattr("builtins.input", _InputFeeder(["3", "", "0"]))
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=10.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        pool_orders=pool_orders,
+        on_fish_sold=lambda entry: sold_names.append(entry.name),
+        on_fish_delivered=lambda entry: delivered_names.append(entry.name),
+    )
+
+    assert balance == 10.0
+    assert level == 1
+    assert xp == 0
+    assert [entry.name for entry in inventory] == [fish.name, "Pacu"]
+    assert selected_pool.name in pool_orders
+    assert sold_names == []
+    assert delivered_names == []
 
 
 def test_show_market_pool_order_delivery_flow_characterization(monkeypatch) -> None:

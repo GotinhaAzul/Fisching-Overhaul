@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.style import Style as RichStyle
 from rich.text import Text
+from utils.perfect_catch import clamp, resolve_hud_color
 
 
 UI_THEME_ENV_VAR = "FISCHING_UI_THEME"
@@ -302,12 +303,78 @@ def print_menu_panel(*args, **kwargs) -> None:
         print(safe_line)
 
 
+def _terminal_line_width(default: int = 120) -> int:
+    try:
+        columns = os.get_terminal_size().columns
+    except OSError:
+        columns = default
+    return max(20, columns - 1)
+
+
+def _truncate_text(text: str, max_len: int) -> str:
+    if max_len <= 0:
+        return ""
+    if len(text) <= max_len:
+        return text
+    if max_len <= 3:
+        return text[:max_len]
+    return f"{text[:max_len - 3]}..."
+
+
+def _lerp_channel(start: int, end: int, ratio: float) -> int:
+    return int(round(start + ((end - start) * ratio)))
+
+
+def _interpolate_rgb(
+    start: tuple[int, int, int],
+    end: tuple[int, int, int],
+    ratio: float,
+) -> tuple[int, int, int]:
+    safe_ratio = clamp(ratio, 0.0, 1.0)
+    return (
+        _lerp_channel(start[0], end[0], safe_ratio),
+        _lerp_channel(start[1], end[1], safe_ratio),
+        _lerp_channel(start[2], end[2], safe_ratio),
+    )
+
+
+def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
+    red, green, blue = rgb
+    return f"#{red:02x}{green:02x}{blue:02x}"
+
+
+def _resolve_hud_gradient_color(elapsed_ratio: float, threshold_ratio: float) -> str:
+    safe_elapsed = clamp(elapsed_ratio, 0.0, 1.0)
+    safe_threshold = clamp(threshold_ratio, 0.10, 1.00)
+    color_system = getattr(console, "color_system", None)
+    if color_system != "truecolor":
+        return resolve_hud_color(safe_elapsed, safe_threshold)
+
+    color_stops: list[tuple[float, tuple[int, int, int]]] = [
+        (0.00, (0, 220, 255)),
+        (0.45, (65, 210, 120)),
+        (0.75, (255, 210, 0)),
+        (1.00, (255, 70, 70)),
+    ]
+    for index in range(1, len(color_stops)):
+        stop_ratio, stop_color = color_stops[index]
+        prev_ratio, prev_color = color_stops[index - 1]
+        if safe_elapsed <= stop_ratio:
+            segment_span = max(0.001, stop_ratio - prev_ratio)
+            segment_ratio = (safe_elapsed - prev_ratio) / segment_span
+            return _rgb_to_hex(_interpolate_rgb(prev_color, stop_color, segment_ratio))
+    return _rgb_to_hex(color_stops[-1][1])
+
+
 def render_fishing_hud_line(
     attempt,
     typed: Sequence[str],
     time_left: float,
     *,
     total_time_s: Optional[float] = None,
+    perfect_threshold_ratio: float = 0.80,
+    perfect_catch_enabled: bool = True,
+    ability_counter_text: str = "",
 ) -> str:
     seq = attempt.sequence
     typed_count = len(typed)
@@ -322,23 +389,42 @@ def render_fishing_hud_line(
         0.001,
         float(total_time_s if total_time_s is not None else attempt.time_limit_s),
     )
-    ratio = max(0.0, min(1.0, time_left / total_time))
+    remaining_ratio = max(0.0, min(1.0, time_left / total_time))
+    elapsed_ratio = 1.0 - remaining_ratio
+    safe_threshold = clamp(perfect_threshold_ratio, 0.10, 1.00)
     bar_len = 20
-    filled = int(bar_len * ratio)
+    filled = int(bar_len * remaining_ratio)
     bar = ("=" * filled) + ("." * (bar_len - filled))
-    if ratio > 0.6:
-        bar_color = "green"
-    elif ratio > 0.3:
-        bar_color = "yellow"
-    else:
-        bar_color = "red"
+    bar_color = _resolve_hud_gradient_color(elapsed_ratio, safe_threshold)
+    _ = perfect_catch_enabled
+
+    hits_segment = f"Hits: {typed_count}/{len(seq)}"
+    ability_segment = ability_counter_text.strip()
+    time_segment = f"Time: [{bar}] {time_left:0.2f}s"
+
+    prefix_segments = ["HUD", hits_segment]
+    if ability_segment:
+        prefix_segments.append(ability_segment)
+    prefix_segments.append(time_segment)
+    prefix_plain = " | ".join(prefix_segments)
+    max_width = _terminal_line_width()
+    free_space = max_width - len(prefix_plain)
+
+    esc_segment = ""
+    esc_label = "ESC sai"
+    delimiter = " | "
+    esc_total_len = len(delimiter) + len(esc_label)
+    if free_space >= esc_total_len:
+        esc_segment = esc_label
 
     hud_text = Text()
     hud_text.append("HUD", style=f"bold {_active_accent_color}")
-    hud_text.append(f" | Seq: {seq_str:<26} ")
-    hud_text.append(f"| Time: [{bar}] {time_left:0.2f}s ", style=bar_color)
-    hud_text.append(f"| Hits: {typed_count}/{len(seq)} ")
-    hud_text.append("| ESC sai")
+    hud_text.append(f" | {hits_segment}")
+    if ability_segment:
+        hud_text.append(f" | {ability_segment}")
+    hud_text.append(f" | {time_segment}", style=bar_color)
+    if esc_segment:
+        hud_text.append(f" | {esc_segment}")
 
     with console.capture() as capture:
         console.print(hud_text, end="")

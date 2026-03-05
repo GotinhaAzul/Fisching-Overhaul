@@ -748,6 +748,7 @@ def apply_mission_rewards(
                         rarity=fish_profile.rarity,
                         kg=kg,
                         base_value=fish_profile.base_value,
+                        is_unsellable=bool(getattr(fish_profile, "unsellable", False)),
                     )
                 )
             discovered_fish.add(fish_profile.name)

@@ -29,6 +29,7 @@ def serialize_inventory(inventory: Sequence[InventoryEntry]) -> List[Dict[str, o
             "mutation_xp_multiplier": entry.mutation_xp_multiplier,
             "mutation_gold_multiplier": entry.mutation_gold_multiplier,
             "is_hunt": entry.is_hunt,
+            "is_unsellable": entry.is_unsellable,
         }
         for entry in inventory
     ]
@@ -155,6 +156,8 @@ def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
             mutation_gold_multiplier = 1.0
         raw_is_hunt = item.get("is_hunt", False)
         is_hunt = raw_is_hunt if isinstance(raw_is_hunt, bool) else False
+        raw_is_unsellable = item.get("is_unsellable", False)
+        is_unsellable = raw_is_unsellable if isinstance(raw_is_unsellable, bool) else False
         restored.append(
             InventoryEntry(
                 name=name,
@@ -165,6 +168,7 @@ def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
                 mutation_xp_multiplier=mutation_xp_multiplier,
                 mutation_gold_multiplier=mutation_gold_multiplier,
                 is_hunt=is_hunt,
+                is_unsellable=is_unsellable,
             )
         )
     return restored

@@ -55,6 +55,7 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
             mutation_name="Albino",
             mutation_xp_multiplier=1.4,
             mutation_gold_multiplier=1.2,
+            is_unsellable=True,
         ),
         InventoryEntry(
             name="Pacu",
@@ -104,11 +105,15 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     assert raw["version"] == SAVE_VERSION
     assert raw["equipped_bait"] == "cheap/minhoca"
     assert raw["bait_inventory"] == {"cheap/minhoca": 3, "invalid": 2}
+    assert raw["inventory"][0]["is_unsellable"] is True
+    assert raw["inventory"][1]["is_unsellable"] is False
 
     restored_inventory = restore_inventory(raw["inventory"])
     assert len(restored_inventory) == 2
     assert restored_inventory[0].name == "Tilapia"
     assert restored_inventory[0].mutation_name == "Albino"
+    assert restored_inventory[0].is_unsellable is True
+    assert restored_inventory[1].is_unsellable is False
 
     available_rods = [starter_rod, premium_rod]
     restored_owned = restore_owned_rods(raw["owned_rods"], available_rods, starter_rod)
@@ -159,4 +164,23 @@ def test_restore_helpers_legacy_and_invalid_payloads() -> None:
 
     restored_hunt = restore_hunt_state({"hunts": [], "active_by_pool": "x"})
     assert restored_hunt == {"hunts": {}, "active_by_pool": {}}
+
+
+def test_restore_inventory_defaults_unsellable_for_legacy_payload() -> None:
+    restored = restore_inventory(
+        [
+            {"name": "Tilapia", "rarity": "Comum", "kg": 2.0, "base_value": 10.0},
+            {
+                "name": "Pacu",
+                "rarity": "Comum",
+                "kg": 3.0,
+                "base_value": 8.0,
+                "is_unsellable": "true",
+            },
+        ]
+    )
+
+    assert len(restored) == 2
+    assert restored[0].is_unsellable is False
+    assert restored[1].is_unsellable is False
 

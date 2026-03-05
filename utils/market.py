@@ -718,9 +718,11 @@ def show_market(
             for index, entry in enumerate(inventory, start=1):
                 value = calculate_entry_value(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
+                unsellable_label = " [Unsellable]" if entry.is_unsellable else ""
                 print(
                     f"{index}. {entry.name} "
-                    f"({entry.kg:0.2f}kg){mutation_label} - {format_currency(value)}"
+                    f"({entry.kg:0.2f}kg){mutation_label}{unsellable_label} "
+                    f"- {format_currency(value)}"
                 )
 
             selection = input("Digite o numero do peixe: ").strip()
@@ -732,6 +734,12 @@ def show_market(
             selected_index = int(selection)
             if not (1 <= selected_index <= len(inventory)):
                 print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                return balance_local
+
+            entry = inventory[selected_index - 1]
+            if entry.is_unsellable:
+                print("Este peixe está marcado como não vendável.")
                 input("\nEnter para voltar.")
                 return balance_local
 
@@ -755,19 +763,29 @@ def show_market(
 
         if sell_choice == "2":
             clear_screen()
-            total = sum(calculate_entry_value(entry) for entry in inventory)
+            sellable_entries = [entry for entry in inventory if not entry.is_unsellable]
+            unsellable_entries = [entry for entry in inventory if entry.is_unsellable]
+            if not sellable_entries:
+                print("Nenhum peixe vendavel no inventario.")
+                input("\nEnter para voltar.")
+                return balance_local
+
+            total = sum(calculate_entry_value(entry) for entry in sellable_entries)
             if on_fish_sold or on_fish_delivered:
-                for entry in inventory:
+                for entry in sellable_entries:
                     if on_fish_sold:
                         on_fish_sold(entry)
                     if on_fish_delivered:
                         on_fish_delivered(entry)
-            inventory.clear()
+            inventory[:] = unsellable_entries
             _mark_inventory_fish_counts_dirty()
             balance_local += total
             if on_money_earned:
                 on_money_earned(total)
-            print(f"Inventario vendido por {format_currency(total)}.")
+            print(
+                f"Inventario vendido por {format_currency(total)}. "
+                f"Itens nao vendaveis mantidos: {len(unsellable_entries)}."
+            )
             input("\nEnter para voltar.")
             return balance_local
 
@@ -949,7 +967,7 @@ def show_market(
         matching_entries = [
             entry
             for entry in inventory
-            if entry.name == order.fish_name
+            if entry.name == order.fish_name and not entry.is_unsellable
         ]
         print_spaced_lines([
             "📦 Pedido Atual ",
@@ -971,7 +989,11 @@ def show_market(
         delivered = 0
         remaining_inventory: List[InventoryEntry] = []
         for entry in inventory:
-            if entry.name == order.fish_name and delivered < order.required_count:
+            if (
+                entry.name == order.fish_name
+                and not entry.is_unsellable
+                and delivered < order.required_count
+            ):
                 delivered += 1
                 if on_fish_sold:
                     on_fish_sold(entry)

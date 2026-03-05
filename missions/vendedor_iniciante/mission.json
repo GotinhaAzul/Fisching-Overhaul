@@ -15,7 +15,7 @@
     },
     {
       "type": "unlock_missions",
-      "mission_ids": ["unlock_mushgrove"]
+      "mission_ids": ["unlock_mushgrove", "unlock_baiadosol"]
     },
     {
       "type": "unlock_rods",

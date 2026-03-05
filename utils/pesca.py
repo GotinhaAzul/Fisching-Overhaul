@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -112,6 +112,11 @@ from utils.pesca_round_helpers import (
     filter_eligible_fish,
     resolve_active_bait,
 )
+from utils.perfect_catch import (
+    PerfectCatchConfig,
+    is_perfect_catch,
+    parse_perfect_catch_config,
+)
 from utils.rods import Rod, load_rods
 from utils.save_system import (
     get_default_save_path,
@@ -165,6 +170,20 @@ def _reel_time_multiplier_from_pace(recent_catch_count: int) -> float:
     return max(PACE_MIN_TIME_MULTIPLIER, multiplier)
 
 
+def _try_parse_bool(value: object) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+        if normalized in {"true", "1", "yes", "sim"}:
+            return True
+        if normalized in {"false", "0", "no", "nao", "não"}:
+            return False
+    return None
+
+
 @dataclass(frozen=True)
 class FishingAttempt:
     """Descreve uma tentativa de pesca (o 'quick time event')."""
@@ -201,6 +220,8 @@ class FishProfile:
         allowed_keys=None,
         generator: Optional[Callable[[], FishingAttempt]] = None,
         counts_for_bestiary_completion: bool = True,
+        perfect_catch: Optional[PerfectCatchConfig] = None,
+        unsellable: bool = False,
     ):
         self.name = name
         self.rarity = rarity
@@ -213,6 +234,8 @@ class FishProfile:
         self.sequence_len_range = sequence_len_range
         self.allowed_keys = allowed_keys or VALID_KEYS
         self.counts_for_bestiary_completion = counts_for_bestiary_completion
+        self.perfect_catch = perfect_catch
+        self.unsellable = unsellable
 
         # Se quiser, pode plugar um gerador customizado por peixe.
         self._custom_generator = generator
@@ -245,6 +268,7 @@ class FishingPool:
     hidden_from_bestiary_until_unlocked: bool = False
     counts_for_bestiary_completion: bool = True
     secret_entry_code: str = ""
+    perfect_catch: PerfectCatchConfig = field(default_factory=PerfectCatchConfig)
 
     def choose_fish(
         self,
@@ -366,7 +390,10 @@ def combine_rarity_weights(
     return normalize_rarity_weights(combined, available_rarities)
 
 
-def load_fish_profiles_from_dir(fish_dir: Path) -> List[FishProfile]:
+def load_fish_profiles_from_dir(
+    fish_dir: Path,
+    pool_perfect_catch: Optional[PerfectCatchConfig] = None,
+) -> List[FishProfile]:
     if not fish_dir.exists():
         return []
 
@@ -390,6 +417,22 @@ def load_fish_profiles_from_dir(fish_dir: Path) -> List[FishProfile]:
         if sequence_len is not None:
             sequence_len = int(sequence_len)
 
+        fish_perfect_catch = parse_perfect_catch_config(
+            fish_data.get("perfect_catch"),
+            source_label=str(fish_path),
+            fallback=pool_perfect_catch or PerfectCatchConfig(),
+            allow_missing=True,
+        )
+        unsellable = False
+        if "unsellable" in fish_data:
+            parsed_unsellable = _try_parse_bool(fish_data.get("unsellable"))
+            if parsed_unsellable is None:
+                print(
+                    f"Aviso: campo 'unsellable' invalido em {fish_path}; usando false."
+                )
+            else:
+                unsellable = parsed_unsellable
+
         fish_profiles.append(
             FishProfile(
                 name=name,
@@ -405,6 +448,8 @@ def load_fish_profiles_from_dir(fish_dir: Path) -> List[FishProfile]:
                 counts_for_bestiary_completion=not bool(
                     fish_data.get("exclude_from_bestiary_completion", False)
                 ),
+                perfect_catch=fish_perfect_catch,
+                unsellable=unsellable,
             )
         )
 
@@ -564,7 +609,16 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
             print(f"Aviso: pool ignorada ({config_path}): formato invalido.")
             continue
 
-        fish_profiles = load_fish_profiles_from_dir(pool_dir / "fish")
+        pool_perfect_catch = parse_perfect_catch_config(
+            data.get("perfect_catch"),
+            source_label=str(config_path),
+            fallback=PerfectCatchConfig(),
+        )
+
+        fish_profiles = load_fish_profiles_from_dir(
+            pool_dir / "fish",
+            pool_perfect_catch=pool_perfect_catch,
+        )
 
         if not fish_profiles:
             continue
@@ -605,6 +659,7 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
                 hidden_from_bestiary_until_unlocked=hidden_from_bestiary_until_unlocked,
                 counts_for_bestiary_completion=counts_for_bestiary_completion,
                 secret_entry_code=secret_entry_code,
+                perfect_catch=pool_perfect_catch,
             )
         )
 
@@ -827,6 +882,11 @@ class FishingMiniGame:
         self.slam_chance = max(0.0, min(1.0, float(slam_chance)))
         self.slam_time_bonus = max(0.0, float(slam_time_bonus))
         self.bonus_time_s = 0.0
+        self.slam_activations: int = 0
+        self.slam_bonus_accum_s: float = 0.0
+        self.slash_activations: int = 0
+        self.slash_cuts_accum: int = 0
+        self.last_ability_label: str = ""
 
     def expected_key(self) -> Optional[str]:
         if self.index >= len(self.attempt.sequence):
@@ -846,6 +906,13 @@ class FishingMiniGame:
     def begin(self):
         self.start_time = time.perf_counter()
 
+    def get_ability_counter_text(self) -> str:
+        if self.slam_activations > 0:
+            return f"Slam! +{self.slam_bonus_accum_s:0.1f}s"
+        if self.slash_activations > 0:
+            return f"Slash! x{self.slash_activations}"
+        return ""
+
     def handle_key(self, key: str) -> Optional[FishingResult]:
         """
         Processa uma tecla. Retorna FishingResult se terminou (sucesso/erro),
@@ -863,8 +930,11 @@ class FishingMiniGame:
         min_slash_index = self.index + 2
         if self.can_slash and self.slash_chance > 0 and min_slash_index < len(self.attempt.sequence):
             if random.random() <= self.slash_chance:
+                self.slash_activations += 1
+                self.last_ability_label = "Slash!"
                 remaining_letters = len(self.attempt.sequence) - self.index
                 if self.slash_power > remaining_letters:
+                    self.slash_cuts_accum += remaining_letters
                     self.index = len(self.attempt.sequence)
                     elapsed = time.perf_counter() - self.start_time
                     return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
@@ -874,6 +944,7 @@ class FishingMiniGame:
                 for _ in range(cuts):
                     remove_index = random.randrange(min_slash_index, len(self.attempt.sequence))
                     self.attempt.sequence.pop(remove_index)
+                self.slash_cuts_accum += max(0, cuts)
                 if self.is_done():
                     elapsed = time.perf_counter() - self.start_time
                     return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
@@ -881,6 +952,9 @@ class FishingMiniGame:
         if self.can_slam and self.slam_chance > 0 and self.slam_time_bonus > 0:
             if random.random() <= self.slam_chance:
                 self.bonus_time_s += self.slam_time_bonus
+                self.slam_activations += 1
+                self.slam_bonus_accum_s += self.slam_time_bonus
+                self.last_ability_label = "Slam!"
 
         expected = self.expected_key()
         if expected is None:
@@ -916,6 +990,9 @@ def render(
     typed: List[str],
     time_left: float,
     total_time_s: Optional[float] = None,
+    perfect_threshold_ratio: float = 0.80,
+    perfect_catch_enabled: bool = True,
+    ability_counter_text: str = "",
 ):
     def _terminal_line_width(default: int = 80) -> int:
         try:
@@ -932,28 +1009,53 @@ def render(
             return line[:limit]
         return f"{line[:limit - 3]}..."
 
+    def _render_two_lines(line1: str, line2: str) -> None:
+        # Draw HUD + sequence and keep cursor at first line for next frame redraw.
+        print(f"\r\033[2K{line1}\n\033[2K{line2}\033[1A\r", end="", flush=True)
+
     line_width = _terminal_line_width()
 
     if use_modern_ui():
+        remaining = attempt.sequence[len(typed):]
+        seq_str = " ".join(k.upper() for k in remaining) if remaining else "OK"
+        seq_line = _trim_line(f"Seq: {seq_str}", line_width)
+
         if line_width >= 96:
             line = render_fishing_hud_line(
                 attempt,
                 typed,
                 time_left,
                 total_time_s=total_time_s,
+                perfect_threshold_ratio=perfect_threshold_ratio,
+                perfect_catch_enabled=perfect_catch_enabled,
+                ability_counter_text=ability_counter_text,
             ).lstrip("\r")
+            _render_two_lines(line, seq_line)
+            return
         else:
-            remaining = attempt.sequence[len(typed):]
-            seq_str = " ".join(k.upper() for k in remaining) if remaining else "OK"
-            seq_str = _trim_line(seq_str, max(6, line_width - 34))
-            line = (
-                f"HUD | Seq: {seq_str} | {time_left:0.2f}s | "
-                f"{len(typed)}/{len(attempt.sequence)} | ESC"
-            )
+            esc_label = "ESC sai"
+            base_segments = [
+                "HUD",
+                f"Hits: {len(typed)}/{len(attempt.sequence)}",
+            ]
+            normalized_ability_counter = ability_counter_text.strip()
+            if normalized_ability_counter:
+                base_segments.append(normalized_ability_counter)
+            base_segments.append(f"Time: {time_left:0.2f}s")
+            prefix = " | ".join(base_segments)
+            free_space = line_width - len(prefix)
+            delimiter = " | "
+            esc_segment = ""
+            esc_total_len = len(delimiter) + len(esc_label)
+            if free_space >= esc_total_len:
+                esc_segment = esc_label
+
+            line = prefix
+            if esc_segment:
+                line = f"{line}{delimiter}{esc_segment}"
 
         line = _trim_line(line, line_width)
-        # Redraw a single line without printing filler spaces each frame.
-        print(f"\r\033[2K{line}", end="", flush=True)
+        _render_two_lines(line, seq_line)
         return
 
     seq = attempt.sequence
@@ -1493,6 +1595,7 @@ def show_dev_save_editor(
                         rarity=selected_fish.rarity,
                         kg=kg,
                         base_value=selected_fish.base_value,
+                        is_unsellable=bool(getattr(selected_fish, "unsellable", False)),
                     )
                 )
             discovered_fish.add(selected_fish.name)
@@ -1628,6 +1731,7 @@ def show_dev_save_editor(
                         mutation_name=selected_mutation.name,
                         mutation_xp_multiplier=selected_mutation.xp_multiplier,
                         mutation_gold_multiplier=selected_mutation.gold_multiplier,
+                        is_unsellable=bool(getattr(selected_fish, "unsellable", False)),
                     )
                 )
             discovered_fish.add(selected_fish.name)
@@ -2533,6 +2637,7 @@ def run_fishing_round(
             )
             is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
 
+        perfect_catch_cfg = fish.perfect_catch or selected_pool.perfect_catch
         pending_reengage_fish_name = None
         pending_reengage_hunt_flag = False
 
@@ -2622,15 +2727,22 @@ def run_fishing_round(
             if result is None:
                 result = game.check_timeout()
 
+            ability_counter_text = game.get_ability_counter_text()
             render(
                 attempt,
                 game.typed,
                 game.time_left(),
                 total_time_s=game.total_time_limit(),
+                perfect_threshold_ratio=perfect_catch_cfg.threshold_ratio,
+                perfect_catch_enabled=perfect_catch_cfg.enabled,
+                ability_counter_text=ability_counter_text,
             )
             time.sleep(0.016)
 
-        print()
+        if use_modern_ui():
+            print("\n")
+        else:
+            print()
         ks.stop()
 
         if result.success:
@@ -2660,6 +2772,7 @@ def run_fishing_round(
                     mutation_xp_multiplier=mutation_xp_multiplier,
                     mutation_gold_multiplier=mutation_gold_multiplier,
                     is_hunt=is_hunt_fish,
+                    is_unsellable=bool(getattr(fish, "unsellable", False)),
                 )
             )
             dupe_triggered = False
@@ -2675,6 +2788,7 @@ def run_fishing_round(
                             mutation_xp_multiplier=mutation_xp_multiplier,
                             mutation_gold_multiplier=mutation_gold_multiplier,
                             is_hunt=is_hunt_fish,
+                            is_unsellable=bool(getattr(fish, "unsellable", False)),
                         )
                     )
                     dupe_triggered = True
@@ -2685,9 +2799,28 @@ def run_fishing_round(
             discovered_fish.add(fish.name)
             base_xp = xp_for_rarity(fish.rarity)
             event_xp_multiplier = event_def.xp_multiplier if event_def else 1.0
+            total_time_s = max(0.001, game.total_time_limit())
+            elapsed_s = max(0.0, result.elapsed_s)
+            perfect_catch_hit = is_perfect_catch(
+                elapsed_s,
+                total_time_s,
+                perfect_catch_cfg,
+            )
+            perfect_xp_multiplier = (
+                perfect_catch_cfg.xp_multiplier
+                if perfect_catch_hit
+                else 1.0
+            )
             gained_xp = max(
                 1,
-                int(round(base_xp * mutation_xp_multiplier * event_xp_multiplier)),
+                int(
+                    round(
+                        base_xp
+                        * mutation_xp_multiplier
+                        * event_xp_multiplier
+                        * perfect_xp_multiplier
+                    )
+                ),
             )
             level, xp, level_ups = apply_xp_gain(level, xp, gained_xp)
             fish_name_label = (
@@ -2703,6 +2836,12 @@ def run_fishing_round(
                     "🧬 Mutação: "
                     f"{mutation.name} (x{mutation_xp_multiplier:0.2f} XP | "
                     f"x{mutation_gold_multiplier:0.2f} Gold)"
+                )
+            if perfect_catch_hit:
+                print(
+                    "🎯 Perfect Catch! "
+                    f"Concluído em {elapsed_s:0.2f}s/{total_time_s:0.2f}s "
+                    f"(XP x{perfect_catch_cfg.xp_multiplier:0.2f})"
                 )
             if dupe_triggered:
                 print("🔁 Efeito de duplicacao ativado: uma copia do peixe foi para o inventario.")
