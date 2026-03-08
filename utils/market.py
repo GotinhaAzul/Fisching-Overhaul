@@ -299,7 +299,36 @@ def _show_crafting_recipe_detail(
                     f"- {format_currency(calculate_entry_value(entry))}"
                 )
 
-            selection = input("Digite o numero do peixe: ").strip()
+            print(f"\n[T] Entregar todos ({len(deliverable_indexes)} peixe(s))")
+
+            selection = input("Digite o numero do peixe (ou T para todos): ").strip()
+
+            if selection.lower() == "t":
+                delivered_entries: list[InventoryEntry] = []
+                while True:
+                    current_indexes = get_craft_deliverable_indexes(
+                        definition, crafting_progress, inventory,
+                    )
+                    if not current_indexes:
+                        break
+                    delivered = deliver_inventory_entry_for_craft(
+                        definition, crafting_progress, inventory, current_indexes[0],
+                    )
+                    if not delivered:
+                        break
+                    delivered_entries.append(delivered)
+                if delivered_entries:
+                    for d in delivered_entries:
+                        mutation_label = f" * {d.mutation_name}" if d.mutation_name else ""
+                        print(f"Entregue: {d.name} ({d.kg:0.2f}kg){mutation_label}")
+                    print(f"\n{len(delivered_entries)} peixe(s) entregue(s)!")
+                else:
+                    print("Nenhum peixe entregue.")
+                if on_inventory_changed:
+                    on_inventory_changed()
+                input("\nEnter para voltar.")
+                continue
+
             if not selection.isdigit():
                 print("Entrada invalida.")
                 input("\nEnter para voltar.")

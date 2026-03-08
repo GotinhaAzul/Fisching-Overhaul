@@ -39,7 +39,7 @@ from utils.cosmetics import (
     unlock_ui_icon,
 )
 from utils.dialogue import get_menu_line
-from utils.inventory import InventoryEntry, render_inventory
+from utils.inventory import InventoryEntry, format_inventory_entry, render_inventory
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.menu_input import read_menu_choice
 from utils.market import (
@@ -130,10 +130,13 @@ from utils.save_system import (
     restore_inventory,
     restore_level,
     restore_owned_rods,
+    restore_storage,
     restore_selected_pool,
     restore_unlocked_pools,
     restore_xp,
 )
+from utils.storage import move_to_inventory, move_to_storage
+from utils.storage_ui import render_storage
 from utils.ui import clear_screen
 
 # -----------------------------
@@ -1923,6 +1926,7 @@ def autosave_state(
     save_path: Path,
     balance: float,
     inventory: List[InventoryEntry],
+    storage: List[InventoryEntry],
     bait_inventory: Dict[str, int],
     owned_rods: List[Rod],
     equipped_rod: Rod,
@@ -1946,6 +1950,7 @@ def autosave_state(
         save_path,
         balance,
         inventory,
+        storage,
         bait_inventory,
         owned_rods,
         equipped_rod,
@@ -1986,6 +1991,7 @@ def format_bait_stats(bait: BaitDefinition) -> str:
 
 def show_inventory(
     inventory: List[InventoryEntry],
+    storage: List[InventoryEntry],
     owned_rods: List[Rod],
     equipped_rod: Rod,
     bait_inventory: Dict[str, int],
@@ -1993,6 +1999,7 @@ def show_inventory(
     equipped_bait_id: Optional[str],
     cosmetics_state: PlayerCosmeticsState,
     on_cosmetics_changed: Optional[Callable[[], None]] = None,
+    on_storage_changed: Optional[Callable[[], None]] = None,
     hunt_fish_names: Optional[set[str]] = None,
 ) -> tuple[Rod, Optional[str]]:
     page_size = 12
@@ -2187,6 +2194,164 @@ def show_inventory(
         page = page_slice.page
         return page_slice.start, page_slice.end, page_slice.total_pages
 
+    def prompt_transfer_index(
+        entries: List[InventoryEntry],
+        *,
+        title: str,
+        subtitle: str,
+        empty_message: str,
+    ) -> Optional[int]:
+        selection_page = 0
+        selection_page_size = 10
+
+        while True:
+            clear_screen()
+            if not entries:
+                print(empty_message)
+                input("\nEnter para voltar.")
+                return None
+
+            page_slice = get_page_slice(len(entries), selection_page, selection_page_size)
+            selection_page = page_slice.page
+            page_entries = entries[page_slice.start:page_slice.end]
+            options = [
+                MenuOption("0", "Cancelar"),
+            ]
+            if page_slice.total_pages > 1:
+                options.extend(
+                    [
+                        MenuOption(
+                            PAGE_NEXT_KEY.upper(),
+                            "Proxima pagina",
+                            f"Itens {selection_page + 1}/{page_slice.total_pages}",
+                            enabled=page_slice.has_next,
+                        ),
+                        MenuOption(
+                            PAGE_PREV_KEY.upper(),
+                            "Pagina anterior",
+                            f"Itens {selection_page + 1}/{page_slice.total_pages}",
+                            enabled=page_slice.has_prev,
+                        ),
+                    ]
+                )
+
+            header_lines = [
+                subtitle,
+                "",
+            ]
+            for display_index, entry in enumerate(page_entries, start=1):
+                absolute_index = page_slice.start + display_index
+                header_lines.append(
+                    f"{display_index}. "
+                    f"{format_inventory_entry(absolute_index, entry, hunt_fish_names=hunt_fish_names)}"
+                )
+
+            print_menu_panel(
+                title,
+                header_lines=header_lines,
+                options=options,
+                prompt="Digite o numero do peixe:",
+                show_badge=False,
+                width=76,
+            )
+            choice = read_menu_choice(
+                "> ",
+                instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY} if page_slice.total_pages > 1 else set(),
+            ).lower()
+            selection_page, moved = apply_page_hotkey(
+                choice,
+                selection_page,
+                page_slice.total_pages,
+            )
+            if moved:
+                continue
+            if choice == "0":
+                return None
+            if not choice.isdigit():
+                print("Entrada invalida.")
+                input("\nEnter para voltar.")
+                continue
+
+            selected_index = int(choice)
+            if not (1 <= selected_index <= len(page_entries)):
+                print("Numero fora do intervalo.")
+                input("\nEnter para voltar.")
+                continue
+            return page_slice.start + selected_index - 1
+
+    def open_storage_menu() -> None:
+        storage_page = 0
+
+        while True:
+            clear_screen()
+            page_slice = render_storage(
+                storage,
+                page=storage_page,
+                hunt_fish_names=hunt_fish_names,
+            )
+            choice = read_menu_choice(
+                "> ",
+                instant_keys={"n", "r", "0", "v", PAGE_PREV_KEY, PAGE_NEXT_KEY}
+                if page_slice.total_pages > 1
+                else {"n", "r", "0", "v"},
+            ).lower()
+            storage_page, moved = apply_page_hotkey(
+                choice,
+                storage_page,
+                page_slice.total_pages,
+            )
+            if moved:
+                continue
+
+            if choice in {"0", "v"}:
+                return
+
+            if choice == "n":
+                selected_index = prompt_transfer_index(
+                    inventory,
+                    title="GUARDAR NO STORAGE",
+                    subtitle="Selecione um peixe do inventario para guardar.",
+                    empty_message="Inventario vazio.",
+                )
+                if selected_index is None:
+                    continue
+                inventory[:], new_storage = move_to_storage(
+                    inventory,
+                    storage,
+                    selected_index,
+                )
+                storage[:] = new_storage
+                if on_storage_changed is not None:
+                    on_storage_changed()
+                print("Peixe movido para o storage.")
+                input("\nEnter para voltar.")
+                continue
+
+            if choice == "r":
+                selected_index = prompt_transfer_index(
+                    storage,
+                    title="RETIRAR DO STORAGE",
+                    subtitle="Selecione um peixe guardado para retornar ao inventario.",
+                    empty_message="Storage vazio.",
+                )
+                if selected_index is None:
+                    continue
+                new_storage, inventory[:] = move_to_inventory(
+                    storage,
+                    inventory,
+                    selected_index,
+                )
+                storage[:] = new_storage
+                storage_page = get_page_slice(len(storage), storage_page, 10).page
+                if on_storage_changed is not None:
+                    on_storage_changed()
+                print("Peixe retirado do storage.")
+                input("\nEnter para voltar.")
+                continue
+
+            print("Opcao invalida.")
+            input("\nEnter para voltar.")
+
     sanitize_equipped_bait()
 
     if use_modern_ui():
@@ -2198,6 +2363,7 @@ def show_inventory(
             total_kg = sum(entry.kg for entry in inventory)
             active_bait_label, active_bait_stats = active_bait_summary()
             cosmetics_option_key = "4" if equipped_bait_id else "3"
+            storage_option_key = "5" if equipped_bait_id else "4"
             options = [
                 MenuOption("1", "Equipar vara", "Selecionar outra vara"),
                 MenuOption(
@@ -2214,6 +2380,13 @@ def show_inventory(
                     cosmetics_option_key,
                     "Cosmeticos",
                     "Cor da interface, cor do icone e icone",
+                )
+            )
+            options.append(
+                MenuOption(
+                    storage_option_key,
+                    "Storage",
+                    f"Guardar ou retirar peixes ({len(storage)} guardados)",
                 )
             )
             if total_pages > 1:
@@ -2396,6 +2569,10 @@ def show_inventory(
                 open_cosmetics_menu()
                 continue
 
+            if choice == storage_option_key:
+                open_storage_menu()
+                continue
+
             print("Opcao invalida.")
             input("\nEnter para voltar.")
 
@@ -2413,11 +2590,13 @@ def show_inventory(
         if active_bait_stats:
             print(f"  {active_bait_stats}")
         cosmetics_option_key = "4" if equipped_bait_id else "3"
+        storage_option_key = "5" if equipped_bait_id else "4"
         print("\n1. Equipar vara")
         print("2. Equipar isca")
         if equipped_bait_id:
             print("3. Desequipar isca")
         print(f"{cosmetics_option_key}. Cosmeticos")
+        print(f"{storage_option_key}. Storage ({len(storage)} guardados)")
         if total_pages > 1:
             print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina de peixes ({page + 1}/{total_pages})")
             print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior de peixes ({page + 1}/{total_pages})")
@@ -2537,6 +2716,10 @@ def show_inventory(
 
         if choice == cosmetics_option_key:
             open_cosmetics_menu()
+            continue
+
+        if choice == storage_option_key:
+            open_storage_menu()
             continue
 
         print("Opcao invalida.")
@@ -3102,6 +3285,7 @@ def main(dev_mode: bool = False):
     crafting_progress = CraftingProgress()
     cosmetics_state = create_default_cosmetics_state()
     inventory: List[InventoryEntry] = []
+    storage: List[InventoryEntry] = []
     bait_inventory: Dict[str, int] = {}
     equipped_bait_id: Optional[str] = None
     discovered_fish: set[str] = set()
@@ -3116,9 +3300,23 @@ def main(dev_mode: bool = False):
         clear_screen()
         print("Um save foi encontrado. Carregando automaticamente...")
         inventory = restore_inventory(save_data.get("inventory"))
+        fish_name_catalog = {
+            fish.name
+            for pool in pools
+            for fish in pool.fish_profiles
+        } | {
+            fish.name
+            for event in events
+            for fish in event.fish_profiles
+        } | {
+            fish.name
+            for hunt in hunts
+            for fish in hunt.fish_profiles
+        }
+        storage = restore_storage(save_data.get("storage"), fish_name_catalog)
         discovered_fish = restore_discovered_fish(
             save_data.get("discovered_fish"),
-            inventory,
+            [*inventory, *storage],
         )
         balance = restore_balance(save_data.get("balance"), balance)
         owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
@@ -3181,6 +3379,32 @@ def main(dev_mode: bool = False):
         )
 
     apply_active_cosmetics()
+
+    def autosave_current_state() -> None:
+        autosave_state(
+            save_path,
+            balance,
+            inventory,
+            storage,
+            bait_inventory,
+            owned_rods,
+            equipped_rod,
+            equipped_bait_id,
+            selected_pool,
+            unlocked_pools,
+            unlocked_rods,
+            level,
+            xp,
+            discovered_fish,
+            mission_state,
+            mission_progress,
+            crafting_state,
+            crafting_progress,
+            pool_market_orders,
+            bestiary_reward_state,
+            cosmetics_state,
+            hunt_manager,
+        )
 
     fish_by_name: Dict[str, FishProfile] = {
         fish.name: fish
@@ -3452,6 +3676,7 @@ def main(dev_mode: bool = False):
             elif choice == "3":
                 equipped_rod, equipped_bait_id = show_inventory(
                     inventory,
+                    storage,
                     owned_rods,
                     equipped_rod,
                     bait_inventory,
@@ -3459,6 +3684,7 @@ def main(dev_mode: bool = False):
                     equipped_bait_id,
                     cosmetics_state,
                     on_cosmetics_changed=apply_active_cosmetics,
+                    on_storage_changed=autosave_current_state,
                     hunt_fish_names=hunt_fish_names,
                 )
             elif choice == "4":
@@ -3582,6 +3808,7 @@ def main(dev_mode: bool = False):
                     save_path,
                     balance,
                     inventory,
+                    storage,
                     bait_inventory,
                     owned_rods,
                     equipped_rod,
@@ -3642,6 +3869,7 @@ def main(dev_mode: bool = False):
                 save_path,
                 balance,
                 inventory,
+                storage,
                 bait_inventory,
                 owned_rods,
                 equipped_rod,

@@ -18,6 +18,7 @@ from utils.save_system import (
     restore_inventory,
     restore_level,
     restore_owned_rods,
+    restore_storage,
     restore_selected_pool,
     restore_unlocked_pools,
     restore_xp,
@@ -64,6 +65,17 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
             base_value=8.0,
         ),
     ]
+    storage = [
+        InventoryEntry(
+            name="Pirarucu",
+            rarity="Lendario",
+            kg=25.0,
+            base_value=180.0,
+            mutation_name="Noir",
+            mutation_xp_multiplier=1.3,
+            mutation_gold_multiplier=1.3,
+        )
+    ]
     bait_defs = {
         "cheap/minhoca": BaitDefinition(
             bait_id="cheap/minhoca",
@@ -80,6 +92,7 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
         save_path,
         balance=321.25,
         inventory=inventory,
+        storage=storage,
         owned_rods=[starter_rod, premium_rod],
         equipped_rod=premium_rod,
         selected_pool=selected_pool,
@@ -107,6 +120,8 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     assert raw["bait_inventory"] == {"cheap/minhoca": 3, "invalid": 2}
     assert raw["inventory"][0]["is_unsellable"] is True
     assert raw["inventory"][1]["is_unsellable"] is False
+    assert raw["storage"][0]["name"] == "Pirarucu"
+    assert raw["storage"][0]["mutation_name"] == "Noir"
 
     restored_inventory = restore_inventory(raw["inventory"])
     assert len(restored_inventory) == 2
@@ -114,6 +129,11 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     assert restored_inventory[0].mutation_name == "Albino"
     assert restored_inventory[0].is_unsellable is True
     assert restored_inventory[1].is_unsellable is False
+
+    restored_storage = restore_storage(raw["storage"], {"Tilapia", "Pacu", "Pirarucu"})
+    assert len(restored_storage) == 1
+    assert restored_storage[0].name == "Pirarucu"
+    assert restored_storage[0].mutation_name == "Noir"
 
     available_rods = [starter_rod, premium_rod]
     restored_owned = restore_owned_rods(raw["owned_rods"], available_rods, starter_rod)
@@ -183,4 +203,22 @@ def test_restore_inventory_defaults_unsellable_for_legacy_payload() -> None:
     assert len(restored) == 2
     assert restored[0].is_unsellable is False
     assert restored[1].is_unsellable is False
+
+
+def test_restore_storage_defaults_empty_and_skips_invalid_entries() -> None:
+    restored_missing = restore_storage(None, {"Tilapia"})
+    assert restored_missing == []
+
+    restored = restore_storage(
+        [
+            {"name": "Tilapia", "rarity": "Comum", "kg": 2.0, "base_value": 10.0},
+            {"name": "Inexistente", "rarity": "Comum", "kg": 1.0, "base_value": 5.0},
+            {"name": "Tilapia", "rarity": "Comum", "kg": "bad", "base_value": 10.0},
+            "corrompido",
+        ],
+        {"Tilapia"},
+    )
+
+    assert len(restored) == 1
+    assert restored[0].name == "Tilapia"
 

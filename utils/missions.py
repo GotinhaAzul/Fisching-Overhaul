@@ -546,12 +546,31 @@ def show_missions_menu(
                 + mission_actions.get("deliver_fish_with_mutation", [])
             )
             if action == "deliver_fish":
-                if _deliver_fish_for_mission(
+                total_remaining = 0
+                for req in deliver_requirements:
+                    _, current, target, done = _format_requirement(
+                        req,
+                        progress,
+                        state.completed,
+                        mission.mission_id,
+                        baseline_progress=baseline_progress,
+                        completed_baseline=completed_baseline,
+                        level=level,
+                        pools=pools,
+                        discovered_fish=discovered_fish,
+                    )
+                    if not done:
+                        total_remaining += max(0, target - current)
+                delivered_count = _deliver_fish_for_mission(
                     deliver_requirements,
                     inventory,
                     progress,
-                ):
+                    max_deliveries=total_remaining,
+                )
+                if delivered_count == 1:
                     print("Peixe entregue para a missão!")
+                elif delivered_count > 1:
+                    print(f"{delivered_count} peixes entregues para a missão!")
                 input("\nEnter para voltar.")
                 continue
 
@@ -893,7 +912,9 @@ def _deliver_fish_for_mission(
     requirements: List[Dict[str, object]],
     inventory: List[InventoryEntry],
     progress: MissionProgress,
-) -> bool:
+    *,
+    max_deliveries: Optional[int] = None,
+) -> int:
     valid_indexes: List[int] = []
     for idx, entry in enumerate(inventory, start=1):
         if _entry_matches_delivery_requirements(entry, requirements):
@@ -901,7 +922,7 @@ def _deliver_fish_for_mission(
 
     if not valid_indexes:
         print("Você não possui peixes válidos para esta missão.")
-        return False
+        return 0
 
     print("\nPeixes que podem ser entregues:")
     for idx in valid_indexes:
@@ -909,19 +930,37 @@ def _deliver_fish_for_mission(
         mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
         print(f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label}")
 
-    selection = input("Digite o número do peixe para entregar: ").strip()
+    deliver_cap = (
+        min(len(valid_indexes), max_deliveries)
+        if max_deliveries is not None
+        else len(valid_indexes)
+    )
+    if deliver_cap > 0:
+        print(f"\n[T] Entregar todos ({deliver_cap} peixe(s))")
+
+    selection = input("Digite o número do peixe para entregar (ou T para todos): ").strip()
+
+    if selection.lower() == "t":
+        to_deliver = valid_indexes[:deliver_cap]
+        delivered_count = 0
+        for idx in sorted(to_deliver, reverse=True):
+            delivered = inventory.pop(idx - 1)
+            progress.record_fish_delivered(delivered.name, delivered.mutation_name)
+            delivered_count += 1
+        return delivered_count
+
     if not selection.isdigit():
         print("Entrada inválida.")
-        return False
+        return 0
 
     selected_index = int(selection)
     if selected_index not in valid_indexes:
         print("Peixe não elegível para esta missão.")
-        return False
+        return 0
 
     delivered = inventory.pop(selected_index - 1)
     progress.record_fish_delivered(delivered.name, delivered.mutation_name)
-    return True
+    return 1
 
 
 def _entry_matches_delivery_requirements(

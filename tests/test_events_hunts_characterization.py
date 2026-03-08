@@ -159,7 +159,7 @@ def test_real_repo_forbidden_forest_pool_and_hunt_characterization() -> None:
     pool_by_name = {pool.name: pool for pool in pools}
     hunt_by_id = {hunt.hunt_id: hunt for hunt in hunts}
 
-    forbidden_pool = pool_by_name["Floresta Proibida"]
+    forbidden_pool = pool_by_name["Templo de Micelio"]
     assert forbidden_pool.hidden_from_bestiary_until_unlocked is True
     assert len(forbidden_pool.fish_profiles) == 9
     assert {fish.name for fish in forbidden_pool.fish_profiles} >= {
@@ -169,7 +169,7 @@ def test_real_repo_forbidden_forest_pool_and_hunt_characterization() -> None:
 
     guardiao = hunt_by_id["o_guardiao"]
     assert guardiao.name == "O Guardiao"
-    assert guardiao.pool_name == "Floresta Proibida"
+    assert guardiao.pool_name == "Templo de Micelio"
     assert guardiao.disturbance_max == 3200.0
     assert {fish.name for fish in guardiao.fish_profiles} == {
         "Mossjaw",

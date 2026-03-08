@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Sequence, Set, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.rods import Rod
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 8
+SAVE_VERSION = 9
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -35,6 +37,10 @@ def serialize_inventory(inventory: Sequence[InventoryEntry]) -> List[Dict[str, o
     ]
 
 
+def serialize_storage(storage: Sequence[InventoryEntry]) -> List[Dict[str, object]]:
+    return serialize_inventory(storage)
+
+
 def serialize_bait_inventory(bait_inventory: Dict[str, int]) -> Dict[str, int]:
     serialized: Dict[str, int] = {}
     for bait_id, quantity in bait_inventory.items():
@@ -54,6 +60,7 @@ def save_game(
     *,
     balance: float,
     inventory: Sequence[InventoryEntry],
+    storage: Optional[Sequence[InventoryEntry]] = None,
     owned_rods: Sequence[Rod],
     equipped_rod: Rod,
     selected_pool: "FishingPool",
@@ -77,6 +84,7 @@ def save_game(
         "version": SAVE_VERSION,
         "balance": balance,
         "inventory": serialize_inventory(inventory),
+        "storage": serialize_storage(storage or []),
         "owned_rods": [rod.name for rod in owned_rods],
         "equipped_rod": equipped_rod.name,
         "selected_pool": selected_pool.name,
@@ -126,16 +134,22 @@ def load_game(save_path: Path) -> Optional[Dict[str, object]]:
     return raw
 
 
-def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
-    if not isinstance(raw_inventory, list):
+def _restore_inventory_entries(
+    raw_entries: Any,
+    *,
+    allowed_names: Optional[Set[str]] = None,
+) -> List[InventoryEntry]:
+    if not isinstance(raw_entries, list):
         return []
 
     restored: List[InventoryEntry] = []
-    for item in raw_inventory:
+    for item in raw_entries:
         if not isinstance(item, dict):
             continue
         name = item.get("name")
         if not isinstance(name, str) or not name:
+            continue
+        if allowed_names is not None and name not in allowed_names:
             continue
         rarity = item.get("rarity", "")
         if not isinstance(rarity, str):
@@ -172,6 +186,20 @@ def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
             )
         )
     return restored
+
+
+def restore_inventory(raw_inventory: object) -> List[InventoryEntry]:
+    return _restore_inventory_entries(raw_inventory)
+
+
+def restore_storage(
+    raw_storage: Any,
+    all_fish_names: Optional[Set[str]] = None,
+) -> List[InventoryEntry]:
+    return _restore_inventory_entries(
+        raw_storage,
+        allowed_names=all_fish_names,
+    )
 
 
 def restore_owned_rods(

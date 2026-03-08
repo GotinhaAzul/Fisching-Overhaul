@@ -439,5 +439,5 @@ def test_real_repo_forbidden_forest_mission_chain_characterization() -> None:
     } in missions["densa_mata_parte_3"].requirements
     assert {
         "type": "unlock_pools",
-        "pool_names": ["Floresta Proibida"],
+        "pool_names": ["Templo de Micelio"],
     } in missions["densa_mata_parte_3"].rewards

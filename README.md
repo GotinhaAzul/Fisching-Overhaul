@@ -41,7 +41,7 @@ Versao atual: `1.3`
 
 - Nova pool desbloqueavel: `O Jardim`, liberada pela missao `Raizes Submersas`.
 - Nova questline `Densa Mata` com Prologo + Partes 1, 2 e 3.
-- Nova pool de endgame: `Floresta Proibida`, com 9 peixes e bestiario oculto ate o desbloqueio.
+- Nova pool de endgame: `Templo de Micelio`, com 9 peixes e bestiario oculto ate o desbloqueio.
 - Nova hunt: `O Guardiao`, com `Mossjaw` e `Awakened Mossjaw`.
 - Nova mutacao: `Incinerado`, exclusiva da vara `Magnasas`.
 - 5 novas varas de alto nivel:
