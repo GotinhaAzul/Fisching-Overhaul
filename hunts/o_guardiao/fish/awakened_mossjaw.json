@@ -1,10 +1,10 @@
 {
   "name": "Awakened Mossjaw",
   "rarity": "Mitico",
-  "description": "Desperto pela magia antiga do santuario, ele rompe a agua com olhos runicos acesos e investidas curtas, violentas e precisas.",
+  "description": "Desperto de seu sagrado santuario, ele rompe a agua com olhos runicos acesos e investidas curtas, violentas e precisa. Nasceu de algumas faiscas de um ser *maior*, se fundiu as algas e formou ilhas com elas.",
   "kg_min": 210.0,
-  "kg_max": 560.0,
-  "base_value": 2350,
-  "sequence_len": 13,
-  "reaction_time_s": 1.45
+  "kg_max": 1560.0,
+  "base_value": 2750,
+  "sequence_len": 16,
+  "reaction_time_s": 4.5
 }

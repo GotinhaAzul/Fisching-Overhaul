@@ -1,7 +1,7 @@
 {
   "id": "densa_mata_parte_1",
-  "name": "Densa Mata: Parte 1",
-  "description": "A entrada proibida responde ao veneno do pantano. Leve exemplares corrompidos e uma Vieira-Lama marcada pela toxina.",
+  "name": "Densa Mata: O furo nas vinhas.",
+  "description": "A entrada proibida responde ao veneno do pantano. Leve exemplares corrompidos e uma Vieira-Lama marcada pela toxina para corroer a entrada.",
   "starts_unlocked": false,
   "requirements": [
     {

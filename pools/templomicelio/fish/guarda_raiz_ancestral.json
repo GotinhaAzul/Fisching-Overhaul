@@ -1,0 +1,10 @@
+{
+  "name": "Guarda-Raiz Ancestral",
+  "rarity": "Epico",
+  "description": "Metade peixe... e metade muralha viva, ele repousa junto as maiores raizes e desperta com violencia quando a agua ao redor muda de ritmo.",
+  "kg_min": 14.5,
+  "kg_max": 29.0,
+  "base_value": 136,
+  "sequence_len": 10,
+  "reaction_time_s": 1.9
+}
