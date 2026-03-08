@@ -1,0 +1,10 @@
+{
+  "name": "Cascudo-Ritual",
+  "rarity": "Incomum",
+  "description": "Placas osseas lembrando mascaras tribais protegem esse cascudo, que passa horas raspando simbolos antigos nas pedras do templo.",
+  "kg_min": 7.0,
+  "kg_max": 15.0,
+  "base_value": 31,
+  "sequence_len": 6,
+  "reaction_time_s": 2.2
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Carpa do Templo",
+  "rarity": "Raro",
+  "description": "Criada por seculos nas piscinas internas do santuario, esta carpa aprendeu a ler vibracoes minimas antes de qualquer investida.",
+  "kg_min": 9.0,
+  "kg_max": 19.5,
+  "base_value": 97,
+  "sequence_len": 7,
+  "reaction_time_s": 1.95
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Trinity",
+  "luck": 0.15,
+  "kg_max": 120.0,
+  "control": 0.6,
+  "description": "Tres essencias fundidas em uma unica vara.",
+  "price": 0,
+  "unlocked_default": false
+}

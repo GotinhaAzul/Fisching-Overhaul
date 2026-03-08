@@ -1,0 +1,10 @@
+{
+  "name": "Musgo-Fantasma",
+  "rarity": "Incomum",
+  "description": "Sua pele translucida reflete apenas tons esverdeados, o bastante para parecer um tufo de musgo flutuando entre as ruinas.",
+  "kg_min": 6.2,
+  "kg_max": 13.8,
+  "base_value": 29,
+  "sequence_len": 6,
+  "reaction_time_s": 2.3
+}

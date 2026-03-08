@@ -1,0 +1,41 @@
+{
+  "id": "trinity_craft",
+  "rod_name": "Trinity",
+  "name": "Tres em Um",
+  "description": "Una tres formas do mesmo peixe para criar algo maior.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "O Jardim"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Tetra-Serpae",
+        "mutation_name": "Noir",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Tetra-Serpae",
+        "mutation_name": "Albino",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Tetra-Serpae",
+        "mutation_name": "Espiral",
+        "count": 1
+      },
+      {
+        "type": "money",
+        "amount": 5000
+      }
+    ]
+  }
+}

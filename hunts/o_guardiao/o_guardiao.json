@@ -1,0 +1,16 @@
+{
+  "name": "O Guardiao",
+  "description": "Um ser emerge das aguas do templo.",
+  "pool_name": "Floresta Proibida",
+  "duration_minutes": 6,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 3,
+  "disturbance_max": 3200,
+  "rarity_chances": {
+    "Raro": 6,
+    "Lendario": 4,
+    "Mitico": 3
+  },
+  "cooldown_minutes": 8,
+  "disturbance_decay_per_check": 1
+}

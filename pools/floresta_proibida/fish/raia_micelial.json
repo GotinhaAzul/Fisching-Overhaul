@@ -1,0 +1,10 @@
+{
+  "name": "Raia-Micelial",
+  "rarity": "Comum",
+  "description": "Camadas de fungos aquaticos crescem sobre o dorso dessa raia e liberam uma nevoa fina quando ela muda de direcao perto do fundo.",
+  "kg_min": 4.8,
+  "kg_max": 10.4,
+  "base_value": 12,
+  "sequence_len": 5,
+  "reaction_time_s": 2.6
+}

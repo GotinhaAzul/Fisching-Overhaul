@@ -1,0 +1,11 @@
+{
+  "name": "Perforatio",
+  "luck": 0.30,
+  "kg_max": 140.0,
+  "control": 0.5,
+  "description": "Forjada com a essencia solar da Imperatriz, erros são meros contra-tempos.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_pierce": true,
+  "pierce_chance": 0.30
+}

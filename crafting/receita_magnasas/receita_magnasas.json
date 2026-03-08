@@ -1,0 +1,34 @@
+{
+  "id": "magnasas_craft",
+  "rod_name": "Magnasas",
+  "name": "Cinzas de Obsidiana",
+  "description": "O fogo da obsidiana encontra a sombra do ninja. Tudo se incinera.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "O Jardim"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Salmao de Obsidiana",
+        "mutation_name": "Chamuscado",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Peixe Ninja",
+        "count": 1
+      },
+      {
+        "type": "money",
+        "amount": 4000
+      }
+    ]
+  }
+}

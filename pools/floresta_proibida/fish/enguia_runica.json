@@ -1,0 +1,10 @@
+{
+  "name": "Enguia-Runica",
+  "rarity": "Epico",
+  "description": "Traços luminosos percorrem seu corpo em padroes que lembram runas ativas. Ela dispara entre pilares e some no escuro em segundos.",
+  "kg_min": 12.0,
+  "kg_max": 25.0,
+  "base_value": 128,
+  "sequence_len": 9,
+  "reaction_time_s": 1.8
+}

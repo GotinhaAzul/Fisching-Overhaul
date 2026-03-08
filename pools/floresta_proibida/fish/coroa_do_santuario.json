@@ -1,0 +1,10 @@
+{
+  "name": "Coroa do Santuario",
+  "rarity": "Lendario",
+  "description": "A criatura mais nobre da floresta patrulha o altar inundado e deixa atras de si um brilho dourado fraco, como uma coroa refletida na agua.",
+  "kg_min": 24.0,
+  "kg_max": 52.0,
+  "base_value": 236,
+  "sequence_len": 12,
+  "reaction_time_s": 1.55
+}

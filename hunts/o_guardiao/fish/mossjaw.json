@@ -1,0 +1,10 @@
+{
+  "name": "Mossjaw",
+  "rarity": "Lendario",
+  "description": "Uma massa de musgo vivo cobre a mandibula desta besta territorial. Quando surge, arrasta raizes e sedimentos como se todo o templo respirasse junto.",
+  "kg_min": 36.0,
+  "kg_max": 88.0,
+  "base_value": 460,
+  "sequence_len": 16,
+  "reaction_time_s": 2.05
+}

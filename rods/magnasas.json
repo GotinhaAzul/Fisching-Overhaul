@@ -1,0 +1,9 @@
+{
+  "name": "Magnasas",
+  "luck": 0.17,
+  "kg_max": 150.0,
+  "control": 0.8,
+  "description": "Obsidiana e sombras forjaram esta vara. Tudo que ela toca corre o risco de se incendiar por dentro.",
+  "price": 0,
+  "unlocked_default": false
+}

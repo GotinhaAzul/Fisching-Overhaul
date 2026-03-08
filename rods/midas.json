@@ -1,0 +1,11 @@
+{
+  "name": "Midas",
+  "luck": 0.15,
+  "kg_max": 110.0,
+  "control": 0.4,
+  "description": "Um dia, afogara em suas moedas de ouro.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_greed": true,
+  "greed_chance": 0.12
+}

@@ -19,6 +19,7 @@ from utils.missions import (
     MissionDefinition,
     MissionProgress,
     MissionState,
+    load_missions,
     _build_mission_actions,
     _check_requirement,
     _format_requirement,
@@ -382,3 +383,61 @@ def test_has_any_pool_bestiary_full_completion_characterization() -> None:
     ]
     assert has_any_pool_bestiary_full_completion(pools, {"Tilapia", "Pacu"})
     assert not has_any_pool_bestiary_full_completion(pools, {"Tilapia"})
+
+
+def test_real_repo_forbidden_forest_mission_chain_characterization() -> None:
+    repo_root = Path(__file__).resolve().parent.parent
+    missions = {
+        mission.mission_id: mission
+        for mission in load_missions(repo_root / "missions")
+    }
+
+    assert "densa_mata_prologo" in missions
+    assert "densa_mata_parte_1" in missions
+    assert "densa_mata_parte_2" in missions
+    assert "densa_mata_parte_3" in missions
+
+    unlock_ojardim_rewards = missions["unlock_ojardim"].rewards
+    assert {
+        "type": "unlock_missions",
+        "mission_ids": ["densa_mata_prologo"],
+    } in unlock_ojardim_rewards
+
+    prologo_requirements = missions["densa_mata_prologo"].requirements
+    assert {
+        "type": "bestiary_pool_percent",
+        "pool_name": "Pantano Mushgrove",
+        "percent": 50,
+    } in prologo_requirements
+    assert {
+        "type": "bestiary_pool_percent",
+        "pool_name": "O Jardim",
+        "percent": 50,
+    } in prologo_requirements
+
+    parte_1_requirements = missions["densa_mata_parte_1"].requirements
+    assert {
+        "type": "deliver_mutation",
+        "count": 4,
+        "mutation_name": "Envenenado",
+    } in parte_1_requirements
+    assert {
+        "type": "deliver_fish_with_mutation",
+        "count": 1,
+        "fish_name": "Vieira-Lama",
+        "mutation_name": "Envenenado",
+    } in parte_1_requirements
+
+    assert {
+        "type": "play_time",
+        "minutes": 45,
+    } in missions["densa_mata_parte_2"].requirements
+    assert {
+        "type": "deliver_mutation",
+        "count": 3,
+        "mutation_name": "Arcana",
+    } in missions["densa_mata_parte_3"].requirements
+    assert {
+        "type": "unlock_pools",
+        "pool_names": ["Floresta Proibida"],
+    } in missions["densa_mata_parte_3"].rewards

@@ -1,0 +1,8 @@
+{
+  "name": "Incinerado",
+  "description": "As escamas brilham em brasa viva, como se o peixe tivesse sido forjado nas profundezas de um vulcao.",
+  "xp_multiplier": 1.1,
+  "gold_multiplier": 1.4,
+  "chance_percent": 20.0,
+  "required_rods": ["Magnasas"]
+}

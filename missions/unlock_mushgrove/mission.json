@@ -17,6 +17,10 @@
     {
       "type": "xp",
       "amount": 200
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["unlock_ojardim"]
     }
   ]
 }

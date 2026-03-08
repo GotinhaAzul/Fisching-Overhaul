@@ -1,0 +1,29 @@
+{
+  "id": "densa_mata_parte_1",
+  "name": "Densa Mata: Parte 1",
+  "description": "A entrada proibida responde ao veneno do pantano. Leve exemplares corrompidos e uma Vieira-Lama marcada pela toxina.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_mutation",
+      "count": 4,
+      "mutation_name": "Envenenado"
+    },
+    {
+      "type": "deliver_fish_with_mutation",
+      "count": 1,
+      "fish_name": "Vieira-Lama",
+      "mutation_name": "Envenenado"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 450
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["densa_mata_parte_2"]
+    }
+  ]
+}

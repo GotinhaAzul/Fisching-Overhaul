@@ -870,6 +870,10 @@ class FishingMiniGame:
         can_slam: bool = False,
         slam_chance: float = 0.0,
         slam_time_bonus: float = 0.0,
+        can_pierce: bool = False,
+        pierce_chance: float = 0.0,
+        can_greed: bool = False,
+        greed_chance: float = 0.0,
     ):
         self.attempt = attempt
         self.typed: List[str] = []
@@ -881,11 +885,17 @@ class FishingMiniGame:
         self.can_slam = can_slam
         self.slam_chance = max(0.0, min(1.0, float(slam_chance)))
         self.slam_time_bonus = max(0.0, float(slam_time_bonus))
+        self.can_pierce = can_pierce
+        self.pierce_chance = max(0.0, min(1.0, float(pierce_chance)))
+        self.can_greed = can_greed
+        self.greed_chance = max(0.0, min(1.0, float(greed_chance)))
         self.bonus_time_s = 0.0
         self.slam_activations: int = 0
         self.slam_bonus_accum_s: float = 0.0
         self.slash_activations: int = 0
         self.slash_cuts_accum: int = 0
+        self.pierce_activations: int = 0
+        self.greed_activated: bool = False
         self.last_ability_label: str = ""
 
     def expected_key(self) -> Optional[str]:
@@ -907,6 +917,10 @@ class FishingMiniGame:
         self.start_time = time.perf_counter()
 
     def get_ability_counter_text(self) -> str:
+        if self.greed_activated:
+            return "Greed! x2 Gold"
+        if self.pierce_activations > 0:
+            return f"Pierce! x{self.pierce_activations}"
         if self.slam_activations > 0:
             return f"Slam! +{self.slam_bonus_accum_s:0.1f}s"
         if self.slash_activations > 0:
@@ -963,6 +977,21 @@ class FishingMiniGame:
 
         self.typed.append(key)
 
+        # Greed: chance per key press to activate (once per minigame)
+        if (
+            self.can_greed
+            and self.greed_chance > 0
+            and not self.greed_activated
+        ):
+            if random.random() <= self.greed_chance:
+                self.greed_activated = True
+                self.last_ability_label = "Greed!"
+                # Speed up timer by 30% (reduce remaining time)
+                elapsed_now = time.perf_counter() - self.start_time
+                remaining = self.total_time_limit() - elapsed_now
+                time_reduction = remaining * 0.30
+                self.bonus_time_s -= time_reduction
+
         if key == expected:
             self.index += 1
             if self.is_done():
@@ -970,7 +999,14 @@ class FishingMiniGame:
                 return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
             return None
 
-        # errou tecla
+        # errou tecla — Pierce pode salvar
+        if self.can_pierce and self.pierce_chance > 0:
+            if random.random() <= self.pierce_chance:
+                self.pierce_activations += 1
+                self.last_ability_label = "Pierce!"
+                # Ignora o erro, nao avanca o indice
+                return None
+
         elapsed = time.perf_counter() - self.start_time
         return FishingResult(False, f"Errou (esperado '{expected}', veio '{key}')", self.typed[:], elapsed)
 
@@ -2677,6 +2713,10 @@ def run_fishing_round(
             can_slam=equipped_rod.can_slam,
             slam_chance=equipped_rod.slam_chance,
             slam_time_bonus=equipped_rod.slam_time_bonus,
+            can_pierce=equipped_rod.can_pierce,
+            pierce_chance=equipped_rod.pierce_chance,
+            can_greed=equipped_rod.can_greed,
+            greed_chance=equipped_rod.greed_chance,
         )
         game.begin()
 
@@ -2762,6 +2802,9 @@ def run_fishing_round(
             mutation_name = mutation.name if mutation else None
             mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
             mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
+            greed_triggered = game.greed_activated
+            if greed_triggered:
+                mutation_gold_multiplier *= 2.0
             inventory.append(
                 InventoryEntry(
                     name=fish.name,
@@ -2845,9 +2888,132 @@ def run_fishing_round(
                 )
             if dupe_triggered:
                 print("🔁 Efeito de duplicacao ativado: uma copia do peixe foi para o inventario.")
+            if game.pierce_activations > 0:
+                print(f"🔱 Pierce ativado {game.pierce_activations}x durante a pesca!")
+            if greed_triggered:
+                print("💰 Greed ativado: valor do peixe dobrado!")
             print(f"✨ Ganhou {gained_xp} XP.")
             if level_ups:
                 print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
+
+            # Frenzy: chance to trigger another fishing sequence after a catch
+            if (
+                equipped_rod.can_frenzy
+                and equipped_rod.frenzy_chance > 0
+                and random.random() <= equipped_rod.frenzy_chance
+                and not is_hunt_fish
+            ):
+                print("🔥 Frenzy ativado! O frenesi toma conta — pesque sem parar!")
+                frenzy_round = 0
+                frenzy_seq_len = max(1, len(attempt.sequence) - 1)
+                frenzy_time_factor = 0.85
+                while True:
+                    frenzy_round += 1
+                    frenzy_seq_len = max(1, frenzy_seq_len - 1)
+                    frenzy_time_factor *= 0.90
+                    frenzy_sequence = [
+                        random.choice(attempt.allowed_keys)
+                        for _ in range(frenzy_seq_len)
+                    ]
+                    frenzy_time = max(
+                        0.5,
+                        (fish.reaction_time_s + effective_control)
+                        * frenzy_time_factor,
+                    )
+                    frenzy_attempt = FishingAttempt(
+                        sequence=frenzy_sequence,
+                        time_limit_s=frenzy_time,
+                        allowed_keys=attempt.allowed_keys,
+                    )
+                    frenzy_game = FishingMiniGame(frenzy_attempt)
+                    frenzy_game.begin()
+                    print(f"\n🔥 Frenzy #{frenzy_round}! ({frenzy_seq_len} teclas, {frenzy_time:0.1f}s)")
+
+                    frenzy_result: Optional[FishingResult] = None
+                    ks2 = KeyStream()
+                    ks2.start()
+                    while frenzy_result is None:
+                        if ks2.stop_requested():
+                            frenzy_result = FishingResult(
+                                False, "Saiu da pesca (ESC)",
+                                frenzy_game.typed[:],
+                                time.perf_counter() - frenzy_game.start_time,
+                            )
+                            break
+                        for ch in ks2.pop_all():
+                            frenzy_result = frenzy_game.handle_key(ch)
+                            if frenzy_result is not None:
+                                break
+                        if frenzy_result is None:
+                            frenzy_result = frenzy_game.check_timeout()
+                        render(
+                            frenzy_attempt,
+                            frenzy_game.typed,
+                            frenzy_game.time_left(),
+                            total_time_s=frenzy_game.total_time_limit(),
+                            perfect_threshold_ratio=perfect_catch_cfg.threshold_ratio,
+                            perfect_catch_enabled=False,
+                            ability_counter_text=f"Frenzy #{frenzy_round}",
+                        )
+                        time.sleep(0.016)
+
+                    if use_modern_ui():
+                        print("\n")
+                    else:
+                        print()
+                    ks2.stop()
+
+                    if not frenzy_result.success:
+                        print(f"❌ Frenzy encerrado! {frenzy_result.reason}")
+                        break
+
+                    # Frenzy catch: same pool, random fish
+                    frenzy_fish = selected_pool.choose_fish(
+                        eligible_fish,
+                        rod_luck,
+                        rarity_weights_override=combined_weights,
+                    )
+                    frenzy_kg = random.uniform(frenzy_fish.kg_min, frenzy_fish.kg_max)
+                    if frenzy_kg > effective_kg_max:
+                        frenzy_kg = effective_kg_max
+                    frenzy_eligible = filter_mutations_for_rod(
+                        list(mutations) + list(event_mutations),
+                        equipped_rod.name,
+                    )
+                    frenzy_mutation = choose_mutation(frenzy_eligible)
+                    frenzy_mut_name = frenzy_mutation.name if frenzy_mutation else None
+                    frenzy_mut_xp = frenzy_mutation.xp_multiplier if frenzy_mutation else 1.0
+                    frenzy_mut_gold = frenzy_mutation.gold_multiplier if frenzy_mutation else 1.0
+                    inventory.append(
+                        InventoryEntry(
+                            name=frenzy_fish.name,
+                            rarity=frenzy_fish.rarity,
+                            kg=frenzy_kg,
+                            base_value=frenzy_fish.base_value,
+                            mutation_name=frenzy_mut_name,
+                            mutation_xp_multiplier=frenzy_mut_xp,
+                            mutation_gold_multiplier=frenzy_mut_gold,
+                            is_hunt=False,
+                            is_unsellable=bool(getattr(frenzy_fish, "unsellable", False)),
+                        )
+                    )
+                    if on_fish_caught:
+                        on_fish_caught(frenzy_fish, frenzy_mutation)
+                    discovered_fish.add(frenzy_fish.name)
+                    frenzy_base_xp = xp_for_rarity(frenzy_fish.rarity)
+                    frenzy_xp = max(1, int(round(frenzy_base_xp * frenzy_mut_xp)))
+                    level, xp, frenzy_lvl_ups = apply_xp_gain(level, xp, frenzy_xp)
+                    console.print(
+                        f"🎣 Frenzy! Pescou: {frenzy_fish.name} "
+                        f"[{frenzy_fish.rarity}] - {frenzy_kg:0.2f}kg"
+                    )
+                    if frenzy_mutation:
+                        print(f"🧬 Mutação: {frenzy_mutation.name}")
+                    print(f"✨ +{frenzy_xp} XP")
+                    if frenzy_lvl_ups:
+                        print(f"⬆️  Subiu {frenzy_lvl_ups} nível(is)! Agora está no nível {level}.")
+                    flush_input_buffer()
+
         else:
             print(f"❌ {result.reason}  ({result.elapsed_s:0.2f}s)")
             print(f"Sequência era: {' '.join(attempt.sequence)}")

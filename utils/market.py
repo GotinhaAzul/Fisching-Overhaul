@@ -6,6 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
 
+from colorama import Fore, Style
+
 from utils.baits import BaitCrateDefinition, BaitDefinition
 from utils.crafting import (
     CraftingDefinition,

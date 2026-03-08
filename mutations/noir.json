@@ -3,6 +3,8 @@
   "description": "Uma mutaçao natural para peixes, bonita de se ver.",
   "xp_multiplier": 1.1,
   "gold_multiplier": 1.5,
-  "chance_percent": 0.25
-
+  "chance_percent": 0.25,
+  "rod_chance_overrides": {
+    "Trinity": 15
+  }
 }

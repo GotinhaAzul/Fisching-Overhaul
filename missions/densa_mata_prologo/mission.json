@@ -1,0 +1,28 @@
+{
+  "id": "densa_mata_prologo",
+  "name": "Densa Mata: Prologo",
+  "description": "As raizes do Jardim se entrelacam ao Pantano. Estude ambos os ecossistemas para encontrar a trilha certa.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Pantano Mushgrove",
+      "percent": 50
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "O Jardim",
+      "percent": 50
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 300
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["densa_mata_parte_1"]
+    }
+  ]
+}

@@ -372,7 +372,7 @@ def render_fishing_hud_line(
     time_left: float,
     *,
     total_time_s: Optional[float] = None,
-    perfect_threshold_ratio: float = 0.80,
+    perfect_threshold_ratio: float = 0.20,
     perfect_catch_enabled: bool = True,
     ability_counter_text: str = "",
 ) -> str:
@@ -396,7 +396,9 @@ def render_fishing_hud_line(
     filled = int(bar_len * remaining_ratio)
     bar = ("=" * filled) + ("." * (bar_len - filled))
     bar_color = _resolve_hud_gradient_color(elapsed_ratio, safe_threshold)
-    _ = perfect_catch_enabled
+
+    is_perfect = perfect_catch_enabled and elapsed_ratio <= safe_threshold
+    perfect_label = "Perfect: ON" if is_perfect else "Perfect: OFF"
 
     hits_segment = f"Hits: {typed_count}/{len(seq)}"
     ability_segment = ability_counter_text.strip()
@@ -423,6 +425,7 @@ def render_fishing_hud_line(
     if ability_segment:
         hud_text.append(f" | {ability_segment}")
     hud_text.append(f" | {time_segment}", style=bar_color)
+    hud_text.append(f" | {perfect_label}")
     if esc_segment:
         hud_text.append(f" | {esc_segment}")
 

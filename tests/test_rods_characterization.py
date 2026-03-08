@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from utils.mutations import load_mutations
 from utils.rods import load_rods
 
 
@@ -77,3 +78,26 @@ def test_load_rods_normalizes_only_chance_fields_when_values_are_over_one(
     assert rod.slam_chance == 0.15
     assert rod.slash_power == 35
     assert rod.slam_time_bonus == 15.0
+
+
+def test_real_repo_high_tier_rods_and_incinerado_characterization() -> None:
+    repo_root = Path(__file__).resolve().parent.parent
+
+    rods = {rod.name: rod for rod in load_rods(repo_root / "rods")}
+    mutations = {mutation.name: mutation for mutation in load_mutations(repo_root / "mutations")}
+
+    assert {"Trinity", "Perforatio", "Frenesis", "Midas", "Magnasas"} <= set(rods)
+
+    assert rods["Trinity"].luck == 0.15
+    assert rods["Perforatio"].can_pierce is True
+    assert rods["Perforatio"].pierce_chance == 0.30
+    assert rods["Frenesis"].can_frenzy is True
+    assert rods["Frenesis"].frenzy_chance == 0.25
+    assert rods["Midas"].can_greed is True
+    assert rods["Midas"].greed_chance == 0.12
+    assert rods["Magnasas"].luck == 0.17
+
+    incinerado = mutations["Incinerado"]
+    assert incinerado.gold_multiplier == 1.4
+    assert incinerado.chance == 0.20
+    assert incinerado.required_rods == ("Magnasas",)

@@ -1,0 +1,10 @@
+{
+  "name": "Tartaruga-Musgo",
+  "rarity": "Epico",
+  "description": "A Tartaruga-Musgo carrega nas costas um ecossistema inteiro: musgos, pequenas flores e ate insetos vivem sobre seu casco. Move-se lentamente pelo Jardim, mas sua forca e surpreendente quando decide resistir a captura. Dizem que as mais velhas vivem ha seculos e conhecem cada canto do jardim submerso. Na pesca, exige paciencia e controle constante para nao perder a linha.",
+  "kg_min": 4.0,
+  "kg_max": 10.0,
+  "base_value": 65,
+  "sequence_len": 7,
+  "reaction_time_s": 1.4
+}

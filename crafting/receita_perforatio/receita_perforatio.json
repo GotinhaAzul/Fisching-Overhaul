@@ -1,0 +1,29 @@
+{
+  "id": "perforatio_craft",
+  "rod_name": "Perforatio",
+  "name": "Perfuracao Solar",
+  "description": "A luz da Imperatriz guia a vara atraves de qualquer erro.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "O Jardim"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Agua-Viva Imperatriz",
+        "mutation_name": "Solar",
+        "count": 1
+      },
+      {
+        "type": "money",
+        "amount": 5000
+      }
+    ]
+  }
+}

@@ -2,7 +2,7 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -13,6 +13,7 @@ class Mutation:
     gold_multiplier: float
     chance: float
     required_rods: Tuple[str, ...]
+    rod_chance_overrides: Tuple[Tuple[str, float], ...] = ()
 
 
 def _normalize_chance(raw_chance: object, raw_percent: object) -> float:
@@ -41,6 +42,20 @@ def _parse_required_rods(raw_required_rods: object) -> Tuple[str, ...]:
     return ()
 
 
+def _parse_rod_chance_overrides(raw: object) -> Tuple[Tuple[str, float], ...]:
+    if not isinstance(raw, dict):
+        return ()
+    result = []
+    for rod_name, chance_val in raw.items():
+        if isinstance(rod_name, str) and rod_name.strip():
+            try:
+                chance = float(chance_val) / 100.0
+            except (TypeError, ValueError):
+                continue
+            result.append((rod_name.strip(), max(0.0, chance)))
+    return tuple(result)
+
+
 def _load_mutations_from_directory(base_dir: Path) -> List[Mutation]:
     mutations: List[Mutation] = []
     for mutation_path in sorted(base_dir.glob("*.json")):
@@ -60,6 +75,9 @@ def _load_mutations_from_directory(base_dir: Path) -> List[Mutation]:
 
         chance = _normalize_chance(data.get("chance"), data.get("chance_percent"))
         required_rods = _parse_required_rods(data.get("required_rods"))
+        rod_chance_overrides = _parse_rod_chance_overrides(
+            data.get("rod_chance_overrides")
+        )
 
         mutations.append(
             Mutation(
@@ -69,6 +87,7 @@ def _load_mutations_from_directory(base_dir: Path) -> List[Mutation]:
                 gold_multiplier=float(data.get("gold_multiplier", 1.0)),
                 chance=chance,
                 required_rods=required_rods,
+                rod_chance_overrides=rod_chance_overrides,
             )
         )
     return mutations
@@ -111,13 +130,30 @@ def filter_mutations_for_rod(
     rod_name: str,
 ) -> List[Mutation]:
     normalized_rod_name = rod_name.casefold()
-    return [
-        mutation
-        for mutation in mutations
-        if not mutation.required_rods
-        or normalized_rod_name
-        in {required_rod.casefold() for required_rod in mutation.required_rods}
-    ]
+    result: List[Mutation] = []
+    for mutation in mutations:
+        if mutation.required_rods and normalized_rod_name not in {
+            r.casefold() for r in mutation.required_rods
+        }:
+            continue
+        # Apply rod-specific chance override if present
+        override_chance: Optional[float] = None
+        for override_rod, override_val in mutation.rod_chance_overrides:
+            if override_rod.casefold() == normalized_rod_name:
+                override_chance = override_val
+                break
+        if override_chance is not None:
+            mutation = Mutation(
+                name=mutation.name,
+                description=mutation.description,
+                xp_multiplier=mutation.xp_multiplier,
+                gold_multiplier=mutation.gold_multiplier,
+                chance=override_chance,
+                required_rods=mutation.required_rods,
+                rod_chance_overrides=mutation.rod_chance_overrides,
+            )
+        result.append(mutation)
+    return result
 
 
 def choose_mutation(mutations: List[Mutation]) -> Optional[Mutation]:

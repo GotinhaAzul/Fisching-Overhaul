@@ -1,0 +1,31 @@
+{
+  "id": "unlock_ojardim",
+  "name": "Raizes Submersas",
+  "description": "Alem do pantano, existe um lugar onde a natureza floresceu sem interferencia. Prove que conhece o Pantano e pague a passagem.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Pantano Mushgrove",
+      "percent": 50
+    },
+    {
+      "type": "spend_money",
+      "amount": 1000
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["O Jardim"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["densa_mata_prologo"]
+    },
+    {
+      "type": "xp",
+      "amount": 250
+    }
+  ]
+}

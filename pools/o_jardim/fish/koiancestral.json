@@ -1,0 +1,10 @@
+{
+  "name": "Koi Ancestral",
+  "rarity": "Lendario",
+  "description": "O Koi Ancestral e a criatura mais antiga do Jardim, reconhecida pelas escamas douradas que brilham mesmo nas aguas mais turvas. Segundo lendas locais, este peixe foi o primeiro habitante do jardim submerso e guia as correntes com seu nado. Rarissimo de ser avistado, aparece apenas quando as condicoes do jardim estao em perfeito equilibrio. Na pesca, sua forca e tecnica desafiam ate os mais experientes.",
+  "kg_min": 5.0,
+  "kg_max": 15.0,
+  "base_value": 105,
+  "sequence_len": 9,
+  "reaction_time_s": 1.3
+}

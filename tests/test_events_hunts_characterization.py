@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from utils.pesca import load_hunts, load_pools
 from utils.events import EventDefinition, EventManager
 from utils.hunts import HuntDefinition, HuntManager
 
@@ -147,3 +149,29 @@ def test_hunt_manager_serialize_restore_roundtrip_characterization(monkeypatch) 
     assert "Rio" in active_by_pool
     assert active_by_pool["Rio"]["hunt_id"] == "h1"
     assert active_by_pool["Rio"]["remaining_s"] > 0.0
+
+
+def test_real_repo_forbidden_forest_pool_and_hunt_characterization() -> None:
+    repo_root = Path(__file__).resolve().parent.parent
+    pools = load_pools(repo_root / "pools")
+    hunts = load_hunts(repo_root / "hunts", {pool.name for pool in pools})
+
+    pool_by_name = {pool.name: pool for pool in pools}
+    hunt_by_id = {hunt.hunt_id: hunt for hunt in hunts}
+
+    forbidden_pool = pool_by_name["Floresta Proibida"]
+    assert forbidden_pool.hidden_from_bestiary_until_unlocked is True
+    assert len(forbidden_pool.fish_profiles) == 9
+    assert {fish.name for fish in forbidden_pool.fish_profiles} >= {
+        "Raia-Micelial",
+        "Coroa do Santuario",
+    }
+
+    guardiao = hunt_by_id["o_guardiao"]
+    assert guardiao.name == "O Guardiao"
+    assert guardiao.pool_name == "Floresta Proibida"
+    assert guardiao.disturbance_max == 3200.0
+    assert {fish.name for fish in guardiao.fish_profiles} == {
+        "Mossjaw",
+        "Awakened Mossjaw",
+    }

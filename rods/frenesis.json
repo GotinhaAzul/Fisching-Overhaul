@@ -1,0 +1,11 @@
+{
+  "name": "Frenesis",
+  "luck": 0.10,
+  "kg_max": 100.0,
+  "control": 0.2,
+  "description": "A espiral e a furia do rio se combinam nesta vara. Deixe a pesca levar a sua mente.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_frenzy": true,
+  "frenzy_chance": 0.25
+}

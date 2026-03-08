@@ -19,7 +19,7 @@ class _AttemptStub:
 
 def test_parse_perfect_catch_defaults_characterization() -> None:
     parsed = parse_perfect_catch_config(None, source_label="pool.json")
-    assert parsed == PerfectCatchConfig(enabled=True, threshold_ratio=0.80, xp_multiplier=1.50)
+    assert parsed == PerfectCatchConfig(enabled=True, threshold_ratio=0.20, xp_multiplier=1.50)
 
 
 def test_parse_perfect_catch_missing_override_returns_none_characterization() -> None:

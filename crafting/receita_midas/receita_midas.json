@@ -1,0 +1,25 @@
+{
+  "id": "midas_craft",
+  "rod_name": "Midas",
+  "name": "Toque Dourado",
+  "description": "Seis joias cristalizadas formam a vara da cobia infinita.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "O Jardim"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Salmajoia",
+        "mutation_name": "Cristalizado",
+        "count": 6
+      }
+    ]
+  }
+}

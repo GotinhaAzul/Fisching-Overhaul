@@ -2,42 +2,61 @@
 
 Simple Fisching text game overhaul.
 
-Focused on being very easily expandable
+Focused on being easily expandable, with most gameplay content driven by JSON files.
 
-Basicamente, um jogo de pesca feito para ser quase infinito com a quantidade de conteúdo.
+Basicamente, um jogo de pesca em texto feito para crescer com novas pools, varas, mutacoes, eventos, hunts e missoes.
 
-Aperte as teclas na sequencia correta e pesque peixes!
+Aperte as teclas na sequencia correta e pesque peixes.
 
 ## Como executar
 
 ```bash
-pip install -e .
+python3 -m pip install -e .
 fisching
 ```
 
-Ou, sem instalar como comando global:
+Ou, sem instalar o comando:
 
 ```bash
-python start_game.py
+python3 start_game.py
 ```
 
-Versão Atual: 1.2
-Update 1.2: A fossa das Marianas
+Modo de desenvolvimento:
 
-- Uma nova questline completa explorando as profundezas do oceano, novos peixes desafiadores aguardam!
+```bash
+python3 start_game_dev.py
+```
 
-- Nova raridade adicionada: Mitico
+Rodar testes:
 
-- 6 Novas varas adicionadas
+```bash
+python3 -m pytest -q
+```
 
-- Tem um pinguim agora em snowcap?
+## Versao Atual
 
-- Rework na UI da pesca + Melhorias no inventario.
+Versao atual: `1.3`
 
-- pynput adicionado a paginas de navegação.
+### Update 1.3: Rods and the Forbidden
 
+- Nova pool desbloqueavel: `O Jardim`, liberada pela missao `Raizes Submersas`.
+- Nova questline `Densa Mata` com Prologo + Partes 1, 2 e 3.
+- Nova pool de endgame: `Floresta Proibida`, com 9 peixes e bestiario oculto ate o desbloqueio.
+- Nova hunt: `O Guardiao`, com `Mossjaw` e `Awakened Mossjaw`.
+- Nova mutacao: `Incinerado`, exclusiva da vara `Magnasas`.
+- 5 novas varas de alto nivel:
+  - `Trinity`
+  - `Perforatio` com habilidade `Pierce`
+  - `Frenesis` com habilidade `Frenzy`
+  - `Midas` com habilidade `Greed`
+  - `Magnasas`
+- Suporte de gameplay para as novas habilidades de vara ja integrado ao minigame de pesca.
 
-Bug fixes - 
+## Estrutura do projeto
 
-- Nada muito relevante, apenas algumas melhorias de performance.
+- `start_game.py`: entrada principal do jogo.
+- `start_game_dev.py`: inicializacao com `dev_mode=True`.
+- `utils/`: logica de runtime, UI, mercado, crafting, inventario, save, eventos, hunts e pesca.
+- `pools/`, `rods/`, `baits/`, `mutations/`, `missions/`, `events/`, `hunts/`, `crafting/`: conteudo data-driven.
+- `tests/`: testes de caracterizacao.
 

@@ -1,0 +1,10 @@
+{
+  "name": "Sapo-Verde",
+  "rarity": "Comum",
+  "description": "O Sapo-Verde habita as margens rasas do Jardim, saltando entre pedras cobertas de musgo. Apesar de nao ser um peixe convencional, e uma captura comum entre os frequentadores da regiao. Emite sons graves durante a noite que ecoam pelas paredes do jardim submerso. Na pesca, surpreende com saltos curtos que testam o reflexo.",
+  "kg_min": 0.5,
+  "kg_max": 2.0,
+  "base_value": 7,
+  "sequence_len": 3,
+  "reaction_time_s": 1.8
+}

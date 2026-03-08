@@ -1,0 +1,23 @@
+{
+  "id": "densa_mata_parte_3",
+  "name": "Densa Mata: Parte 3",
+  "description": "Magia pura atravessa o dossel submerso. Entregue tres capturas tocadas pela Arcana para abrir o santuario perdido.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_mutation",
+      "count": 3,
+      "mutation_name": "Arcana"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Floresta Proibida"]
+    },
+    {
+      "type": "xp",
+      "amount": 1000
+    }
+  ]
+}

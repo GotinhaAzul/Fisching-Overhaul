@@ -1,0 +1,10 @@
+{
+  "name": "Peixe-Orquidea",
+  "rarity": "Incomum",
+  "description": "O Peixe-Orquidea exibe nadadeiras que se abrem como petalas, criando um espetaculo visual enquanto nada entre as plantas do Jardim. Usa essa exibicao tanto para atrair parceiros quanto para confundir predadores. Alimenta-se de polen aquatico e microorganismos que flutuam entre as raizes. Quando fisgado, seus movimentos sao elegantes mas persistentes.",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 16,
+  "sequence_len": 5,
+  "reaction_time_s": 1.6
+}

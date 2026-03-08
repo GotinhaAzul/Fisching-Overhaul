@@ -1,0 +1,33 @@
+{
+  "id": "frenesis_craft",
+  "rod_name": "Frenesis",
+  "name": "Furia Espiral",
+  "description": "A espiral e o rio se encontram em um ciclo sem fim.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "O Jardim"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Artefato-Espiral",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Piracanjuba",
+        "count": 1
+      },
+      {
+        "type": "money",
+        "amount": 6000
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Carpa-Rosa",
+  "rarity": "Incomum",
+  "description": "A Carpa-Rosa se destaca pela coloracao vibrante que lembra petalas de flor. Habita as areas mais iluminadas do Jardim, onde a luz filtra pela superficie e tinge a agua de tons rosados. Costuma nadar em pares e reage com cautela a qualquer perturbacao. Na linha, combina velocidade moderada com mudancas de direcao imprevisíveis.",
+  "kg_min": 1.0,
+  "kg_max": 3.5,
+  "base_value": 14,
+  "sequence_len": 4,
+  "reaction_time_s": 1.7
+}

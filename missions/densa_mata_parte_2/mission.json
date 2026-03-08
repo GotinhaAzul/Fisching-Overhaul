@@ -1,0 +1,32 @@
+{
+  "id": "densa_mata_parte_2",
+  "name": "Densa Mata: Parte 2",
+  "description": "A floresta exige familiaridade total com o pantano e o jardim, alem de tempo suficiente para aprender seus sinais.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "play_time",
+      "minutes": 45
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Pantano Mushgrove",
+      "percent": 100
+    },
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "O Jardim",
+      "percent": 100
+    }
+  ],
+  "rewards": [
+    {
+      "type": "xp",
+      "amount": 700
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["densa_mata_parte_3"]
+    }
+  ]
+}
