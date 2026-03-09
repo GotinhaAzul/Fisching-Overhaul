@@ -36,6 +36,9 @@ Use these IDs in reward payloads:
 - `mariana_void`: Vazio Mariana
 - `mariana_prism`: Prisma Mariana
 - `mariana_singularity`: Singularidade Mariana
+- `jardim_jade`: Jade do Jardim
+- `mycelium_spore`: Esporo de Micelio
+- `vulcao_magma`: Magma do Vulcao
 
 ## UI icons
 
@@ -68,3 +71,6 @@ Use these IDs in reward payloads:
 - `pool_zenite_abissal`: Zenite Abissal
 - `pool_aguas_calmas`: Aguas Calmas
 - `pool_ponto_zero`: Ponto Zero
+- `pool_o_jardim`: O Jardim
+- `pool_templomicelio`: Templo de Micelio
+- `pool_vulcaodosol`: Vulcao do Sol

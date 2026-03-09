@@ -1,0 +1,10 @@
+{
+  "name": "Dragao Carmesim",
+  "rarity": "Lendario",
+  "description": "Um dragao de escamas avermelhadas que absorvem o calor da caverna. Mais agressivo que o Azul, suas arrancadas sao explosivas e imprevisíveis. Raramente e visto inteiro - normalmente so se veem as marcas que deixa.",
+  "kg_min": 30.0,
+  "kg_max": 1000.0,
+  "base_value": 1220,
+  "sequence_len": 14,
+  "reaction_time_s": 3.2
+}

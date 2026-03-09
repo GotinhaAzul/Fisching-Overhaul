@@ -1,0 +1,10 @@
+{
+  "name": "Dragao Azul",
+  "rarity": "Lendario",
+  "description": "Uma serpente majestosa de escamas azuis que emitem luz propria. Habita as correntes mais fundas da caverna e raramente sobe a superficie. Quando fisgado, luta com movimentos lentos e deliberados - cada arrancada pesa toneladas.",
+  "kg_min": 20.0,
+  "kg_max": 800.0,
+  "base_value": 920,
+  "sequence_len": 12,
+  "reaction_time_s": 3.0
+}

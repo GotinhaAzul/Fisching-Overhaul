@@ -1,0 +1,10 @@
+{
+  "name": "Medusa do Breu",
+  "rarity": "Raro",
+  "description": "Uma medusa adaptada ao ambiente fechado da caverna. Seus tentaculos luminosos servem tanto para atrair presas quanto para desorientar predadores.",
+  "kg_min": 1.0,
+  "kg_max": 3.5,
+  "base_value": 58,
+  "sequence_len": 6,
+  "reaction_time_s": 1.6
+}

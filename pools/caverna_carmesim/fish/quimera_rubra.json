@@ -1,0 +1,10 @@
+{
+  "name": "Quimera Rubra",
+  "rarity": "Lendario",
+  "description": "Uma quimera de aparencia impossivel, com partes de diferentes criaturas fundidas pelo calor milenar da caverna. Sua existencia desafia a biologia conhecida e seu valor e incalculavel.",
+  "kg_min": 10.0,
+  "kg_max": 30.0,
+  "base_value": 145,
+  "sequence_len": 8,
+  "reaction_time_s": 2.0
+}

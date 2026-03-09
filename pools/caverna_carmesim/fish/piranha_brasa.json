@@ -1,0 +1,10 @@
+{
+  "name": "Piranha Brasa",
+  "rarity": "Comum",
+  "description": "Uma piranha de dentes enrijecidos pelo calor da caverna. Sua pele avermelhada e quente ao toque, e ela nada em grupos agitados perto das paredes.",
+  "kg_min": 0.5,
+  "kg_max": 1.8,
+  "base_value": 7,
+  "sequence_len": 5,
+  "reaction_time_s": 2.2
+}

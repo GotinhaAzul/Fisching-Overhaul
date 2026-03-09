@@ -1,0 +1,12 @@
+{
+  "name": "Caverna Carmesim",
+  "description": "Alem da luz, existe o vermelho. Uma caverna onde o calor subterraneo tingiu cada pedra de escarlate. A agua esquenta. Os peixes, tambem.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 37,
+    "Incomum": 36,
+    "Raro": 18,
+    "Epico": 13,
+    "Lendario": 2
+  }
+}

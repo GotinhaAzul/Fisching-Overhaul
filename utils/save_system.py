@@ -6,13 +6,14 @@ from typing import Any, Dict, List, Optional, Sequence, Set, TYPE_CHECKING
 
 from utils.inventory import InventoryEntry
 from utils.rods import Rod
+from utils.rod_upgrades import RodUpgradeState
 
 if TYPE_CHECKING:
     from utils.baits import BaitDefinition
     from utils.pesca import FishingPool
 
 
-SAVE_VERSION = 9
+SAVE_VERSION = 11
 SAVE_FILE_NAME = "savegame.json"
 
 
@@ -27,6 +28,7 @@ def serialize_inventory(inventory: Sequence[InventoryEntry]) -> List[Dict[str, o
             "rarity": entry.rarity,
             "kg": entry.kg,
             "base_value": entry.base_value,
+            "is_shiny": entry.is_shiny,
             "mutation_name": entry.mutation_name,
             "mutation_xp_multiplier": entry.mutation_xp_multiplier,
             "mutation_gold_multiplier": entry.mutation_gold_multiplier,
@@ -79,6 +81,7 @@ def save_game(
     equipped_bait: Optional[str] = None,
     bestiary_reward_state: Optional[Dict[str, object]] = None,
     cosmetics_state: Optional[Dict[str, object]] = None,
+    rod_upgrade_state: Optional[RodUpgradeState] = None,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -114,6 +117,11 @@ def save_game(
             cosmetics_state
             if isinstance(cosmetics_state, dict)
             else {}
+        ),
+        "rod_upgrades": (
+            rod_upgrade_state.to_save_dict()
+            if isinstance(rod_upgrade_state, RodUpgradeState)
+            else {"bonuses": {}, "recipes": {}}
         ),
     }
     save_path.write_text(
@@ -159,6 +167,8 @@ def _restore_inventory_entries(
             base_value = float(item.get("base_value", 0.0))
         except (TypeError, ValueError):
             continue
+        raw_is_shiny = item.get("is_shiny", False)
+        is_shiny = raw_is_shiny if isinstance(raw_is_shiny, bool) else False
         mutation_name = item.get("mutation_name")
         if mutation_name is not None and not isinstance(mutation_name, str):
             mutation_name = None
@@ -178,6 +188,7 @@ def _restore_inventory_entries(
                 rarity=rarity,
                 kg=kg,
                 base_value=base_value,
+                is_shiny=is_shiny,
                 mutation_name=mutation_name or None,
                 mutation_xp_multiplier=mutation_xp_multiplier,
                 mutation_gold_multiplier=mutation_gold_multiplier,

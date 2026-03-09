@@ -1,0 +1,14 @@
+{
+  "id": "pool_caverna_carmesim_100",
+  "name": "Chama Completa",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": { "pool": "Caverna Carmesim" },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    { "type": "ui_color", "color_id": "lava_red" },
+    { "type": "money", "amount": 3200 },
+    { "type": "xp", "amount": 1800 }
+  ]
+}

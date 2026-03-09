@@ -1,0 +1,14 @@
+{
+  "name": "A Chama Carmesim",
+  "description": "O calor aumenta sem explicacao. Algo do tamanho de um barco circula abaixo.",
+  "pool_name": "Caverna Carmesim",
+  "duration_minutes": 4,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 2,
+  "disturbance_max": 1500,
+  "rarity_chances": {
+    "Lendario": 5
+  },
+  "cooldown_minutes": 10,
+  "disturbance_decay_per_check": 4
+}

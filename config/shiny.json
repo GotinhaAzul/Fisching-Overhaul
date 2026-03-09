@@ -1,0 +1,10 @@
+{
+  "catch_chance_percent": 1.0,
+  "appraise_chance_percent": 1.0,
+  "value_multiplier": 1.55,
+  "display": {
+    "label": "✦ Shiny",
+    "color": "#FFD700",
+    "catch_message": "✦ Um peixe SHINY apareceu!"
+  }
+}

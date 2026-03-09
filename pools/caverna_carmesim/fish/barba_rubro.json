@@ -1,0 +1,10 @@
+{
+  "name": "Barba-Rubro",
+  "rarity": "Incomum",
+  "description": "Um bagre de barbatanas avermelhadas que usa as correntes termais da caverna para navegar sem esforco. Sua resistencia ao calor e invejavel.",
+  "kg_min": 2.5,
+  "kg_max": 7.0,
+  "base_value": 25,
+  "sequence_len": 6,
+  "reaction_time_s": 1.8
+}

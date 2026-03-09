@@ -24,6 +24,7 @@ class InventoryEntry:
     rarity: str
     kg: float
     base_value: float
+    is_shiny: bool = False
     mutation_name: Optional[str] = None
     mutation_xp_multiplier: float = 1.0
     mutation_gold_multiplier: float = 1.0
@@ -46,12 +47,13 @@ def format_inventory_entry(
         bool(hunt_fish_names) and entry.name in hunt_fish_names
     )
     fish_name_color = "#FF6666" if is_hunt_entry else color
+    shiny_label = " ✦ Shiny" if entry.is_shiny else ""
     mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
     unsellable_label = " [bold red][Unsellable][/bold red]" if entry.is_unsellable else ""
     return (
         f"[{color}]\\[{entry.rarity}] "
         f"[{fish_name_color}]{entry.name}[/] "
-        f"[{color}]({entry.kg:0.2f}kg){mutation_label}[/]"
+        f"[{color}]({entry.kg:0.2f}kg){shiny_label}{mutation_label}[/]"
         f"{unsellable_label}"
     )
 

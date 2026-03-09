@@ -1,0 +1,10 @@
+{
+  "name": "Dragao Etereo",
+  "rarity": "Mitico",
+  "description": "Nao e inteiramente solido. Sua forma translucida funde azul e carmesim em um espectro impossivel. Dizem que aparece apenas uma vez por era....",
+  "kg_min": 100.0,
+  "kg_max": 700.0,
+  "base_value": 3300,
+  "sequence_len": 18,
+  "reaction_time_s": 4.5
+}

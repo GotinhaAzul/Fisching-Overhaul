@@ -14,6 +14,7 @@ from utils.inventory import InventoryEntry
 from utils.market import serialize_pool_market_orders
 from utils.missions import MissionProgress, serialize_mission_progress, serialize_mission_state
 from utils.rods import Rod
+from utils.rod_upgrades import RodUpgradeState
 from utils.save_system import save_game
 
 if TYPE_CHECKING:
@@ -44,6 +45,7 @@ def autosave_state(
     pool_market_orders,
     bestiary_reward_state: "BestiaryRewardState",
     cosmetics_state: PlayerCosmeticsState,
+    rod_upgrade_state: RodUpgradeState,
     hunt_manager: Optional["HuntManager"],
     serialize_bestiary_reward_state,
 ) -> None:
@@ -70,4 +72,5 @@ def autosave_state(
         equipped_bait=equipped_bait_id,
         bestiary_reward_state=serialize_bestiary_reward_state(bestiary_reward_state),
         cosmetics_state=serialize_cosmetics_state(cosmetics_state),
+        rod_upgrade_state=rod_upgrade_state,
     )

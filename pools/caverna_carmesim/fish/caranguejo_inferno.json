@@ -1,0 +1,10 @@
+{
+  "name": "Caranguejo do Inferno",
+  "rarity": "Raro",
+  "description": "Um caranguejo gigante de pincas avermelhadas que habita as zonas mais quentes da caverna. Suas pincas sao tao resistentes que podem quebrar equipamentos de pesca.",
+  "kg_min": 4.0,
+  "kg_max": 11.0,
+  "base_value": 64,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

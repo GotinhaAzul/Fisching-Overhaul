@@ -1,0 +1,14 @@
+{
+  "name": "O Chamado Azul",
+  "description": "As luzes da caverna pulsam em sincronia. Uma sombra enorme cruza o brilho, lenta e indiferente.",
+  "pool_name": "Caverna Luminosa",
+  "duration_minutes": 4,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 2,
+  "disturbance_max": 1500,
+  "rarity_chances": {
+    "Lendario": 5
+  },
+  "cooldown_minutes": 10,
+  "disturbance_decay_per_check": 4
+}

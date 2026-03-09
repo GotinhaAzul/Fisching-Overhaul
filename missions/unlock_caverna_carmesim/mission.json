@@ -1,0 +1,29 @@
+{
+  "id": "unlock_caverna_carmesim",
+  "name": "Alem da Luz, o Vermelho",
+  "description": "A Caverna Luminosa esconde uma passagem. Ela so se abre para quem traz uma marca que ainda nao existia.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Caverna Luminosa",
+      "percent": 70
+    },
+    {
+      "type": "deliver_fish_with_mutation",
+      "count": 1,
+      "fish_name": "Dragao Azul",
+      "mutation_name": "Carmesim"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Caverna Carmesim"]
+    },
+    {
+      "type": "xp",
+      "amount": 900
+    }
+  ]
+}

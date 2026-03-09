@@ -28,6 +28,9 @@
     {"icon_id": "pool_zona_glacial", "name": "Zona Glacial", "badge_lines": ["  _/\\_   ", " /_[]_\\  ", "   ||    "]},
     {"icon_id": "pool_zenite_abissal", "name": "Zenite Abissal", "badge_lines": ["  .--.   ", " ( oo )  ", "  '--'   "]},
     {"icon_id": "pool_aguas_calmas", "name": "Aguas Calmas", "badge_lines": ["  ~~~~~  ", " (~~~~~) ", "  ~~~~~  "]},
-    {"icon_id": "pool_ponto_zero", "name": "Ponto Zero", "badge_lines": ["  .:::.  ", " : (0) : ", "  ':::'  "]}
+    {"icon_id": "pool_ponto_zero", "name": "Ponto Zero", "badge_lines": ["  .:::.  ", " : (0) : ", "  ':::'  "]},
+    {"icon_id": "pool_o_jardim", "name": "O Jardim", "badge_lines": ["  ,'.',  ", "  \\|||/  ", "  ~~~~~  "]},
+    {"icon_id": "pool_templomicelio", "name": "Templo de Micelio", "badge_lines": ["  .---.  ", " ( uuu ) ", "  _|_|_  "]},
+    {"icon_id": "pool_vulcaodosol", "name": "Vulcao do Sol", "badge_lines": ["  \\|/   ", " _/^\\_  ", " [***]  "]}
   ]
 }

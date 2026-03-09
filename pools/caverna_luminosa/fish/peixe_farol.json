@@ -1,0 +1,10 @@
+{
+  "name": "Peixe Farol",
+  "rarity": "Epico",
+  "description": "Um peixe globular com um orgao luminoso proeminente na testa. Usa a luz para guiar outros peixes menores, que o seguem em cardumes leais e densos.",
+  "kg_min": 2.5,
+  "kg_max": 7.0,
+  "base_value": 68,
+  "sequence_len": 7,
+  "reaction_time_s": 1.5
+}

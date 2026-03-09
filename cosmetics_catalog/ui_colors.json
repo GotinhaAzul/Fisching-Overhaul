@@ -159,6 +159,21 @@
       "color_id": "mariana_singularity",
       "name": "Singularidade Mariana",
       "accent_color": "#E8E8FF"
+    },
+    {
+      "color_id": "jardim_jade",
+      "name": "Jade do Jardim",
+      "accent_color": "#2ECC71"
+    },
+    {
+      "color_id": "mycelium_spore",
+      "name": "Esporo de Micelio",
+      "accent_color": "#7D3C98"
+    },
+    {
+      "color_id": "vulcao_magma",
+      "name": "Magma do Vulcao",
+      "accent_color": "#E84A00"
     }
   ]
 }

@@ -1,0 +1,33 @@
+{
+  "id": "unlock_caverna_luminosa",
+  "name": "A Fenda Luminosa",
+  "description": "Nas profundezas da ruina existe um brilho que nao deveria existir. Talvez um peixe que tambem brilha possa encontra-lo.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Profundezas Desoladas",
+      "percent": 70
+    },
+    {
+      "type": "deliver_fish_with_mutation",
+      "count": 1,
+      "fish_name": "Surubim",
+      "mutation_name": "Brilhante"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Caverna Luminosa"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["unlock_caverna_carmesim"]
+    },
+    {
+      "type": "xp",
+      "amount": 600
+    }
+  ]
+}

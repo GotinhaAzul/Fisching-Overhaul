@@ -18,12 +18,14 @@ from utils.save_system import (
     restore_inventory,
     restore_level,
     restore_owned_rods,
+    restore_rod_upgrade_state,
     restore_storage,
     restore_selected_pool,
     restore_unlocked_pools,
     restore_xp,
     save_game,
 )
+from utils.rod_upgrades import UpgradeRequirement
 
 
 def _rod(name: str, *, price: float = 0.0, unlocked_default: bool = False) -> Rod:
@@ -53,6 +55,7 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
             rarity="Comum",
             kg=2.5,
             base_value=10.0,
+            is_shiny=True,
             mutation_name="Albino",
             mutation_xp_multiplier=1.4,
             mutation_gold_multiplier=1.2,
@@ -88,6 +91,14 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
         )
     }
 
+    rod_upgrade_state = restore_rod_upgrade_state(
+        {"Vara Carbono": {"luck": 0.12, "kg_max": 0.08}}
+    )
+    rod_upgrade_state.set_recipe(
+        "Vara Carbono",
+        [UpgradeRequirement("Tilapia", "Comum", 3)],
+    )
+
     save_game(
         save_path,
         balance=321.25,
@@ -111,6 +122,7 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
         equipped_bait="cheap/minhoca",
         bestiary_reward_state={"claimed": ["reward_1"]},
         cosmetics_state={"equipped_ui_color": "ocean_blue"},
+        rod_upgrade_state=rod_upgrade_state,
     )
 
     raw = load_game(save_path)
@@ -118,16 +130,28 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     assert raw["version"] == SAVE_VERSION
     assert raw["equipped_bait"] == "cheap/minhoca"
     assert raw["bait_inventory"] == {"cheap/minhoca": 3, "invalid": 2}
+    assert raw["inventory"][0]["is_shiny"] is True
+    assert raw["inventory"][1]["is_shiny"] is False
     assert raw["inventory"][0]["is_unsellable"] is True
     assert raw["inventory"][1]["is_unsellable"] is False
     assert raw["storage"][0]["name"] == "Pirarucu"
     assert raw["storage"][0]["mutation_name"] == "Noir"
+    assert raw["rod_upgrades"] == {
+        "bonuses": {"Vara Carbono": {"luck": 0.12, "kg_max": 0.08}},
+        "recipes": {
+            "Vara Carbono": [
+                {"fish_name": "Tilapia", "rarity": "Comum", "count": 3},
+            ]
+        },
+    }
 
     restored_inventory = restore_inventory(raw["inventory"])
     assert len(restored_inventory) == 2
     assert restored_inventory[0].name == "Tilapia"
+    assert restored_inventory[0].is_shiny is True
     assert restored_inventory[0].mutation_name == "Albino"
     assert restored_inventory[0].is_unsellable is True
+    assert restored_inventory[1].is_shiny is False
     assert restored_inventory[1].is_unsellable is False
 
     restored_storage = restore_storage(raw["storage"], {"Tilapia", "Pacu", "Pirarucu"})
@@ -159,6 +183,12 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     restored_discovered = restore_discovered_fish(raw["discovered_fish"], restored_inventory)
     assert restored_discovered == {"Tilapia", "Pacu"}
 
+    restored_rod_upgrades = restore_rod_upgrade_state(raw["rod_upgrades"])
+    assert restored_rod_upgrades.to_dict() == {"Vara Carbono": {"luck": 0.12, "kg_max": 0.08}}
+    restored_recipe = restored_rod_upgrades.get_recipe("Vara Carbono")
+    assert restored_recipe is not None
+    assert restored_recipe.fish_requirements == [UpgradeRequirement("Tilapia", "Comum", 3)]
+
 
 def test_restore_helpers_legacy_and_invalid_payloads() -> None:
     starter_rod = _rod("Vara Bambu", unlocked_default=True)
@@ -185,6 +215,12 @@ def test_restore_helpers_legacy_and_invalid_payloads() -> None:
     restored_hunt = restore_hunt_state({"hunts": [], "active_by_pool": "x"})
     assert restored_hunt == {"hunts": {}, "active_by_pool": {}}
 
+    restored_legacy_rod_upgrades = restore_rod_upgrade_state(
+        {"Vara Bambu": {"luck": 0.12}}
+    )
+    assert restored_legacy_rod_upgrades.to_dict() == {"Vara Bambu": {"luck": 0.12}}
+    assert restored_legacy_rod_upgrades.get_recipe("Vara Bambu") is None
+
 
 def test_restore_inventory_defaults_unsellable_for_legacy_payload() -> None:
     restored = restore_inventory(
@@ -201,7 +237,9 @@ def test_restore_inventory_defaults_unsellable_for_legacy_payload() -> None:
     )
 
     assert len(restored) == 2
+    assert restored[0].is_shiny is False
     assert restored[0].is_unsellable is False
+    assert restored[1].is_shiny is False
     assert restored[1].is_unsellable is False
 
 

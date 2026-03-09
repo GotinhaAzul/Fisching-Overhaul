@@ -1,0 +1,14 @@
+{
+  "name": "O Ultimo Mito",
+  "description": "Uma silhueta que nao deveria existir. Metade luz, metade brasa - o Etereo cruza o limite entre as duas cavernas.",
+  "pool_name": "Caverna Carmesim",
+  "duration_minutes": 3,
+  "check_interval_seconds": 90,
+  "disturbance_per_catch": 5,
+  "disturbance_max": 3000,
+  "rarity_chances": {
+    "Mitico": 2
+  },
+  "cooldown_minutes": 30,
+  "disturbance_decay_per_check": 2
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Celacantozinho Brilhante",
+  "rarity": "Lendario",
+  "description": "Um celacanthe em miniatura que sobreviveu nas camaras mais profundas da caverna por milenios. Seu corpo inteiro irradia uma luz dourada tenue que ilumina metros ao redor. Captura-lo e considerado um sinal de boa fortuna.",
+  "kg_min": 8.0,
+  "kg_max": 24.0,
+  "base_value": 140,
+  "sequence_len": 7,
+  "reaction_time_s": 2.1
+}

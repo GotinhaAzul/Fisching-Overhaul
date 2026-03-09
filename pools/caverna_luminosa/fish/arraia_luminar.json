@@ -1,0 +1,10 @@
+{
+  "name": "Arraia Luminar",
+  "rarity": "Raro",
+  "description": "Uma arraia plana cujas extremidades das asas emitem luz continua. Desliza pelo fundo da caverna como uma estrela cadente submersa.",
+  "kg_min": 3.0,
+  "kg_max": 8.0,
+  "base_value": 60,
+  "sequence_len": 6,
+  "reaction_time_s": 1.7
+}

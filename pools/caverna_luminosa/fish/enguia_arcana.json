@@ -1,0 +1,10 @@
+{
+  "name": "Enguia Arcana",
+  "rarity": "Epico",
+  "description": "Mais antiga do que a propria caverna, segundo os estudiosos. Sua bioluminescencia forma padroes que lembram runas antigas nas paredes da rocha.",
+  "kg_min": 4.0,
+  "kg_max": 10.0,
+  "base_value": 72,
+  "sequence_len": 6,
+  "reaction_time_s": 1.4
+}

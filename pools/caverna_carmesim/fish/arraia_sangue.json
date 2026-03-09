@@ -1,0 +1,10 @@
+{
+  "name": "Arraia de Sangue",
+  "rarity": "Incomum",
+  "description": "Uma arraia de coloracao vermelha intensa que imita as manchas da caverna para se camuflar. Seu ferrão foi adaptado para ambientes de alta temperatura.",
+  "kg_min": 2.0,
+  "kg_max": 6.0,
+  "base_value": 22,
+  "sequence_len": 5,
+  "reaction_time_s": 1.9
+}

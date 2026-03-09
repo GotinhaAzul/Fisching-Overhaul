@@ -1,0 +1,10 @@
+{
+  "name": "Carpa Eterea",
+  "rarity": "Incomum",
+  "description": "Uma carpa de escamas translucidas que refletem a luz da caverna em arco-iris discretos. Seu nado lento e hipnotico engana pescadores desatentos.",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

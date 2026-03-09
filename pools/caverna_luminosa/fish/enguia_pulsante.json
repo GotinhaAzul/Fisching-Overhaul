@@ -1,0 +1,10 @@
+{
+  "name": "Enguia Pulsante",
+  "rarity": "Comum",
+  "description": "Uma enguia longa cujo corpo irradia pulsos de luz a cada movimento. Sua eletricidade fraca cria um campo bioluminescente ao redor.",
+  "kg_min": 0.8,
+  "kg_max": 2.2,
+  "base_value": 7,
+  "sequence_len": 5,
+  "reaction_time_s": 2.3
+}

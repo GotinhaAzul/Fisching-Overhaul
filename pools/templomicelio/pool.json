@@ -4,10 +4,10 @@
   "unlocked_default": false,
   "hidden_from_bestiary_until_unlocked": true,
   "rarity_chances": {
-    "Comum": 34,
+    "Comum": 40,
     "Incomum": 24,
-    "Raro": 18,
+    "Raro": 19,
     "Epico": 15,
-    "Lendario": 9
+    "Lendario": 2
   }
 }

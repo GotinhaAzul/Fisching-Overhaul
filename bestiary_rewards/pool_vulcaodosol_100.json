@@ -1,0 +1,34 @@
+{
+  "id": "pool_vulcaodosol_100",
+  "name": "Calor do Vulcao",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": {
+      "pool": "Vulcao do Sol"
+    },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    {
+      "type": "ui_color",
+      "color_id": "vulcao_magma"
+    },
+    {
+      "type": "ui_icon",
+      "icon_id": "pool_vulcaodosol"
+    },
+    {
+      "type": "money",
+      "amount": 2000
+    },
+    {
+      "type": "xp",
+      "amount": 1100
+    },
+    {
+      "type": "bait",
+      "bait_id": "expensive_bait_crate/cabeca_de_tubarao",
+      "amount": 4
+    }
+  ]
+}

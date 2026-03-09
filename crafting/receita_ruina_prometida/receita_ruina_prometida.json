@@ -1,0 +1,23 @@
+{
+  "id": "ruina_prometida_craft",
+  "rod_name": "Ruina Prometida",
+  "name": "A Promessa Quebrada.",
+  "description": "Apenas quem dominou completamente a Caverna Carmesim pode forjar esta vara.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Caverna Carmesim"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      { "type": "fish", "fish_name": "Dragao Carmesim", "count": 1 },
+      { "type": "fish", "fish_name": "Quimera Rubra", "count": 2 },
+      { "type": "fish", "fish_name": "Espadarte Carmesim", "count": 3 },
+      { "type": "money", "amount": 9999 }
+    ]
+  }
+}

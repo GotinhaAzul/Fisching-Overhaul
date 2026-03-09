@@ -118,6 +118,7 @@ from utils.perfect_catch import (
     parse_perfect_catch_config,
 )
 from utils.rods import Rod, load_rods
+from utils.rod_upgrades import RodUpgradeState, get_effective_rod, restore_rod_upgrade_state
 from utils.save_system import (
     get_default_save_path,
     load_game,
@@ -1622,6 +1623,9 @@ def show_dev_save_editor(
                     time.sleep(1)
                     continue
 
+            shiny_choice = input("Shiny? [s/N]: ").strip().casefold()
+            is_shiny = shiny_choice in {"s", "sim", "y", "yes"}
+
             for _ in range(count):
                 kg = (
                     fixed_kg
@@ -1634,6 +1638,7 @@ def show_dev_save_editor(
                         rarity=selected_fish.rarity,
                         kg=kg,
                         base_value=selected_fish.base_value,
+                        is_shiny=is_shiny,
                         is_unsellable=bool(getattr(selected_fish, "unsellable", False)),
                     )
                 )
@@ -1944,6 +1949,7 @@ def autosave_state(
     pool_market_orders,
     bestiary_reward_state: BestiaryRewardState,
     cosmetics_state: PlayerCosmeticsState,
+    rod_upgrade_state: RodUpgradeState,
     hunt_manager: Optional[HuntManager],
 ) -> None:
     _autosave_state_impl(
@@ -1968,6 +1974,7 @@ def autosave_state(
         pool_market_orders,
         bestiary_reward_state,
         cosmetics_state,
+        rod_upgrade_state,
         hunt_manager,
         serialize_bestiary_reward_state,
     )
@@ -2735,6 +2742,7 @@ def run_fishing_round(
     bait_by_id: Dict[str, BaitDefinition],
     equipped_bait_id: Optional[str],
     mutations: List[Mutation],
+    rod_upgrade_state: RodUpgradeState,
     level: int,
     xp: int,
     event_manager: Optional[EventManager],
@@ -2770,8 +2778,9 @@ def run_fishing_round(
             bait_by_id,
             equipped_bait_id,
         )
+        effective_rod = get_effective_rod(equipped_rod, rod_upgrade_state)
         effective_control, effective_luck, effective_kg_max = calculate_effective_rod_stats(
-            equipped_rod,
+            effective_rod,
             active_bait,
         )
         print("=== Pesca (WASD em tempo real) ===")
@@ -2862,8 +2871,8 @@ def run_fishing_round(
 
         attempt = fish.generate_attempt()
         attempt_sequence = list(attempt.sequence)
-        if equipped_rod.can_alter and equipped_rod.hardcount != 0:
-            hard_multiplier = max(-90.0, equipped_rod.hardcount) / 100.0
+        if effective_rod.can_alter and effective_rod.hardcount != 0:
+            hard_multiplier = max(-90.0, effective_rod.hardcount) / 100.0
             delta_keys = int(round(len(attempt_sequence) * hard_multiplier))
             if delta_keys > 0:
                 for _ in range(delta_keys):
@@ -2872,8 +2881,8 @@ def run_fishing_round(
                 attempt_sequence = attempt_sequence[: max(1, len(attempt_sequence) + delta_keys)]
 
         altered_time_limit_s = attempt.time_limit_s
-        if equipped_rod.can_alter and equipped_rod.timecount != 0:
-            altered_time_limit_s *= max(0.1, 1.0 + (equipped_rod.timecount / 100.0))
+        if effective_rod.can_alter and effective_rod.timecount != 0:
+            altered_time_limit_s *= max(0.1, 1.0 + (effective_rod.timecount / 100.0))
         attempt = FishingAttempt(
             sequence=attempt_sequence,
             time_limit_s=altered_time_limit_s,
@@ -2890,16 +2899,16 @@ def run_fishing_round(
         )
         game = FishingMiniGame(
             attempt,
-            can_slash=equipped_rod.can_slash,
-            slash_chance=equipped_rod.slash_chance,
-            slash_power=equipped_rod.slash_power,
-            can_slam=equipped_rod.can_slam,
-            slam_chance=equipped_rod.slam_chance,
-            slam_time_bonus=equipped_rod.slam_time_bonus,
-            can_pierce=equipped_rod.can_pierce,
-            pierce_chance=equipped_rod.pierce_chance,
-            can_greed=equipped_rod.can_greed,
-            greed_chance=equipped_rod.greed_chance,
+            can_slash=effective_rod.can_slash,
+            slash_chance=effective_rod.slash_chance,
+            slash_power=effective_rod.slash_power,
+            can_slam=effective_rod.can_slam,
+            slam_chance=effective_rod.slam_chance,
+            slam_time_bonus=effective_rod.slam_time_bonus,
+            can_pierce=effective_rod.can_pierce,
+            pierce_chance=effective_rod.pierce_chance,
+            can_greed=effective_rod.can_greed,
+            greed_chance=effective_rod.greed_chance,
         )
         game.begin()
 
@@ -3002,8 +3011,8 @@ def run_fishing_round(
                 )
             )
             dupe_triggered = False
-            if equipped_rod.can_dupe and equipped_rod.dupe_chance > 0:
-                if random.random() <= equipped_rod.dupe_chance:
+            if effective_rod.can_dupe and effective_rod.dupe_chance > 0:
+                if random.random() <= effective_rod.dupe_chance:
                     inventory.append(
                         InventoryEntry(
                             name=fish.name,
@@ -3081,9 +3090,9 @@ def run_fishing_round(
 
             # Frenzy: chance to trigger another fishing sequence after a catch
             if (
-                equipped_rod.can_frenzy
-                and equipped_rod.frenzy_chance > 0
-                and random.random() <= equipped_rod.frenzy_chance
+                effective_rod.can_frenzy
+                and effective_rod.frenzy_chance > 0
+                and random.random() <= effective_rod.frenzy_chance
                 and not is_hunt_fish
             ):
                 print("🔥 Frenzy ativado! O frenesi toma conta — pesque sem parar!")
@@ -3204,10 +3213,10 @@ def run_fishing_round(
                 print(f"Você digitou:  {' '.join(result.typed)}")
 
             recover_triggered = (
-                equipped_rod.can_recover
-                and equipped_rod.recover_chance > 0
+                effective_rod.can_recover
+                and effective_rod.recover_chance > 0
                 and result.reason != "Saiu da pesca (ESC)"
-                and random.random() <= equipped_rod.recover_chance
+                and random.random() <= effective_rod.recover_chance
             )
             if recover_triggered:
                 pending_reengage_fish_name = fish.name
@@ -3284,6 +3293,7 @@ def main(dev_mode: bool = False):
     crafting_state = restore_crafting_state(None, crafting_definitions)
     crafting_progress = CraftingProgress()
     cosmetics_state = create_default_cosmetics_state()
+    rod_upgrade_state = RodUpgradeState()
     inventory: List[InventoryEntry] = []
     storage: List[InventoryEntry] = []
     bait_inventory: Dict[str, int] = {}
@@ -3358,6 +3368,7 @@ def main(dev_mode: bool = False):
             bestiary_rewards,
         )
         cosmetics_state = restore_cosmetics_state(save_data.get("cosmetics_state"))
+        rod_upgrade_state = restore_rod_upgrade_state(save_data.get("rod_upgrades"))
         hunt_manager.restore_state(restore_hunt_state(save_data.get("hunt_state")))
         print("Save carregado com sucesso!")
         time.sleep(1)
@@ -3403,6 +3414,7 @@ def main(dev_mode: bool = False):
             pool_market_orders,
             bestiary_reward_state,
             cosmetics_state,
+            rod_upgrade_state,
             hunt_manager,
         )
 
@@ -3663,6 +3675,7 @@ def main(dev_mode: bool = False):
                     bait_by_id,
                     equipped_bait_id,
                     available_mutations,
+                    rod_upgrade_state,
                     level,
                     xp,
                     event_manager,
@@ -3721,6 +3734,7 @@ def main(dev_mode: bool = False):
                     pool_orders=pool_market_orders,
                     unlocked_rods=unlocked_rods,
                     unlocked_pools=unlocked_pool_market_keys,
+                    rod_upgrade_state=rod_upgrade_state,
                     on_money_earned=mission_progress.record_money_earned,
                     on_money_spent=mission_progress.record_money_spent,
                     on_fish_sold=lambda entry: mission_progress.record_fish_sold(entry.name),
@@ -3741,6 +3755,7 @@ def main(dev_mode: bool = False):
                     bestiary_rewards=bestiary_rewards,
                     bestiary_reward_state=bestiary_reward_state,
                     on_claim_bestiary_reward=apply_bestiary_reward,
+                    discovered_shiny_fish=set(mission_progress.shiny_fish_caught_by_name.keys()),
                 )
             elif choice == "6":
                 level, xp, balance = show_missions_menu(
@@ -3826,6 +3841,7 @@ def main(dev_mode: bool = False):
                     pool_market_orders,
                     bestiary_reward_state,
                     cosmetics_state,
+                    rod_upgrade_state,
                     hunt_manager,
                 )
                 autosave_done = True
@@ -3887,6 +3903,7 @@ def main(dev_mode: bool = False):
                 pool_market_orders,
                 bestiary_reward_state,
                 cosmetics_state,
+                rod_upgrade_state,
                 hunt_manager,
             )
         event_manager.stop()

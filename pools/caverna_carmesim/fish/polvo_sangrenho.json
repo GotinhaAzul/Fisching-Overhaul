@@ -1,0 +1,10 @@
+{
+  "name": "Polvo Sangrenho",
+  "rarity": "Epico",
+  "description": "Um polvo de tinta vermelha viscosa que usa o calor da caverna para se mover com surpreendente velocidade. Seus tentaculos podem agarrar linhas de pesca com forca consideravel.",
+  "kg_min": 5.0,
+  "kg_max": 14.0,
+  "base_value": 70,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

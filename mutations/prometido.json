@@ -1,0 +1,8 @@
+{
+  "name": "Prometido",
+  "description": "Marcado pela luz da caverna, este peixe carrega uma promessa silenciosa.",
+  "xp_multiplier": 1.4,
+  "gold_multiplier": 1.6,
+  "chance_percent": 10.0,
+  "required_rods": ["Promessa Luminescente"]
+}

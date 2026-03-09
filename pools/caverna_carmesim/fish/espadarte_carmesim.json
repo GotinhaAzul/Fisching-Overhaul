@@ -1,0 +1,10 @@
+{
+  "name": "Espadarte Carmesim",
+  "rarity": "Epico",
+  "description": "Um espadarte de espada tingida de vermelho pelo mineral ferruginoso da caverna. Extremamente agressivo, carrega cicatrizes de batalhas contra a propria rocha.",
+  "kg_min": 15.0,
+  "kg_max": 45.0,
+  "base_value": 75,
+  "sequence_len": 7,
+  "reaction_time_s": 1.4
+}

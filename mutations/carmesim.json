@@ -1,0 +1,7 @@
+{
+  "name": "Carmesim",
+  "description": "Uma coloracao vermelha profunda, quase impossivel de ocorrer naturalmente.",
+  "xp_multiplier": 1.5,
+  "gold_multiplier": 1.5,
+  "chance_percent": 0.16
+}

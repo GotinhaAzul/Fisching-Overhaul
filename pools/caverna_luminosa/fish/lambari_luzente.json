@@ -1,0 +1,10 @@
+{
+  "name": "Lambari Luzente",
+  "rarity": "Comum",
+  "description": "Um lambari minusculo cujas escamas emitem um tenue brilho azulado. Abundante nas bordas da caverna, onde a luminescencia e mais fraca.",
+  "kg_min": 0.4,
+  "kg_max": 1.5,
+  "base_value": 6,
+  "sequence_len": 5,
+  "reaction_time_s": 2.5
+}

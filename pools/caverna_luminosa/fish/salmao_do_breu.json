@@ -1,0 +1,10 @@
+{
+  "name": "Salmao do Breu",
+  "rarity": "Incomum",
+  "description": "Adaptado a escuridao total, este salmao desenvolveu orgaos de bioluminescencia ao longo da coluna. Sua carne tem sabor marcante e e muito valorizada.",
+  "kg_min": 2.0,
+  "kg_max": 5.5,
+  "base_value": 24,
+  "sequence_len": 5,
+  "reaction_time_s": 1.8
+}

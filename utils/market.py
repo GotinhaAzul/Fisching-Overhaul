@@ -32,6 +32,16 @@ from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel
 from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
 from utils.rods import Rod
+from utils.rod_upgrades import (
+    UPGRADEABLE_STATS,
+    RodUpgradeState,
+    UpgradeRequirement,
+    apply_stat_bonus,
+    calculate_upgrade_bonus,
+    compute_upgrade_cost,
+    generate_fish_requirements,
+    get_effective_rod,
+)
 from utils.ui import clear_screen, print_spaced_lines
 
 if TYPE_CHECKING:
@@ -511,6 +521,7 @@ def show_market(
     pool_orders: Optional[Dict[str, PoolMarketOrder]] = None,
     unlocked_rods: Optional[set[str]] = None,
     unlocked_pools: Optional[set[str]] = None,
+    rod_upgrade_state: Optional[RodUpgradeState] = None,
     on_money_earned=None,
     on_money_spent=None,
     on_fish_sold=None,
@@ -528,6 +539,11 @@ def show_market(
     resolved_discovered_fish = discovered_fish if discovered_fish is not None else set()
     resolved_unlocked_rods = unlocked_rods if unlocked_rods is not None else set()
     resolved_unlocked_pools = unlocked_pools if unlocked_pools is not None else set()
+    resolved_rod_upgrade_state = (
+        rod_upgrade_state
+        if rod_upgrade_state is not None
+        else RodUpgradeState()
+    )
     normalized_unlocked_pools = {
         pool_name.strip().casefold()
         for pool_name in resolved_unlocked_pools
@@ -592,6 +608,105 @@ def show_market(
         if not has_any_pool_bestiary_full_completion(resolved_pools, resolved_discovered_fish):
             return False, "Crafting bloqueado: complete 100% do bestiario em ao menos uma pool."
         return True, ""
+
+    def _is_upgrade_pool_unlocked(pool: "FishingPool") -> bool:
+        if not normalized_unlocked_pools:
+            return (
+                pool.name.strip().casefold() == selected_pool_name
+                or pool.folder.name.strip().casefold() == selected_pool_id
+            )
+        return (
+            pool.name.strip().casefold() in normalized_unlocked_pools
+            or pool.folder.name.strip().casefold() in normalized_unlocked_pools
+        )
+
+    def _get_upgrade_pool_fish() -> List["FishProfile"]:
+        source_pools = resolved_pools or [selected_pool]
+        seen_fish_names: set[str] = set()
+        available_fish: List["FishProfile"] = []
+        for pool in source_pools:
+            if not _is_upgrade_pool_unlocked(pool):
+                continue
+            for fish in pool.fish_profiles:
+                fish_name = getattr(fish, "name", "")
+                if not fish_name or fish_name in seen_fish_names:
+                    continue
+                seen_fish_names.add(fish_name)
+                available_fish.append(fish)
+        return available_fish
+
+    def _upgrade_gate_status() -> tuple[bool, str]:
+        if level < 20:
+            return False, "Melhoria bloqueada: alcance o nivel 20."
+        if not _get_upgrade_pool_fish():
+            return False, "Melhoria indisponivel: nao ha peixes nas pools desbloqueadas."
+        return True, ""
+
+    def _format_upgrade_stat_value(stat: str, value: float) -> str:
+        if stat == "luck":
+            return f"{value:.0%}"
+        if stat == "control":
+            return f"{value:+.2f}s"
+        return f"{value:g}"
+
+    def _format_upgrade_summary(rod: Rod) -> str:
+        rod_bonuses = resolved_rod_upgrade_state.upgrades.get(rod.name, {})
+        if not rod_bonuses:
+            return "Sem melhorias"
+        parts = [
+            f"{UPGRADEABLE_STATS[stat]['label']} +{int(bonus * 100)}%"
+            for stat, bonus in rod_bonuses.items()
+            if stat in UPGRADEABLE_STATS and bonus > 0
+        ]
+        return " | ".join(parts) if parts else "Sem melhorias"
+
+    def _build_upgrade_requirement_lines(
+        requirements: Sequence[UpgradeRequirement],
+    ) -> tuple[List[str], bool]:
+        inventory_counts: Dict[str, int] = {}
+        for entry in inventory:
+            if entry.is_unsellable:
+                continue
+            inventory_counts[entry.name] = inventory_counts.get(entry.name, 0) + 1
+        all_requirements_met = True
+        lines: List[str] = []
+        for requirement in requirements:
+            owned = inventory_counts.get(requirement.fish_name, 0)
+            enough = owned >= requirement.count
+            if not enough:
+                all_requirements_met = False
+            marker = "[green]✓[/green]" if enough else "[red]✗[/red]"
+            owned_style = "green" if enough else "red"
+            lines.append(
+                f"{marker} {requirement.count}x {requirement.fish_name} "
+                f"({requirement.rarity}) - voce tem: [{owned_style}]{owned}[/]"
+            )
+        return lines, all_requirements_met
+
+    def _consume_upgrade_requirements(
+        requirements: Sequence[UpgradeRequirement],
+    ) -> None:
+        remaining_by_name: Dict[str, int] = {}
+        for requirement in requirements:
+            remaining_by_name[requirement.fish_name] = (
+                remaining_by_name.get(requirement.fish_name, 0) + requirement.count
+            )
+
+        index = 0
+        while index < len(inventory):
+            entry = inventory[index]
+            if entry.is_unsellable:
+                index += 1
+                continue
+            remaining = remaining_by_name.get(entry.name, 0)
+            if remaining <= 0:
+                index += 1
+                continue
+            consumed_entry = inventory.pop(index)
+            remaining_by_name[entry.name] = remaining - 1
+            if on_fish_delivered:
+                on_fish_delivered(consumed_entry)
+        _mark_inventory_fish_counts_dirty()
 
     def _format_bait_stats(bait: BaitDefinition) -> str:
         return (
@@ -1286,6 +1401,220 @@ def show_market(
             _mark_inventory_fish_counts_dirty,
         )
 
+    def _handle_upgrade_rod_action(
+        current_balance: float,
+        *,
+        upgrade_gate_open: bool,
+        upgrade_gate_reason: str,
+    ) -> float:
+        if not upgrade_gate_open:
+            print(upgrade_gate_reason)
+            input("\nEnter para voltar.")
+            return current_balance
+
+        balance_local = current_balance
+        if not owned_rods:
+            print("Nenhuma vara disponivel para melhoria.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        clear_screen()
+        rod_options = [
+            MenuOption(str(index), rod.name, hint=_format_upgrade_summary(rod))
+            for index, rod in enumerate(owned_rods, start=1)
+        ]
+        rod_options.append(MenuOption("0", "Voltar"))
+        print_menu_panel(
+            "Melhorar Vara",
+            breadcrumb="MERCADO > MELHORAR VARA",
+            header_lines=[
+                f"Saldo atual: {format_currency(balance_local)}",
+                "Escolha a vara que recebera a melhoria.",
+            ],
+            options=rod_options,
+            prompt="Digite o numero da vara:",
+            show_badge=False,
+            width=92,
+        )
+        rod_choice = input("> ").strip()
+        if rod_choice == "0":
+            return balance_local
+        if not rod_choice.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        rod_index = int(rod_choice)
+        if not (1 <= rod_index <= len(owned_rods)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        selected_rod = owned_rods[rod_index - 1]
+        effective_rod = get_effective_rod(selected_rod, resolved_rod_upgrade_state)
+        stat_keys = [
+            stat
+            for stat in UPGRADEABLE_STATS
+            if float(getattr(selected_rod, stat, 0.0)) != 0.0
+        ]
+        if not stat_keys:
+            print("Esta vara nao possui stats elegiveis para melhoria.")
+            input("\nEnter para voltar.")
+            return balance_local
+        stat_options: List[MenuOption] = []
+        for index, stat in enumerate(stat_keys, start=1):
+            info = UPGRADEABLE_STATS[stat]
+            base_value = float(getattr(selected_rod, stat, 0.0))
+            current_value = float(getattr(effective_rod, stat, base_value))
+            current_bonus = resolved_rod_upgrade_state.get_bonus(selected_rod.name, stat)
+            bonus_hint = (
+                f" | Bonus salvo +{int(current_bonus * 100)}%"
+                if current_bonus > 0
+                else ""
+            )
+            stat_options.append(
+                MenuOption(
+                    str(index),
+                    str(info["label"]),
+                    hint=(
+                        f"Base {_format_upgrade_stat_value(stat, base_value)} | "
+                        f"Atual {_format_upgrade_stat_value(stat, current_value)}"
+                        f"{bonus_hint}"
+                    ),
+                )
+            )
+        stat_options.append(MenuOption("0", "Voltar"))
+
+        clear_screen()
+        print_menu_panel(
+            "Escolha o Stat",
+            breadcrumb="MERCADO > MELHORAR VARA",
+            header_lines=[
+                f"Vara: {selected_rod.name}",
+                f"Melhorias atuais: {_format_upgrade_summary(selected_rod)}",
+            ],
+            options=stat_options,
+            prompt="Digite o numero do stat:",
+            show_badge=False,
+            width=92,
+        )
+        stat_choice = input("> ").strip()
+        if stat_choice == "0":
+            return balance_local
+        if not stat_choice.isdigit():
+            print("Entrada invalida.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        stat_index = int(stat_choice)
+        if not (1 <= stat_index <= len(stat_keys)):
+            print("Numero fora do intervalo.")
+            input("\nEnter para voltar.")
+            return balance_local
+
+        selected_stat = stat_keys[stat_index - 1]
+        stat_label = str(UPGRADEABLE_STATS[selected_stat]["label"])
+        recipe = resolved_rod_upgrade_state.get_recipe(selected_rod.name)
+        if recipe is None:
+            requirements = generate_fish_requirements(_get_upgrade_pool_fish(), selected_rod)
+            if requirements:
+                recipe = resolved_rod_upgrade_state.set_recipe(selected_rod.name, requirements)
+        if recipe is None:
+            print("Nao foi possivel gerar requisitos para a melhoria nas pools desbloqueadas.")
+            input("\nEnter para voltar.")
+            return balance_local
+        requirements = list(recipe.fish_requirements)
+
+        cost = compute_upgrade_cost(selected_rod)
+        requirement_lines, has_all_fish = _build_upgrade_requirement_lines(requirements)
+        can_afford = balance_local >= cost
+        current_bonus = resolved_rod_upgrade_state.get_bonus(selected_rod.name, selected_stat)
+        current_value = (
+            apply_stat_bonus(selected_rod, selected_stat, current_bonus)
+            if current_bonus > 0
+            else float(getattr(selected_rod, selected_stat, 0.0))
+        )
+
+        header_lines = [
+            f"Vara: {selected_rod.name}",
+            f"Stat escolhido: {stat_label}",
+            (
+                f"Valor base: "
+                f"{_format_upgrade_stat_value(selected_stat, float(getattr(selected_rod, selected_stat, 0.0)))}"
+            ),
+            f"Valor atual: {_format_upgrade_stat_value(selected_stat, current_value)}",
+            f"Custo: {format_currency(cost)}",
+            "",
+            "Peixes necessarios:",
+            *requirement_lines,
+        ]
+        if not can_afford:
+            header_lines.append(
+                f"[red]Dinheiro insuficiente. Necessario: {format_currency(cost)}[/red]"
+            )
+        if not has_all_fish:
+            header_lines.append("[red]Voce nao possui todos os peixes necessarios.[/red]")
+
+        clear_screen()
+        if can_afford and has_all_fish:
+            options = [
+                MenuOption("1", "Confirmar melhoria"),
+                MenuOption("0", "Cancelar"),
+            ]
+            prompt = "Digite 1 para confirmar:"
+        else:
+            options = [MenuOption("0", "Voltar")]
+            prompt = "Digite 0 para voltar:"
+        print_menu_panel(
+            "Confirmar Melhoria",
+            breadcrumb="MERCADO > MELHORAR VARA",
+            header_lines=header_lines,
+            options=options,
+            prompt=prompt,
+            show_badge=False,
+            width=92,
+        )
+        confirmation = input("> ").strip()
+        if confirmation != "1" or not can_afford or not has_all_fish:
+            return balance_local
+
+        balance_local -= cost
+        if on_money_spent:
+            on_money_spent(cost)
+        _consume_upgrade_requirements(requirements)
+
+        previous_bonus = resolved_rod_upgrade_state.get_bonus(selected_rod.name, selected_stat)
+        previous_value = (
+            apply_stat_bonus(selected_rod, selected_stat, previous_bonus)
+            if previous_bonus > 0
+            else float(getattr(selected_rod, selected_stat, 0.0))
+        )
+        bonus = calculate_upgrade_bonus(list(requirements))
+        resolved_rod_upgrade_state.apply_upgrade(selected_rod.name, selected_stat, bonus)
+        resolved_rod_upgrade_state.clear_recipe(selected_rod.name)
+        upgraded_value = apply_stat_bonus(selected_rod, selected_stat, bonus)
+
+        clear_screen()
+        print_menu_panel(
+            "Melhoria Aplicada",
+            breadcrumb="MERCADO > MELHORAR VARA",
+            header_lines=[
+                f"[green]Melhoria aplicada! {stat_label} +{int(bonus * 100)}%[/green]",
+                f"Vara: {selected_rod.name}",
+                (
+                    f"{stat_label}: "
+                    f"{_format_upgrade_stat_value(selected_stat, previous_value)} -> "
+                    f"{_format_upgrade_stat_value(selected_stat, upgraded_value)}"
+                ),
+            ],
+            options=[MenuOption("0", "Voltar")],
+            prompt="Digite 0 para voltar:",
+            show_badge=False,
+            width=92,
+        )
+        input("> ")
+        return balance_local
+
     while True:
         _refresh_crafting_unlocks()
         clear_screen()
@@ -1301,12 +1630,12 @@ def show_market(
                 f"{minutes_left:02d}:{seconds_left:02d})"
             )
 
+        upgrade_gate_open, upgrade_gate_reason = _upgrade_gate_status()
+
         crafting_gate_open, crafting_gate_reason = _crafting_gate_status()
-        crafting_line = "6. Crafting de varas"
-        if not (crafting_definitions and crafting_state and crafting_progress):
-            crafting_line += " (indisponivel)"
-        elif not crafting_gate_open:
-            crafting_line += " (bloqueado)"
+        crafting_available = bool(
+            crafting_definitions and crafting_state and crafting_progress
+        )
 
         lines = [
             "🛒 === Mercado ===",
@@ -1324,10 +1653,15 @@ def show_market(
                 order_line,
                 "4. Appraise - rerolar kg + mutacao",
                 "5. Caixas de isca",
-                crafting_line,
-                "0. Voltar",
             ]
         )
+        if upgrade_gate_open:
+            lines.append("6. Melhorar vara")
+        if crafting_available and crafting_gate_open:
+            lines.append("7. Crafting de varas")
+        elif not crafting_available:
+            lines.append("7. Crafting de varas (indisponivel)")
+        lines.append("0. Voltar")
         print_spaced_lines(lines)
 
         choice = input("Escolha uma opcao: ").strip()
@@ -1355,6 +1689,14 @@ def show_market(
             continue
 
         if choice == "6":
+            balance = _handle_upgrade_rod_action(
+                balance,
+                upgrade_gate_open=upgrade_gate_open,
+                upgrade_gate_reason=upgrade_gate_reason,
+            )
+            continue
+
+        if choice == "7":
             balance = _handle_crafting_action(
                 balance,
                 crafting_gate_open=crafting_gate_open,

@@ -1,0 +1,14 @@
+{
+  "id": "pool_caverna_luminosa_100",
+  "name": "Luz Completa",
+  "trigger": {
+    "type": "fish_bestiary",
+    "target": { "pool": "Caverna Luminosa" },
+    "threshold_percent": 100
+  },
+  "rewards": [
+    { "type": "ui_color", "color_id": "crystal_violet" },
+    { "type": "money", "amount": 2800 },
+    { "type": "xp", "amount": 1600 }
+  ]
+}

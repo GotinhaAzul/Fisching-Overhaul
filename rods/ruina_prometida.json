@@ -1,0 +1,11 @@
+{
+  "name": "Ruina Prometida",
+  "luck": 0.25,
+  "kg_max": 280.0,
+  "control": 0.1,
+  "description": "O Ruina, porque usa de sua rigida mão em meu destino?",
+  "price": 0,
+  "unlocked_default": false,
+  "can_pierce": true,
+  "pierce_chance": 0.20
+}

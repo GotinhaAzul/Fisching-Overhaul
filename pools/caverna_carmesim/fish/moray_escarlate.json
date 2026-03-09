@@ -1,0 +1,10 @@
+{
+  "name": "Moray Escarlate",
+  "rarity": "Raro",
+  "description": "Uma moray de coloracao escarlate que se esconde nas fendas aquecidas da caverna. Sua mordida e poderosa e sua pele resiste a temperaturas extremas.",
+  "kg_min": 3.5,
+  "kg_max": 9.0,
+  "base_value": 62,
+  "sequence_len": 6,
+  "reaction_time_s": 1.7
+}
