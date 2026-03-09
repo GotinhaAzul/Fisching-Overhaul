@@ -4,7 +4,7 @@
   "pool_name": "Caverna Carmesim",
   "duration_minutes": 3,
   "check_interval_seconds": 90,
-  "disturbance_per_catch": 5,
+  "disturbance_per_catch": 1,
   "disturbance_max": 3000,
   "rarity_chances": {
     "Mitico": 2
