@@ -40,6 +40,7 @@ from utils.cosmetics import (
 )
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, format_inventory_entry, render_inventory
+from utils.shiny import ShinyConfig, load_shiny_config, roll_shiny_on_catch, roll_shiny_on_appraise
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.menu_input import read_menu_choice
 from utils.market import (
@@ -92,6 +93,7 @@ from utils.mutations import (
 )
 from utils.events import ActiveEvent, EventDefinition, EventManager
 from utils.hunts import ActiveHunt, HuntDefinition, HuntManager
+from utils.weather import WeatherDefinition, WeatherManager, load_weather
 from utils.pesca_autosave import autosave_state as _autosave_state_impl
 from utils.pesca_boot import (
     build_default_unlocked_pools,
@@ -118,7 +120,12 @@ from utils.perfect_catch import (
     parse_perfect_catch_config,
 )
 from utils.rods import Rod, load_rods
-from utils.rod_upgrades import RodUpgradeState, get_effective_rod, restore_rod_upgrade_state
+from utils.rod_upgrades import (
+    RodUpgradeState,
+    format_rod_stats,
+    get_effective_rod,
+    restore_rod_upgrade_state,
+)
 from utils.save_system import (
     get_default_save_path,
     load_game,
@@ -1033,6 +1040,7 @@ def render(
     perfect_threshold_ratio: float = 0.80,
     perfect_catch_enabled: bool = True,
     ability_counter_text: str = "",
+    weather_text: str = "",
 ):
     def _terminal_line_width(default: int = 80) -> int:
         try:
@@ -1069,6 +1077,7 @@ def render(
                 perfect_threshold_ratio=perfect_threshold_ratio,
                 perfect_catch_enabled=perfect_catch_enabled,
                 ability_counter_text=ability_counter_text,
+                weather_text=weather_text,
             ).lstrip("\r")
             _render_two_lines(line, seq_line)
             return
@@ -1127,6 +1136,7 @@ def show_main_menu(
     active_event: Optional[ActiveEvent],
     active_hunt: Optional[ActiveHunt],
     dev_mode: bool = False,
+    active_weather: Optional[WeatherDefinition] = None,
 ) -> str:
     if use_modern_ui():
         clear_screen()
@@ -1158,6 +1168,8 @@ def show_main_menu(
             )
             if hunt.description:
                 header_lines.append(f"  {hunt.description}")
+        if active_weather:
+            header_lines.append(f"{active_weather.icon} Clima: {active_weather.name}")
 
         options = [
             MenuOption("1", "Pescar", "Iniciar rodada"),
@@ -1211,6 +1223,8 @@ def show_main_menu(
         )
         if hunt.description:
             print(f"   {hunt.description}")
+    if active_weather:
+        print(f"{active_weather.icon} Clima: {active_weather.name}")
     print("1. Pescar")
     print("2. Pools")
     print("3. Inventario")
@@ -1247,6 +1261,7 @@ def show_dev_save_editor(
     mission_progress: MissionProgress,
     event_manager: EventManager,
     hunt_manager: HuntManager,
+    weather_manager: Optional[WeatherManager] = None,
 ) -> tuple[float, int, int, FishingPool, Rod, Optional[str]]:
     while True:
         if equipped_bait_id and (
@@ -1296,6 +1311,7 @@ def show_dev_save_editor(
                     MenuOption("15", "Force event", "Inicia um evento manualmente"),
                     MenuOption("16", "Add bait", "Adiciona isca ao inventario"),
                     MenuOption("17", "Unicode symbols", "Define true/false"),
+                    MenuOption("18", "Force weather", "Muda o clima manualmente"),
                     MenuOption("0", "Voltar", "Retorna ao menu principal"),
                 ],
                 prompt="Escolha uma opcao:",
@@ -1331,6 +1347,7 @@ def show_dev_save_editor(
             print("15. Force event")
             print("16. Add bait")
             print("17. Unicode symbols")
+            print("18. Force weather")
             print("0. Voltar")
             choice = input("Escolha uma opcao: ").strip()
 
@@ -1923,6 +1940,43 @@ def show_dev_save_editor(
             time.sleep(1)
             continue
 
+        if choice == "18":
+            if weather_manager is None:
+                print("Weather manager nao disponivel.")
+                time.sleep(1)
+                continue
+            weather_options = weather_manager.list_weathers()
+            if not weather_options:
+                print("Nao ha climas carregados.")
+                time.sleep(1)
+                continue
+
+            clear_screen()
+            print("=== Force weather ===")
+            for index, w in enumerate(weather_options, start=1):
+                print(f"{index}. {w.icon} {w.name}")
+            selected = input("Escolha o numero do clima (Enter cancela): ").strip()
+            if not selected:
+                continue
+            try:
+                selected_index = int(selected)
+            except ValueError:
+                print("Opcao invalida.")
+                time.sleep(1)
+                continue
+            if not (1 <= selected_index <= len(weather_options)):
+                print("Opcao invalida.")
+                time.sleep(1)
+                continue
+            selected_weather = weather_options[selected_index - 1]
+            forced = weather_manager.force_weather(selected_weather.id)
+            if not forced:
+                print("Falha ao mudar clima.")
+            else:
+                print(f"Clima forcado: {forced.icon} {forced.name}.")
+            time.sleep(1)
+            continue
+
         print("Opcao invalida.")
         time.sleep(1)
 
@@ -1978,15 +2032,6 @@ def autosave_state(
         hunt_manager,
         serialize_bestiary_reward_state,
     )
-
-
-def format_rod_stats(rod: Rod) -> str:
-    return (
-        f"Sorte: {rod.luck:.0%} | KGMax: {rod.kg_max:g} | "
-        f"Controle: {rod.control:+.1f}s"
-    )
-
-
 def format_bait_stats(bait: BaitDefinition) -> str:
     return (
         f"Sorte: {bait.luck:+.0%} | KG+: {bait.kg_plus:+g} | "
@@ -2001,6 +2046,7 @@ def show_inventory(
     storage: List[InventoryEntry],
     owned_rods: List[Rod],
     equipped_rod: Rod,
+    rod_upgrade_state: RodUpgradeState,
     bait_inventory: Dict[str, int],
     bait_by_id: Dict[str, BaitDefinition],
     equipped_bait_id: Optional[str],
@@ -2420,7 +2466,7 @@ def show_inventory(
                 header_lines=[
                     f"Peixes: {len(inventory)} | Peso total: {total_kg:0.2f}kg",
                     f"Vara equipada: {equipped_rod.name}",
-                    f"Stats: {format_rod_stats(equipped_rod)}",
+                    f"Stats: {format_rod_stats(equipped_rod, rod_upgrade_state)}",
                     f"Isca ativa: {active_bait_label}",
                     active_bait_stats if active_bait_stats else "Buff de isca: -",
                 ],
@@ -2463,7 +2509,7 @@ def show_inventory(
                         MenuOption(
                             str(idx),
                             rod.name,
-                            format_rod_stats(rod),
+                            format_rod_stats(rod, rod_upgrade_state),
                             status="equipada" if rod.name == equipped_rod.name else "",
                         )
                         for idx, rod in enumerate(rods_on_page, start=1)
@@ -2591,7 +2637,7 @@ def show_inventory(
         start, end, total_pages = get_page_bounds()
         print("=== Inventario ===")
         print("\nVara equipada:")
-        print(f"- {equipped_rod.name} ({format_rod_stats(equipped_rod)})")
+        print(f"- {equipped_rod.name} ({format_rod_stats(equipped_rod, rod_upgrade_state)})")
         print("\nIsca ativa:")
         print(f"- {active_bait_label}")
         if active_bait_stats:
@@ -2641,7 +2687,10 @@ def show_inventory(
                 print("Escolha a vara para equipar:")
                 for idx, rod in enumerate(rods_on_page, start=1):
                     selected_marker = " (equipada)" if rod.name == equipped_rod.name else ""
-                    print(f"{idx}. {rod.name} - {format_rod_stats(rod)}{selected_marker}")
+                    print(
+                        f"{idx}. {rod.name} - "
+                        f"{format_rod_stats(rod, rod_upgrade_state)}{selected_marker}"
+                    )
                     print(f"   {rod.description}")
                 if rod_page_slice.total_pages > 1:
                     print(
@@ -2747,7 +2796,8 @@ def run_fishing_round(
     xp: int,
     event_manager: Optional[EventManager],
     hunt_manager: Optional[HuntManager],
-    on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation]], None]] = None,
+    weather_manager: Optional[WeatherManager] = None,
+    on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation], bool], None]] = None,
 ) -> tuple[int, int, Optional[str]]:
     recent_catch_times: deque[float] = deque()
     pending_reengage_fish_name: Optional[str] = None
@@ -2766,12 +2816,18 @@ def run_fishing_round(
             hunt_manager.suppress_notifications(False)
             for note in hunt_manager.pop_notifications():
                 print(f"\n🔔 {note}")
+        if weather_manager:
+            weather_manager.suppress_notifications(False)
+            for note in weather_manager.pop_notifications():
+                print(f"\n🔔 {note}")
 
     while True:
         if event_manager:
             event_manager.suppress_notifications(True)
         if hunt_manager:
             hunt_manager.suppress_notifications(True)
+        if weather_manager:
+            weather_manager.suppress_notifications(True)
         clear_screen()
         equipped_bait_id, active_bait, active_bait_quantity = resolve_active_bait(
             bait_inventory,
@@ -2786,6 +2842,7 @@ def run_fishing_round(
         print("=== Pesca (WASD em tempo real) ===")
         print(f"Pool selecionada: {selected_pool.name}")
         print(f"Vara equipada: {equipped_rod.name}")
+        print(f"Stats da vara: {format_rod_stats(equipped_rod, rod_upgrade_state)}")
         if active_bait:
             print(f"Isca ativa: {active_bait.name} x{active_bait_quantity}")
             print(f"Buff da isca: {format_bait_stats(active_bait)}")
@@ -2836,7 +2893,10 @@ def run_fishing_round(
         else:
             combined_weights = selected_pool.rarity_weights
 
+        weather = weather_manager.get_active_weather() if weather_manager else None
         rod_luck = effective_luck * (event_def.luck_multiplier if event_def else 1.0)
+        if weather:
+            rod_luck += weather.luck_bonus
         reused_fish_attempt = False
         fish: FishProfile
         if pending_reengage_fish_name:
@@ -2891,7 +2951,8 @@ def run_fishing_round(
         now_s = time.monotonic()
         prune_recent_catch_times(now_s)
         pace_multiplier = _reel_time_multiplier_from_pace(len(recent_catch_times))
-        base_time_limit_s = max(0.5, attempt.time_limit_s + effective_control)
+        weather_control_bonus = weather.control_bonus if weather else 0.0
+        base_time_limit_s = max(0.5, attempt.time_limit_s + effective_control + weather_control_bonus)
         attempt = FishingAttempt(
             sequence=attempt.sequence,
             time_limit_s=max(0.5, base_time_limit_s * pace_multiplier),
@@ -2960,6 +3021,7 @@ def run_fishing_round(
                 result = game.check_timeout()
 
             ability_counter_text = game.get_ability_counter_text()
+            weather_hud_text = f"{weather.icon} {weather.name}" if weather else ""
             render(
                 attempt,
                 game.typed,
@@ -2968,6 +3030,7 @@ def run_fishing_round(
                 perfect_threshold_ratio=perfect_catch_cfg.threshold_ratio,
                 perfect_catch_enabled=perfect_catch_cfg.enabled,
                 ability_counter_text=ability_counter_text,
+                weather_text=weather_hud_text,
             )
             time.sleep(0.016)
 
@@ -2997,12 +3060,14 @@ def run_fishing_round(
             greed_triggered = game.greed_activated
             if greed_triggered:
                 mutation_gold_multiplier *= 2.0
+            is_shiny = roll_shiny_on_catch(shiny_config)
             inventory.append(
                 InventoryEntry(
                     name=fish.name,
                     rarity=fish.rarity,
                     kg=caught_kg,
                     base_value=fish.base_value,
+                    is_shiny=is_shiny,
                     mutation_name=mutation_name,
                     mutation_xp_multiplier=mutation_xp_multiplier,
                     mutation_gold_multiplier=mutation_gold_multiplier,
@@ -3019,6 +3084,7 @@ def run_fishing_round(
                             rarity=fish.rarity,
                             kg=caught_kg,
                             base_value=fish.base_value,
+                            is_shiny=is_shiny,
                             mutation_name=mutation_name,
                             mutation_xp_multiplier=mutation_xp_multiplier,
                             mutation_gold_multiplier=mutation_gold_multiplier,
@@ -3028,12 +3094,13 @@ def run_fishing_round(
                     )
                     dupe_triggered = True
             if on_fish_caught:
-                on_fish_caught(fish, mutation)
+                on_fish_caught(fish, mutation, is_shiny)
             if hunt_manager:
                 hunt_manager.record_catch(selected_pool.name)
             discovered_fish.add(fish.name)
             base_xp = xp_for_rarity(fish.rarity)
             event_xp_multiplier = event_def.xp_multiplier if event_def else 1.0
+            weather_xp_multiplier = weather.xp_multiplier if weather else 1.0
             total_time_s = max(0.001, game.total_time_limit())
             elapsed_s = max(0.0, result.elapsed_s)
             perfect_catch_hit = is_perfect_catch(
@@ -3054,6 +3121,7 @@ def run_fishing_round(
                         * mutation_xp_multiplier
                         * event_xp_multiplier
                         * perfect_xp_multiplier
+                        * weather_xp_multiplier
                     )
                 ),
             )
@@ -3084,6 +3152,8 @@ def run_fishing_round(
                 print(f"🔱 Pierce ativado {game.pierce_activations}x durante a pesca!")
             if greed_triggered:
                 print("💰 Greed ativado: valor do peixe dobrado!")
+            if is_shiny:
+                console.print(f"[#FFD700]{shiny_config.display.catch_message}[/#FFD700]")
             print(f"✨ Ganhou {gained_xp} XP.")
             if level_ups:
                 print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
@@ -3109,7 +3179,11 @@ def run_fishing_round(
                     ]
                     frenzy_time = max(
                         0.5,
-                        (fish.reaction_time_s + effective_control)
+                        (
+                            fish.reaction_time_s
+                            + effective_control
+                            + (weather.control_bonus if weather else 0.0)
+                        )
                         * frenzy_time_factor,
                     )
                     frenzy_attempt = FishingAttempt(
@@ -3146,6 +3220,7 @@ def run_fishing_round(
                             perfect_threshold_ratio=perfect_catch_cfg.threshold_ratio,
                             perfect_catch_enabled=False,
                             ability_counter_text=f"Frenzy #{frenzy_round}",
+                            weather_text=f"{weather.icon} {weather.name}" if weather else "",
                         )
                         time.sleep(0.016)
 
@@ -3176,12 +3251,14 @@ def run_fishing_round(
                     frenzy_mut_name = frenzy_mutation.name if frenzy_mutation else None
                     frenzy_mut_xp = frenzy_mutation.xp_multiplier if frenzy_mutation else 1.0
                     frenzy_mut_gold = frenzy_mutation.gold_multiplier if frenzy_mutation else 1.0
+                    frenzy_is_shiny = roll_shiny_on_catch(shiny_config)
                     inventory.append(
                         InventoryEntry(
                             name=frenzy_fish.name,
                             rarity=frenzy_fish.rarity,
                             kg=frenzy_kg,
                             base_value=frenzy_fish.base_value,
+                            is_shiny=frenzy_is_shiny,
                             mutation_name=frenzy_mut_name,
                             mutation_xp_multiplier=frenzy_mut_xp,
                             mutation_gold_multiplier=frenzy_mut_gold,
@@ -3190,10 +3267,19 @@ def run_fishing_round(
                         )
                     )
                     if on_fish_caught:
-                        on_fish_caught(frenzy_fish, frenzy_mutation)
+                        on_fish_caught(frenzy_fish, frenzy_mutation, frenzy_is_shiny)
                     discovered_fish.add(frenzy_fish.name)
                     frenzy_base_xp = xp_for_rarity(frenzy_fish.rarity)
-                    frenzy_xp = max(1, int(round(frenzy_base_xp * frenzy_mut_xp)))
+                    frenzy_xp = max(
+                        1,
+                        int(
+                            round(
+                                frenzy_base_xp
+                                * frenzy_mut_xp
+                                * (weather.xp_multiplier if weather else 1.0)
+                            )
+                        ),
+                    )
                     level, xp, frenzy_lvl_ups = apply_xp_gain(level, xp, frenzy_xp)
                     console.print(
                         f"🎣 Frenzy! Pescou: {frenzy_fish.name} "
@@ -3201,6 +3287,8 @@ def run_fishing_round(
                     )
                     if frenzy_mutation:
                         print(f"🧬 Mutação: {frenzy_mutation.name}")
+                    if frenzy_is_shiny:
+                        console.print(f"[#FFD700]{shiny_config.display.catch_message}[/#FFD700]")
                     print(f"✨ +{frenzy_xp} XP")
                     if frenzy_lvl_ups:
                         print(f"⬆️  Subiu {frenzy_lvl_ups} nível(is)! Agora está no nível {level}.")
@@ -3264,7 +3352,12 @@ def main(dev_mode: bool = False):
         valid_pool_names={pool.name for pool in pools},
     )
     hunt_manager = HuntManager(hunts, dev_tools_enabled=dev_mode)
+    weather_base_dir = Path(__file__).resolve().parent.parent
+    weather_defs, weather_config = load_weather(weather_base_dir)
+    weather_manager = WeatherManager(weather_defs, weather_config, dev_tools_enabled=dev_mode)
+    shiny_config = load_shiny_config(Path(__file__).resolve().parent.parent)
     event_manager.start()
+    weather_manager.start()
     rods_dir = Path(__file__).resolve().parent.parent / "rods"
     available_rods = load_rods(rods_dir)
     mutations_dir = Path(__file__).resolve().parent.parent / "mutations"
@@ -3535,9 +3628,13 @@ def main(dev_mode: bool = False):
                 print(f"\n🔔 {note}")
         return notes
 
-    def on_fish_caught_for_progress(fish: FishProfile, mutation: Optional[Mutation]) -> None:
+    def on_fish_caught_for_progress(
+        fish: FishProfile,
+        mutation: Optional[Mutation],
+        is_shiny: bool,
+    ) -> None:
         mutation_name = mutation.name if mutation else None
-        mission_progress.record_fish_caught(fish.name, mutation_name)
+        mission_progress.record_fish_caught(fish.name, mutation_name, is_shiny)
         crafting_progress.record_find(fish.name, mutation_name)
         mark_inventory_fish_counts_dirty()
 
@@ -3656,6 +3753,7 @@ def main(dev_mode: bool = False):
             play_time_recorded_for_loop = False
             active_event = event_manager.get_active_event()
             active_hunt = hunt_manager.get_active_hunt_for_pool(selected_pool.name)
+            active_weather = weather_manager.get_active_weather()
             choice = show_main_menu(
                 selected_pool,
                 balance,
@@ -3664,6 +3762,7 @@ def main(dev_mode: bool = False):
                 active_event,
                 active_hunt,
                 dev_mode=dev_mode,
+                active_weather=active_weather,
             )
             if choice == "1":
                 level, xp, equipped_bait_id = run_fishing_round(
@@ -3680,6 +3779,7 @@ def main(dev_mode: bool = False):
                     xp,
                     event_manager,
                     hunt_manager,
+                    weather_manager=weather_manager,
                     on_fish_caught=on_fish_caught_for_progress,
                 )
                 mark_inventory_fish_counts_dirty()
@@ -3692,6 +3792,7 @@ def main(dev_mode: bool = False):
                     storage,
                     owned_rods,
                     equipped_rod,
+                    rod_upgrade_state,
                     bait_inventory,
                     bait_by_id,
                     equipped_bait_id,
@@ -3739,6 +3840,7 @@ def main(dev_mode: bool = False):
                     on_money_spent=mission_progress.record_money_spent,
                     on_fish_sold=lambda entry: mission_progress.record_fish_sold(entry.name),
                     on_appraise_completed=on_market_appraise_completed,
+                    shiny_config=shiny_config,
                 )
                 mark_inventory_fish_counts_dirty()
             elif choice == "5":
@@ -3755,7 +3857,7 @@ def main(dev_mode: bool = False):
                     bestiary_rewards=bestiary_rewards,
                     bestiary_reward_state=bestiary_reward_state,
                     on_claim_bestiary_reward=apply_bestiary_reward,
-                    discovered_shiny_fish=set(mission_progress.shiny_fish_caught_by_name.keys()),
+                    discovered_shiny_fish={e.name for e in inventory if e.is_shiny},
                 )
             elif choice == "6":
                 level, xp, balance = show_missions_menu(
@@ -3805,6 +3907,7 @@ def main(dev_mode: bool = False):
                     mission_progress=mission_progress,
                     event_manager=event_manager,
                     hunt_manager=hunt_manager,
+                    weather_manager=weather_manager,
                 )
                 mark_inventory_fish_counts_dirty()
             elif choice == "0":
@@ -3908,6 +4011,7 @@ def main(dev_mode: bool = False):
             )
         event_manager.stop()
         hunt_manager.stop()
+        weather_manager.stop()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,10 @@
+{
+  "name": "Vara das Nuvens",
+  "luck": 0.10,
+  "kg_max": 80.0,
+  "control": 0.35,
+  "description": "Leve como o ar rarefeito de Celestia. Responde bem ao toque, mas nao aguenta os maiores monstros do ceu.",
+  "price": 4500,
+  "unlocked_default": false,
+  "unlockswithpool": "Celestia"
+}

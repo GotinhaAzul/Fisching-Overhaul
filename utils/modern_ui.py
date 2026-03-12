@@ -375,6 +375,7 @@ def render_fishing_hud_line(
     perfect_threshold_ratio: float = 0.20,
     perfect_catch_enabled: bool = True,
     ability_counter_text: str = "",
+    weather_text: str = "",
 ) -> str:
     seq = attempt.sequence
     typed_count = len(typed)
@@ -426,6 +427,9 @@ def render_fishing_hud_line(
         hud_text.append(f" | {ability_segment}")
     hud_text.append(f" | {time_segment}", style=bar_color)
     hud_text.append(f" | {perfect_label}")
+    weather_segment = weather_text.strip()
+    if weather_segment:
+        hud_text.append(f" | {weather_segment}")
     if esc_segment:
         hud_text.append(f" | {esc_segment}")
 

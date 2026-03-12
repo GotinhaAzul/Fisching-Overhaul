@@ -1,0 +1,10 @@
+{
+  "name": "Dragao Celeste",
+  "rarity": "Raro",
+  "kg_min": 8.0,
+  "kg_max": 18.0,
+  "base_value": 78,
+  "sequence_len": 7,
+  "reaction_time_s": 2.0,
+  "description": "O Dragao Celeste e cercado por um brilho dourado permanente que distorce o ar ao seu redor como calor sobre pedra. Seu corpo longo e sinuoso ondula entre as rochas flutuantes com autoridade silenciosa. Outros peixes abrem caminho quando ele se aproxima, e ate as correntes parecem desviar de sua rota. Enfrenta-lo na linha e sentir a teimosia de algo que nunca precisou fugir de nada."
+}

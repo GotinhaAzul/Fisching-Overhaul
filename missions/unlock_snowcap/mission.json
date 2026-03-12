@@ -20,7 +20,7 @@
     },
     {
       "type": "unlock_missions",
-      "mission_ids": ["helpafriend1"]
+      "mission_ids": ["helpafriend1", "unlock_celestia"]
     }
   ]
 }

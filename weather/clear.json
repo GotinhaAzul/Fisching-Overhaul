@@ -1,0 +1,8 @@
+{
+    "name": "Limpo",
+    "description": "Céu claro e sol brilhante. Condições normais de pesca.",
+    "icon": "☀️",
+    "xp_multiplier": 1.0,
+    "luck_bonus": 0.0,
+    "control_bonus": 0.0
+}

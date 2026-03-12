@@ -26,8 +26,8 @@ Cada missão fica em uma pasta com um `mission.json`. Isso facilita adicionar, r
 | `earn_money` | `amount` | Total de dinheiro acumulado (ganho). |
 | `spend_money` | `amount` | Dinheiro pago diretamente na opção "Pagar dinheiro para a missão". |
 | `level` | `level` | Alcançar um nível mínimo. |
-| `catch_fish` | `count`, `fish_name?` | Capturar peixes (geral ou específico). |
-| `deliver_fish` | `count`, `fish_name?` | Entregar peixes para missão (geral ou específico). |
+| `catch_fish` | `count`, `fish_name?`, `is_shiny?` | Capturar peixes (geral ou específico), com filtro opcional por shiny. |
+| `deliver_fish` | `count`, `fish_name?`, `is_shiny?` | Entregar peixes para missão (geral ou específico), com filtro opcional por shiny. |
 | `sell_fish` | `count`, `fish_name?` | Vender peixes no mercado (geral ou específico). |
 | `catch_mutation` | `count`, `mutation_name?` | Capturar peixes com mutação (geral ou específica). |
 | `deliver_mutation` | `count`, `mutation_name?` | Entregar peixes com mutação para missão. |
@@ -53,4 +53,5 @@ Cada missão fica em uma pasta com um `mission.json`. Isso facilita adicionar, r
 
 - `starts_unlocked: true` indica que a missão começa disponível.
 - `fish_name`, `mutation_name` e `pool_name` devem bater exatamente com os nomes dos arquivos cadastrados.
+- `is_shiny: true` exige apenas peixes shiny; `is_shiny: false` exige apenas peixes não-shiny; sem o campo, qualquer um conta.
 - Use nomes curtos no `id` para facilitar dependências (ex.: desbloquear outras missões).

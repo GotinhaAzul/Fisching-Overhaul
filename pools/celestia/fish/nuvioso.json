@@ -1,0 +1,10 @@
+{
+  "name": "Nuvioso",
+  "rarity": "Comum",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 9,
+  "sequence_len": 5,
+  "reaction_time_s": 2.8,
+  "description": "O Nuvioso parece um fragmento de nuvem que ganhou vida propria. Seu corpo macio e esbranquicado se desfaz em vapor quando exposto ao sol direto, so para se reformar minutos depois na sombra de uma rocha flutuante. Captura-lo exige paciencia, porque a linha parece atravessar nada ate o momento em que ele decide resistir."
+}

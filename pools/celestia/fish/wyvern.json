@@ -1,0 +1,10 @@
+{
+  "name": "Wyvern",
+  "rarity": "Mitico",
+  "kg_min": 160.0,
+  "kg_max": 550.0,
+  "base_value": 2000,
+  "sequence_len": 22,
+  "reaction_time_s": 7.2,
+  "description": "O Wyvern e a razao pela qual a ilha flutua, ou pelo menos e o que os mais antigos acreditam. Seu corpo colossal projeta uma sombra que escurece Celestia inteira quando ele passa. Nuvens se formam e se desfazem ao redor de suas nadadeiras, e o vento muda de direcao ao sabor de seus movimentos. Ninguem sabe ao certo se ele e um peixe, um espirito ou um pedaco do proprio ceu que decidiu se mover. Fisga-lo e enfrentar algo que existia antes de qualquer pescador pisar nessas rochas."
+}

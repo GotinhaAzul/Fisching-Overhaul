@@ -1,0 +1,13 @@
+{
+  "name": "Celestia",
+  "description": "Uma ilha flutuante acima das nuvens, onde rios de luz correm entre rochas suspensas e peixes nadam no ar rarefeito como se a gravidade fosse apenas uma sugestao.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 38,
+    "Incomum": 36,
+    "Raro": 16,
+    "Epico": 10,
+    "Lendario": 2,
+    "Mitico": 0.4
+  }
+}

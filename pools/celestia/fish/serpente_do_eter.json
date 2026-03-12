@@ -1,0 +1,10 @@
+{
+  "name": "Serpente do Eter",
+  "rarity": "Lendario",
+  "kg_min": 20.0,
+  "kg_max": 45.0,
+  "base_value": 195,
+  "sequence_len": 11,
+  "reaction_time_s": 1.8,
+  "description": "A Serpente do Eter se move entre camadas de realidade como se o ceu de Celestia fosse apenas uma das muitas superficies que ela habita. Seu corpo semitransparente revela orgaos internos que pulsam com luz propria, e seu olhar fixo transmite uma inteligencia perturbadora. Pescadores que a encontraram relatam que o tempo pareceu desacelerar ao redor dela. Na linha, sua forca nao vem de velocidade, mas de uma pressao constante e implacavel que testa a resistencia ate o limite."
+}

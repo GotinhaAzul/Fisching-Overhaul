@@ -32,9 +32,12 @@ class InventoryEntry:
     is_unsellable: bool = False
 
 
-def calculate_entry_value(entry: InventoryEntry) -> float:
+def calculate_entry_value(entry: InventoryEntry, *, shiny_multiplier: float = 1.55) -> float:
     base_total = entry.base_value * (entry.kg / 100 + 1)
-    return base_total * entry.mutation_gold_multiplier
+    multiplier = entry.mutation_gold_multiplier
+    if entry.is_shiny:
+        multiplier *= shiny_multiplier
+    return base_total * multiplier
 
 
 def format_inventory_entry(

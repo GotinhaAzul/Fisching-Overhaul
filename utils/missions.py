@@ -57,11 +57,15 @@ class MissionProgress:
     fish_caught: int = 0
     fish_delivered: int = 0
     fish_sold: int = 0
+    shiny_fish_caught: int = 0
+    shiny_fish_delivered: int = 0
     mutated_fish_caught: int = 0
     mutated_fish_delivered: int = 0
     fish_caught_by_name: Dict[str, int] = field(default_factory=dict)
     fish_delivered_by_name: Dict[str, int] = field(default_factory=dict)
     fish_sold_by_name: Dict[str, int] = field(default_factory=dict)
+    shiny_fish_caught_by_name: Dict[str, int] = field(default_factory=dict)
+    shiny_fish_delivered_by_name: Dict[str, int] = field(default_factory=dict)
     fish_caught_with_mutation_by_name: Dict[str, int] = field(default_factory=dict)
     fish_delivered_with_mutation_by_name: Dict[str, int] = field(default_factory=dict)
     fish_delivered_with_mutation_pair_counts: Dict[str, int] = field(default_factory=dict)
@@ -82,9 +86,19 @@ class MissionProgress:
             self.total_mission_money_paid += amount
             self.total_money_spent += amount
 
-    def record_fish_caught(self, fish_name: str, mutation_name: Optional[str]) -> None:
+    def record_fish_caught(
+        self,
+        fish_name: str,
+        mutation_name: Optional[str],
+        is_shiny: bool = False,
+    ) -> None:
         self.fish_caught += 1
         self.fish_caught_by_name[fish_name] = self.fish_caught_by_name.get(fish_name, 0) + 1
+        if is_shiny:
+            self.shiny_fish_caught += 1
+            self.shiny_fish_caught_by_name[fish_name] = (
+                self.shiny_fish_caught_by_name.get(fish_name, 0) + 1
+            )
         if mutation_name:
             self.mutated_fish_caught += 1
             self.fish_caught_with_mutation_by_name[fish_name] = (
@@ -94,9 +108,19 @@ class MissionProgress:
                 self.mutations_caught_by_name.get(mutation_name, 0) + 1
             )
 
-    def record_fish_delivered(self, fish_name: str, mutation_name: Optional[str]) -> None:
+    def record_fish_delivered(
+        self,
+        fish_name: str,
+        mutation_name: Optional[str],
+        is_shiny: bool = False,
+    ) -> None:
         self.fish_delivered += 1
         self.fish_delivered_by_name[fish_name] = self.fish_delivered_by_name.get(fish_name, 0) + 1
+        if is_shiny:
+            self.shiny_fish_delivered += 1
+            self.shiny_fish_delivered_by_name[fish_name] = (
+                self.shiny_fish_delivered_by_name.get(fish_name, 0) + 1
+            )
         if mutation_name:
             self.mutated_fish_delivered += 1
             self.fish_delivered_with_mutation_by_name[fish_name] = (
@@ -188,12 +212,16 @@ def serialize_mission_progress(progress: MissionProgress) -> Dict[str, object]:
         "fish_caught": progress.fish_caught,
         "fish_delivered": progress.fish_delivered,
         "fish_sold": progress.fish_sold,
+        "shiny_fish_caught": progress.shiny_fish_caught,
+        "shiny_fish_delivered": progress.shiny_fish_delivered,
         "mutated_fish_caught": progress.mutated_fish_caught,
         "mutated_fish_delivered": progress.mutated_fish_delivered,
         # Snapshot maps to avoid mission baselines sharing mutable dict references.
         "fish_caught_by_name": dict(progress.fish_caught_by_name),
         "fish_delivered_by_name": dict(progress.fish_delivered_by_name),
         "fish_sold_by_name": dict(progress.fish_sold_by_name),
+        "shiny_fish_caught_by_name": dict(progress.shiny_fish_caught_by_name),
+        "shiny_fish_delivered_by_name": dict(progress.shiny_fish_delivered_by_name),
         "fish_caught_with_mutation_by_name": dict(progress.fish_caught_with_mutation_by_name),
         "fish_delivered_with_mutation_by_name": dict(progress.fish_delivered_with_mutation_by_name),
         "fish_delivered_with_mutation_pair_counts": dict(progress.fish_delivered_with_mutation_pair_counts),
@@ -215,11 +243,17 @@ def restore_mission_progress(raw_progress: object) -> MissionProgress:
     progress.fish_caught = _safe_int(raw_progress.get("fish_caught"))
     progress.fish_delivered = _safe_int(raw_progress.get("fish_delivered"))
     progress.fish_sold = _safe_int(raw_progress.get("fish_sold"))
+    progress.shiny_fish_caught = _safe_int(raw_progress.get("shiny_fish_caught"))
+    progress.shiny_fish_delivered = _safe_int(raw_progress.get("shiny_fish_delivered"))
     progress.mutated_fish_caught = _safe_int(raw_progress.get("mutated_fish_caught"))
     progress.mutated_fish_delivered = _safe_int(raw_progress.get("mutated_fish_delivered"))
     progress.fish_caught_by_name = _safe_str_int_map(raw_progress.get("fish_caught_by_name"))
     progress.fish_delivered_by_name = _safe_str_int_map(raw_progress.get("fish_delivered_by_name"))
     progress.fish_sold_by_name = _safe_str_int_map(raw_progress.get("fish_sold_by_name"))
+    progress.shiny_fish_caught_by_name = _safe_str_int_map(raw_progress.get("shiny_fish_caught_by_name"))
+    progress.shiny_fish_delivered_by_name = _safe_str_int_map(
+        raw_progress.get("shiny_fish_delivered_by_name")
+    )
     progress.fish_caught_with_mutation_by_name = _safe_str_int_map(
         raw_progress.get("fish_caught_with_mutation_by_name")
     )
@@ -927,8 +961,9 @@ def _deliver_fish_for_mission(
     print("\nPeixes que podem ser entregues:")
     for idx in valid_indexes:
         entry = inventory[idx - 1]
+        shiny_label = " ✦ Shiny" if entry.is_shiny else ""
         mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
-        print(f"{idx}. {entry.name} ({entry.kg:0.2f}kg){mutation_label}")
+        print(f"{idx}. {entry.name} ({entry.kg:0.2f}kg){shiny_label}{mutation_label}")
 
     deliver_cap = (
         min(len(valid_indexes), max_deliveries)
@@ -945,7 +980,11 @@ def _deliver_fish_for_mission(
         delivered_count = 0
         for idx in sorted(to_deliver, reverse=True):
             delivered = inventory.pop(idx - 1)
-            progress.record_fish_delivered(delivered.name, delivered.mutation_name)
+            progress.record_fish_delivered(
+                delivered.name,
+                delivered.mutation_name,
+                delivered.is_shiny,
+            )
             delivered_count += 1
         return delivered_count
 
@@ -959,7 +998,11 @@ def _deliver_fish_for_mission(
         return 0
 
     delivered = inventory.pop(selected_index - 1)
-    progress.record_fish_delivered(delivered.name, delivered.mutation_name)
+    progress.record_fish_delivered(
+        delivered.name,
+        delivered.mutation_name,
+        delivered.is_shiny,
+    )
     return 1
 
 
@@ -971,8 +1014,11 @@ def _entry_matches_delivery_requirements(
         fish_name = requirement.get("fish_name")
         mutation_name = requirement.get("mutation_name")
         req_type = requirement.get("type")
+        is_shiny = _requirement_shiny_filter(requirement)
 
         if isinstance(fish_name, str) and not _fish_name_matches(entry.name, fish_name):
+            continue
+        if is_shiny is not None and entry.is_shiny != is_shiny:
             continue
         if req_type == "deliver_mutation":
             if not entry.mutation_name:
@@ -1096,15 +1142,35 @@ def _format_catch_fish_requirement(
 ) -> Tuple[str, int, int, bool]:
     target = _safe_int(requirement.get("count"))
     fish_name = requirement.get("fish_name")
+    is_shiny = _requirement_shiny_filter(requirement)
     if isinstance(fish_name, str):
-        current = max(
-            0,
-            _count_fish_name(progress.fish_caught_by_name, fish_name)
-            - _count_fish_name(baseline_progress.fish_caught_by_name, fish_name),
+        current = _fish_count_delta(
+            progress.fish_caught_by_name,
+            baseline_progress.fish_caught_by_name,
+            progress.shiny_fish_caught_by_name,
+            baseline_progress.shiny_fish_caught_by_name,
+            fish_name=fish_name,
+            is_shiny=is_shiny,
         )
-        return f"Capturar {fish_name}", current, target, current >= target
-    current = max(0, progress.fish_caught - baseline_progress.fish_caught)
-    return "Capturar peixes", current, target, current >= target
+        return (
+            _format_shiny_requirement_label("Capturar", fish_name, is_shiny),
+            current,
+            target,
+            current >= target,
+        )
+    current = _fish_count_delta(
+        progress.fish_caught,
+        baseline_progress.fish_caught,
+        progress.shiny_fish_caught,
+        baseline_progress.shiny_fish_caught,
+        is_shiny=is_shiny,
+    )
+    return (
+        _format_shiny_requirement_label("Capturar", "peixes", is_shiny),
+        current,
+        target,
+        current >= target,
+    )
 
 
 def _format_deliver_fish_requirement(
@@ -1121,15 +1187,35 @@ def _format_deliver_fish_requirement(
 ) -> Tuple[str, int, int, bool]:
     target = _safe_int(requirement.get("count"))
     fish_name = requirement.get("fish_name")
+    is_shiny = _requirement_shiny_filter(requirement)
     if isinstance(fish_name, str):
-        current = max(
-            0,
-            _count_fish_name(progress.fish_delivered_by_name, fish_name)
-            - _count_fish_name(baseline_progress.fish_delivered_by_name, fish_name),
+        current = _fish_count_delta(
+            progress.fish_delivered_by_name,
+            baseline_progress.fish_delivered_by_name,
+            progress.shiny_fish_delivered_by_name,
+            baseline_progress.shiny_fish_delivered_by_name,
+            fish_name=fish_name,
+            is_shiny=is_shiny,
         )
-        return f"Entregar {fish_name}", current, target, current >= target
-    current = max(0, progress.fish_delivered - baseline_progress.fish_delivered)
-    return "Entregar peixes", current, target, current >= target
+        return (
+            _format_shiny_requirement_label("Entregar", fish_name, is_shiny),
+            current,
+            target,
+            current >= target,
+        )
+    current = _fish_count_delta(
+        progress.fish_delivered,
+        baseline_progress.fish_delivered,
+        progress.shiny_fish_delivered,
+        baseline_progress.shiny_fish_delivered,
+        is_shiny=is_shiny,
+    )
+    return (
+        _format_shiny_requirement_label("Entregar", "peixes", is_shiny),
+        current,
+        target,
+        current >= target,
+    )
 
 
 def _format_sell_fish_requirement(
@@ -1503,6 +1589,62 @@ def _extract_string_list(value: object) -> List[str]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, str)]
+
+
+def _requirement_shiny_filter(requirement: Dict[str, object]) -> Optional[bool]:
+    is_shiny = requirement.get("is_shiny")
+    return is_shiny if isinstance(is_shiny, bool) else None
+
+
+def _format_shiny_requirement_label(action: str, target: str, is_shiny: Optional[bool]) -> str:
+    if is_shiny is True:
+        return f"{action} {target} shiny"
+    if is_shiny is False:
+        return f"{action} {target} não-shiny"
+    return f"{action} {target}"
+
+
+def _fish_count_delta(
+    progress_counts: object,
+    baseline_counts: object,
+    shiny_progress_counts: object,
+    shiny_baseline_counts: object,
+    *,
+    fish_name: Optional[str] = None,
+    is_shiny: Optional[bool],
+) -> int:
+    total_delta = _count_progress_delta(progress_counts, baseline_counts, fish_name=fish_name)
+    if is_shiny is None:
+        return total_delta
+    shiny_delta = _count_progress_delta(
+        shiny_progress_counts,
+        shiny_baseline_counts,
+        fish_name=fish_name,
+    )
+    if is_shiny:
+        return shiny_delta
+    return max(0, total_delta - shiny_delta)
+
+
+def _count_progress_delta(
+    progress_counts: object,
+    baseline_counts: object,
+    *,
+    fish_name: Optional[str] = None,
+) -> int:
+    current_total = _count_progress_value(progress_counts, fish_name=fish_name)
+    baseline_total = _count_progress_value(baseline_counts, fish_name=fish_name)
+    return max(0, current_total - baseline_total)
+
+
+def _count_progress_value(counts: object, *, fish_name: Optional[str] = None) -> int:
+    if fish_name is not None:
+        if not isinstance(counts, dict):
+            return 0
+        return _count_fish_name(counts, fish_name)
+    if isinstance(counts, dict):
+        return sum(max(0, _safe_int(value)) for value in counts.values())
+    return max(0, _safe_int(counts))
 
 
 def _fish_name_matches(actual_name: str, expected_name: str) -> bool:

@@ -1,0 +1,5 @@
+{
+    "rotation_interval_minutes": 5,
+    "change_chance_percent": 40,
+    "default_weather": "clear"
+}

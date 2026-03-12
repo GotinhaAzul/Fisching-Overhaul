@@ -35,6 +35,7 @@ Requires Python 3.10+. Dependencies: `rich`, `pynput`.
 - `bestiary.py` — fish tracking and completion rewards
 - `hunts.py` — boss-style special encounters
 - `events.py` — temporary fishing events
+- `weather.py` — global weather rotation with gameplay modifiers
 - `mutations.py` — per-fish stat modifiers
 - `modern_ui.py` — Rich terminal UI components
 - `perfect_catch.py` — key-sequence validation
@@ -52,6 +53,7 @@ Requires Python 3.10+. Dependencies: `rich`, `pynput`.
 | `crafting/<id>/<id>.json` | New rod recipe |
 | `events/<id>/event.json` | New temporary event |
 | `hunts/<id>/` | New boss hunt |
+| `weather/<name>.json` | New weather type |
 
 Rod JSON keys: `name`, `luck`, `kg_max`, `control`, `price`, `unlocked_default`, `slash_chance`, `slam_chance`, `recover_chance`, `dupe_chance`.
 

@@ -1,0 +1,10 @@
+{
+  "name": "Grifo Alado",
+  "rarity": "Epico",
+  "kg_min": 18.0,
+  "kg_max": 35.0,
+  "base_value": 102,
+  "sequence_len": 9,
+  "reaction_time_s": 1.8,
+  "description": "O Grifo Alado possui nadadeiras que se abrem como asas emplumadas, criando correntes de ar que desequilibram tudo ao redor. Seu bico curvo e afiado corta a linha com facilidade se o pescador hesitar por um segundo sequer. Caca em mergulhos que comecam no topo das rochas flutuantes e terminam rente ao vazio abaixo da ilha. Enfrenta-lo e aceitar que ele controla o ritmo do combate ate o ultimo instante."
+}

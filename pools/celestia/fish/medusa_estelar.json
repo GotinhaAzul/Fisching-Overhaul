@@ -1,0 +1,10 @@
+{
+  "name": "Medusa Estelar",
+  "rarity": "Raro",
+  "kg_min": 4.5,
+  "kg_max": 10.5,
+  "base_value": 72,
+  "sequence_len": 6,
+  "reaction_time_s": 2.1,
+  "description": "A Medusa Estelar flutua como uma constelacao solta no vazio. Seus tentaculos finos emitem pontos de luz que piscam em padroes que ninguem conseguiu decifrar. Ela nao parece cacar nem fugir, apenas existir em suspensao, ate que algo a perturbe e revele uma velocidade que contradiz toda a sua aparente serenidade."
+}

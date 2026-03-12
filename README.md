@@ -35,28 +35,30 @@ python3 -m pytest -q
 
 ## Versao Atual
 
-Versao atual: `1.3`
+Versao atual: `1.4`
 
-### Update 1.3: Rods and the Forbidden
+### Update 1.4: Skies of Rain
 
-- Nova pool desbloqueavel: `O Jardim`, liberada pela missao `Raizes Submersas`.
-- Nova questline `Densa Mata` com Prologo + Partes 1, 2 e 3.
-- Nova pool de endgame: `Templo de Micelio`, com 9 peixes e bestiario oculto ate o desbloqueio.
-- Nova hunt: `O Guardiao`, com `Mossjaw` e `Awakened Mossjaw`.
-- Nova mutacao: `Incinerado`, exclusiva da vara `Magnasas`.
-- 5 novas varas de alto nivel:
-  - `Trinity`
-  - `Perforatio` com habilidade `Pierce`
-  - `Frenesis` com habilidade `Frenzy`
-  - `Midas` com habilidade `Greed`
-  - `Magnasas`
-- Suporte de gameplay para as novas habilidades de vara ja integrado ao minigame de pesca.
+- Nova pool desbloqueavel: `Celestia`, uma ilha flutuante acima das nuvens com `16` peixes exclusivos.
+- Nova missao de desbloqueio: `Alem das nuvens.`, exigindo nivel `15` e entregas de `Carpa Eterea` e `Peixe Farol`.
+- Nova vara tematizada: `Vara das Nuvens`, liberada junto com `Celestia`.
+- Nova mutacao exclusiva: `Nuvem`, com bonus de `1.2x XP` e `1.3x gold` para capturas com a `Vara das Nuvens`.
+- Novo evento global: `Cardume Celestial`, trazendo peixes raros para qualquer pool ativa por tempo limitado.
+- Novo sistema de clima com rotacao automatica e suporte a configuracao por JSON.
+- Climas iniciais incluidos:
+  - `Limpo`
+  - `Chuvoso`
+  - `Neblina`
+  - `Ventania`
+- Os modificadores de clima afetam a gameplay em tempo real com bonus de XP, sorte e controle.
+- Suite de testes expandida para cobrir o carregamento de clima, rotacao, notificacoes e modificadores.
 
 ## Estrutura do projeto
 
 - `start_game.py`: entrada principal do jogo.
 - `start_game_dev.py`: inicializacao com `dev_mode=True`.
-- `utils/`: logica de runtime, UI, mercado, crafting, inventario, save, eventos, hunts e pesca.
-- `pools/`, `rods/`, `baits/`, `mutations/`, `missions/`, `events/`, `hunts/`, `crafting/`: conteudo data-driven.
+- `utils/`: logica de runtime, UI, mercado, crafting, inventario, clima, save, eventos, hunts e pesca.
+- `pools/`, `rods/`, `baits/`, `mutations/`, `missions/`, `events/`, `hunts/`, `crafting/`, `weather/`: conteudo data-driven.
+- `cosmetics_catalog/`, `bestiary_rewards/`: catalogos e recompensas de progressao.
 - `tests/`: testes de caracterizacao.
 

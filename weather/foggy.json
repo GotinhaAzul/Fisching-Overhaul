@@ -1,0 +1,8 @@
+{
+    "name": "Neblina",
+    "description": "Uma névoa densa cobre a área, revelando peixes raros.",
+    "icon": "🌫️",
+    "xp_multiplier": 1.0,
+    "luck_bonus": 0.02,
+    "control_bonus": 0.0
+}

@@ -16,6 +16,7 @@ from utils.rod_upgrades import (
     UpgradeRequirement,
     apply_stat_bonus,
     calculate_upgrade_bonus,
+    format_rod_stats,
     generate_fish_requirements,
     get_effective_rod,
     restore_rod_upgrade_state,
@@ -29,6 +30,7 @@ class _DummyFish:
     base_value: float
     kg_min: float
     kg_max: float
+    reaction_time_s: float = 2.5
 
 
 @dataclass
@@ -36,6 +38,7 @@ class _DummyPool:
     name: str
     fish_profiles: list[_DummyFish]
     folder: Path
+    hidden_from_pool_selection: bool = False
 
 
 class _InputFeeder:
@@ -112,17 +115,99 @@ def test_generate_requirements_and_bonus_characterization(monkeypatch) -> None:
         lambda population, count: list(population)[:count],
     )
 
-    requirements = generate_fish_requirements([fish_a, fish_b], _rod("Ignis"))
+    requirements = generate_fish_requirements([fish_a, fish_b], _rod("Ignis"), "luck")
     assert requirements == [
-        UpgradeRequirement(fish_name="Tilapia", rarity="Comum", count=5),
-        UpgradeRequirement(fish_name="Piracanjuba", rarity="Raro", count=2),
+        UpgradeRequirement(fish_name="Piracanjuba", rarity="Raro", count=5),
+        UpgradeRequirement(fish_name="Tilapia", rarity="Comum", count=2),
     ]
 
     monkeypatch.setattr("utils.rod_upgrades.random.uniform", lambda _a, _b: 0.04)
-    assert calculate_upgrade_bonus(requirements) == MAX_UPGRADE_PERCENT
+    assert calculate_upgrade_bonus(
+        requirements,
+        stat="luck",
+        fish_by_name={fish_a.name: fish_a, fish_b.name: fish_b},
+    ) == pytest.approx(0.15)
 
     monkeypatch.setattr("utils.rod_upgrades.random.uniform", lambda _a, _b: -0.08)
     assert calculate_upgrade_bonus([]) == MIN_UPGRADE_PERCENT
+
+
+def test_generate_requirements_bias_by_stat_and_rod_characterization(monkeypatch) -> None:
+    rare_fish = _DummyFish("Astro Koi", "Lendario", 180.0, 1.0, 3.0)
+    heavy_fish = _DummyFish("Bagre Colossal", "Comum", 18.0, 20.0, 55.0)
+    fast_fish = _DummyFish("Agulha Sombria", "Raro", 70.0, 2.0, 6.0, reaction_time_s=1.1)
+
+    monkeypatch.setattr("utils.rod_upgrades.random.randint", lambda _a, _b: 1)
+    monkeypatch.setattr(
+        "utils.rod_upgrades.random.sample",
+        lambda population, count: list(population)[:count],
+    )
+
+    pool_fish = [rare_fish, heavy_fish, fast_fish]
+    light_rod = _rod("Vara Leve", price=50.0, kg_max=4.0, control=0.1)
+    heavy_rod = _rod("Vara Abissal", price=5000.0, kg_max=800.0, control=1.2)
+
+    luck_requirements = generate_fish_requirements(pool_fish, light_rod, "luck")
+    light_kg_requirements = generate_fish_requirements(pool_fish, light_rod, "kg_max")
+    heavy_kg_requirements = generate_fish_requirements(pool_fish, heavy_rod, "kg_max")
+    control_requirements = generate_fish_requirements(pool_fish, heavy_rod, "control")
+
+    assert [requirement.fish_name for requirement in luck_requirements] == ["Astro Koi"]
+    assert [requirement.fish_name for requirement in light_kg_requirements] == ["Astro Koi"]
+    assert [requirement.fish_name for requirement in heavy_kg_requirements] == ["Bagre Colossal"]
+    assert [requirement.fish_name for requirement in control_requirements] == ["Agulha Sombria"]
+
+
+def test_calculate_upgrade_bonus_uses_stat_specific_material_quality_characterization(
+    monkeypatch,
+) -> None:
+    rare_fish = _DummyFish("Astro Koi", "Lendario", 180.0, 1.0, 3.0)
+    heavy_fish = _DummyFish("Bagre Colossal", "Comum", 18.0, 20.0, 55.0)
+    fast_fish = _DummyFish("Agulha Sombria", "Raro", 70.0, 2.0, 6.0, reaction_time_s=1.1)
+    fish_by_name = {
+        rare_fish.name: rare_fish,
+        heavy_fish.name: heavy_fish,
+        fast_fish.name: fast_fish,
+    }
+    heavy_requirements = [UpgradeRequirement("Bagre Colossal", "Comum", 3)]
+    fast_requirements = [UpgradeRequirement("Agulha Sombria", "Raro", 3)]
+    rare_requirements = [UpgradeRequirement("Astro Koi", "Lendario", 3)]
+
+    monkeypatch.setattr("utils.rod_upgrades.random.uniform", lambda _a, _b: 0.0)
+
+    luck_bonus = calculate_upgrade_bonus(rare_requirements, stat="luck", fish_by_name=fish_by_name)
+    kg_bonus = calculate_upgrade_bonus(heavy_requirements, stat="kg_max", fish_by_name=fish_by_name)
+    control_bonus = calculate_upgrade_bonus(
+        fast_requirements,
+        stat="control",
+        fish_by_name=fish_by_name,
+    )
+    off_stat_bonus = calculate_upgrade_bonus(
+        heavy_requirements,
+        stat="luck",
+        fish_by_name=fish_by_name,
+    )
+
+    assert luck_bonus == pytest.approx(0.12)
+    assert kg_bonus == pytest.approx(0.08)
+    assert control_bonus == pytest.approx(0.11)
+    assert off_stat_bonus < kg_bonus
+
+
+def test_recipe_storage_and_rod_stat_formatting_characterization() -> None:
+    state = RodUpgradeState()
+    state.set_recipe("Ignis", [UpgradeRequirement("Tilapia", "Comum", 2)], stat="luck")
+    state.set_recipe("Ignis", [UpgradeRequirement("Pirarucu", "Lendario", 1)], stat="kg_max")
+    state.apply_upgrade("Ignis", "luck", 0.20)
+
+    assert state.get_recipe("Ignis", "luck") is not None
+    assert state.get_recipe("Ignis", "kg_max") is not None
+    assert state.get_recipe("Ignis", "luck") != state.get_recipe("Ignis", "kg_max")
+
+    formatted = format_rod_stats(_rod("Ignis"), state)
+    assert "Sorte: 10% -> 12%" in formatted
+    assert "KGMax: 100" in formatted
+    assert "Melhorias: Sorte +20%" in formatted
 
 
 def test_show_market_upgrade_flow_characterization(monkeypatch) -> None:
@@ -156,12 +241,17 @@ def test_show_market_upgrade_flow_characterization(monkeypatch) -> None:
     seen_requirement_pool: list[str] = []
 
     monkeypatch.setattr(market, "clear_screen", lambda: None)
-    def _capture_requirements(pool_fish, _rod):
+    def _capture_requirements(pool_fish, _rod, stat):
         seen_requirement_pool.extend(fish_profile.name for fish_profile in pool_fish)
+        assert stat == "luck"
         return [UpgradeRequirement("Dourado", "Raro", 1)]
 
     monkeypatch.setattr(market, "generate_fish_requirements", _capture_requirements)
-    monkeypatch.setattr(market, "calculate_upgrade_bonus", lambda _requirements: 0.18)
+    monkeypatch.setattr(
+        market,
+        "calculate_upgrade_bonus",
+        lambda _requirements, **_kwargs: 0.18,
+    )
     monkeypatch.setattr(
         "builtins.input",
         _InputFeeder(["6", "2", "1", "1", "0", "0"]),
@@ -192,6 +282,66 @@ def test_show_market_upgrade_flow_characterization(monkeypatch) -> None:
     assert money_spent == [400.0]
     assert delivered_names == ["Dourado"]
     assert upgrade_state.to_dict() == {"Vara Carbono": {"luck": 0.18}}
+    saved_recipe = upgrade_state.get_recipe("Vara Carbono", "luck")
+    assert saved_recipe is None
+
+
+def test_show_market_upgrade_ignores_secret_pool_materials_characterization(monkeypatch) -> None:
+    starter = _rod("Vara Bambu")
+    premium = _rod("Vara Carbono", price=50.0)
+    common_fish = _DummyFish("Tilapia", "Comum", 10.0, 1.0, 3.0)
+    secret_fish = _DummyFish("Segredo Abissal", "Mitico", 999.0, 50.0, 120.0)
+    selected_pool = _DummyPool(
+        name="Lagoa Tranquila",
+        fish_profiles=[common_fish],
+        folder=Path("lagoa"),
+    )
+    secret_pool = _DummyPool(
+        name="Far Seas",
+        fish_profiles=[secret_fish],
+        folder=Path("farseas"),
+        hidden_from_pool_selection=True,
+    )
+    inventory = [InventoryEntry(name="Tilapia", rarity="Comum", kg=2.0, base_value=10.0)]
+    seen_requirement_pool: list[str] = []
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+
+    def _capture_requirements(pool_fish, _rod, stat):
+        seen_requirement_pool.extend(fish_profile.name for fish_profile in pool_fish)
+        assert stat == "luck"
+        return [UpgradeRequirement("Tilapia", "Comum", 1)]
+
+    monkeypatch.setattr(market, "generate_fish_requirements", _capture_requirements)
+    monkeypatch.setattr(
+        market,
+        "calculate_upgrade_bonus",
+        lambda _requirements, **_kwargs: 0.18,
+    )
+    monkeypatch.setattr(
+        "builtins.input",
+        _InputFeeder(["6", "2", "1", "1", "0", "0"]),
+    )
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=1000.0,
+        selected_pool=selected_pool,
+        level=20,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter, premium],
+        fish_by_name={common_fish.name: common_fish, secret_fish.name: secret_fish},
+        available_mutations=[],
+        pools=[selected_pool, secret_pool],
+        unlocked_pools={"Lagoa Tranquila", "Far Seas", "farseas"},
+        rod_upgrade_state=RodUpgradeState(),
+    )
+
+    assert balance == 600.0
+    assert level == 20
+    assert xp == 0
+    assert seen_requirement_pool == ["Tilapia"]
 
 
 def test_show_market_upgrade_blocks_unsellable_materials_characterization(monkeypatch) -> None:
@@ -221,7 +371,7 @@ def test_show_market_upgrade_blocks_unsellable_materials_characterization(monkey
     monkeypatch.setattr(
         market,
         "generate_fish_requirements",
-        lambda _pool_fish, _rod: [UpgradeRequirement("Tilapia", "Comum", 1)],
+        lambda _pool_fish, _rod, _stat: [UpgradeRequirement("Tilapia", "Comum", 1)],
     )
     monkeypatch.setattr(
         "builtins.input",
@@ -272,14 +422,15 @@ def test_show_market_persists_upgrade_recipe_per_rod_until_upgrade(monkeypatch) 
 
     monkeypatch.setattr(market, "clear_screen", lambda: None)
 
-    def _generate_requirements(_pool_fish, _rod):
+    def _generate_requirements(_pool_fish, _rod, stat):
         requirement_calls.append(1)
+        assert stat == "luck"
         if len(requirement_calls) == 1:
             return [UpgradeRequirement("Dourado", "Raro", 1)]
         return [UpgradeRequirement("Pacu", "Comum", 1)]
 
     monkeypatch.setattr(market, "generate_fish_requirements", _generate_requirements)
-    monkeypatch.setattr(market, "calculate_upgrade_bonus", lambda _requirements: 0.18)
+    monkeypatch.setattr(market, "calculate_upgrade_bonus", lambda _requirements, **_kwargs: 0.18)
 
     monkeypatch.setattr(
         "builtins.input",
@@ -301,7 +452,7 @@ def test_show_market_persists_upgrade_recipe_per_rod_until_upgrade(monkeypatch) 
 
     assert balance == 1000.0
     assert len(requirement_calls) == 1
-    assert upgrade_state.get_recipe("Vara Carbono") is not None
+    assert upgrade_state.get_recipe("Vara Carbono", "luck") is not None
     assert [entry.name for entry in inventory] == ["Dourado", "Pacu"]
 
     monkeypatch.setattr(
@@ -326,7 +477,7 @@ def test_show_market_persists_upgrade_recipe_per_rod_until_upgrade(monkeypatch) 
     assert len(requirement_calls) == 1
     assert [entry.name for entry in inventory] == ["Pacu"]
     assert delivered_names == ["Dourado"]
-    assert upgrade_state.get_recipe("Vara Carbono") is None
+    assert upgrade_state.get_recipe("Vara Carbono", "luck") is None
     assert upgrade_state.to_dict() == {"Vara Carbono": {"luck": 0.18}}
 
 

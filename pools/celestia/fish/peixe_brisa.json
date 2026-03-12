@@ -1,0 +1,10 @@
+{
+  "name": "Peixe-Brisa",
+  "rarity": "Comum",
+  "kg_min": 2.0,
+  "kg_max": 5.5,
+  "base_value": 10,
+  "sequence_len": 5,
+  "reaction_time_s": 2.8,
+  "description": "O Peixe-Brisa flutua entre correntes de ar quente como se dormisse em pe. Suas nadadeiras translucidas capturam o vento e o impulsionam sem esforco visivel. Pescadores relatam que ele muda de direcao no instante exato em que a brisa vira, como se lesse o ceu antes de qualquer outro ser vivo."
+}

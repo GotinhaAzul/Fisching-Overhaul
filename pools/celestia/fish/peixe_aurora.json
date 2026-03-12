@@ -1,0 +1,10 @@
+{
+  "name": "Peixe Aurora",
+  "rarity": "Incomum",
+  "kg_min": 5.0,
+  "kg_max": 11.0,
+  "base_value": 25,
+  "sequence_len": 6,
+  "reaction_time_s": 2.5,
+  "description": "O Peixe Aurora emite pulsos de cor que variam entre verde, violeta e rosa, imitando o fenomeno celeste que lhe deu o nome. Esse espetaculo luminoso serve para atrair parceiros e confundir predadores em igual medida. Ao amanhecer, seus pulsos se sincronizam com a luz do horizonte, tornando-o quase impossivel de distinguir do proprio ceu."
+}

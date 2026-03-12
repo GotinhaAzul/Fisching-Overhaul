@@ -1,0 +1,10 @@
+{
+  "name": "Condor Abissal",
+  "rarity": "Lendario",
+  "kg_min": 25.0,
+  "kg_max": 55.0,
+  "base_value": 205,
+  "sequence_len": 12,
+  "reaction_time_s": 1.8,
+  "description": "O Condor Abissal patrulha as bordas de Celestia onde o ceu encontra o nada. Sua envergadura projeta uma sombra que escurece rochas inteiras, e seu voo silencioso so e percebido quando ja e tarde demais. Dizem que ele desce ate as camadas mais baixas das nuvens para cacar criaturas que nenhum outro peixe ousa perseguir. Na pesca, cada arrancada parece arrastar o pescador para mais perto do abismo."
+}

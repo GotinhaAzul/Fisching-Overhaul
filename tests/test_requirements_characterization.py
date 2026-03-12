@@ -19,6 +19,7 @@ from utils.missions import (
     MissionDefinition,
     MissionProgress,
     MissionState,
+    _entry_matches_delivery_requirements,
     load_missions,
     _build_mission_actions,
     _check_requirement,
@@ -50,9 +51,13 @@ def _mission_context() -> tuple[MissionProgress, MissionProgress, list[_DummyPoo
         fish_caught=5,
         fish_delivered=2,
         fish_sold=3,
+        shiny_fish_caught=2,
+        shiny_fish_delivered=1,
         fish_caught_by_name={"Tilapia": 3},
         fish_delivered_by_name={"Tilapia": 1},
         fish_sold_by_name={"Tilapia": 2},
+        shiny_fish_caught_by_name={"Tilapia": 1, "Pacu": 1},
+        shiny_fish_delivered_by_name={"Tilapia": 1},
         fish_caught_with_mutation_by_name={"Tilapia": 2},
         fish_delivered_with_mutation_by_name={"Tilapia": 2},
         fish_delivered_with_mutation_pair_counts={"Tilapia::Albino": 2},
@@ -67,9 +72,13 @@ def _mission_context() -> tuple[MissionProgress, MissionProgress, list[_DummyPoo
         fish_caught=1,
         fish_delivered=0,
         fish_sold=1,
+        shiny_fish_caught=1,
+        shiny_fish_delivered=0,
         fish_caught_by_name={"tilapia": 1},
         fish_delivered_by_name={},
         fish_sold_by_name={"tilapia": 1},
+        shiny_fish_caught_by_name={"tilapia": 1},
+        shiny_fish_delivered_by_name={},
         fish_caught_with_mutation_by_name={"tilapia": 1},
         fish_delivered_with_mutation_by_name={"tilapia": 1},
         fish_delivered_with_mutation_pair_counts={"Tilapia::Albino": 1},
@@ -207,6 +216,70 @@ def test_spend_money_ignores_generic_spending_characterization() -> None:
         discovered_fish=set(),
     )
     assert (current, target, done) == (60, 50, True)
+
+
+def test_shiny_filtered_catch_and_delivery_requirements_characterization() -> None:
+    progress, baseline, pools, discovered = _mission_context()
+
+    label, current, target, done = _format_requirement(
+        {"type": "catch_fish", "count": 1, "fish_name": "Tilapia", "is_shiny": False},
+        progress,
+        completed_missions=set(),
+        current_mission_id="m_current",
+        baseline_progress=baseline,
+        completed_baseline=0,
+        level=1,
+        pools=pools,
+        discovered_fish=discovered,
+    )
+    assert (label, current, target, done) == ("Capturar Tilapia não-shiny", 2, 1, True)
+
+    label, current, target, done = _format_requirement(
+        {"type": "catch_fish", "count": 2, "is_shiny": True},
+        progress,
+        completed_missions=set(),
+        current_mission_id="m_current",
+        baseline_progress=baseline,
+        completed_baseline=0,
+        level=1,
+        pools=pools,
+        discovered_fish=discovered,
+    )
+    assert (label, current, target, done) == ("Capturar peixes shiny", 1, 2, False)
+
+    label, current, target, done = _format_requirement(
+        {"type": "deliver_fish", "count": 1, "fish_name": "Tilapia", "is_shiny": True},
+        progress,
+        completed_missions=set(),
+        current_mission_id="m_current",
+        baseline_progress=baseline,
+        completed_baseline=0,
+        level=1,
+        pools=pools,
+        discovered_fish=discovered,
+    )
+    assert (label, current, target, done) == ("Entregar Tilapia shiny", 1, 1, True)
+
+
+def test_delivery_requirement_shiny_filter_matching_characterization() -> None:
+    shiny_entry = InventoryEntry(
+        name="Tilapia",
+        rarity="Comum",
+        kg=2.5,
+        base_value=10.0,
+        is_shiny=True,
+    )
+    plain_entry = InventoryEntry(
+        name="Tilapia",
+        rarity="Comum",
+        kg=2.0,
+        base_value=10.0,
+        is_shiny=False,
+    )
+    requirement = {"type": "deliver_fish", "count": 1, "fish_name": "Tilapia", "is_shiny": True}
+
+    assert _entry_matches_delivery_requirements(shiny_entry, [requirement])
+    assert not _entry_matches_delivery_requirements(plain_entry, [requirement])
 
 
 def test_restore_mission_progress_legacy_mission_payment_fallback_characterization() -> None:

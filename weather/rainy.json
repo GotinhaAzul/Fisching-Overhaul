@@ -1,0 +1,8 @@
+{
+    "name": "Chuvoso",
+    "description": "A chuva cai sobre o lago, trazendo experiência extra.",
+    "icon": "🌧️",
+    "xp_multiplier": 1.1,
+    "luck_bonus": 0.0,
+    "control_bonus": 0.0
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Quimera dos Ventos",
+  "rarity": "Lendario",
+  "kg_min": 30.0,
+  "kg_max": 65.0,
+  "base_value": 215,
+  "sequence_len": 12,
+  "reaction_time_s": 1.7,
+  "description": "A Quimera dos Ventos parece ser tres criaturas ao mesmo tempo. Sua cabeca muda de forma conforme o angulo, e suas caudas multiplas se movem em direcoes opostas como se obedecessem a ventos diferentes. Ninguem sabe se e uma especie real ou uma distorcao causada pelo ar rarefeito de Celestia. O que se sabe e que sua forca na linha e desproporcional ao que os olhos sugerem, e que perdê-la deixa uma sensacao estranha de que ela nunca esteve ali."
+}

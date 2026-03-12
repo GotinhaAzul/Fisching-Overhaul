@@ -1,0 +1,10 @@
+{
+  "name": "Peixe Prisma",
+  "rarity": "Epico",
+  "kg_min": 10.0,
+  "kg_max": 22.0,
+  "base_value": 95,
+  "sequence_len": 8,
+  "reaction_time_s": 1.9,
+  "description": "O Peixe Prisma refrata a luz do ceu em feixes que se espalham como raios solidos ao seu redor. Suas escamas geometricas giram independentemente umas das outras, criando padroes hipnoticos que confundem predadores e pescadores por igual. Ele aparece com mais frequencia quando a luz do sol atravessa as nuvens em angulo baixo. Na linha, sua resistencia e calculada, como se medisse a forca exata necessaria para escapar."
+}

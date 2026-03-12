@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from utils.baits import BaitDefinition
 from utils.inventory import InventoryEntry
 from utils.rods import Rod
+from utils.rod_upgrades import restore_rod_upgrade_state
 from utils.save_system import (
     SAVE_VERSION,
     load_game,
@@ -18,7 +19,6 @@ from utils.save_system import (
     restore_inventory,
     restore_level,
     restore_owned_rods,
-    restore_rod_upgrade_state,
     restore_storage,
     restore_selected_pool,
     restore_unlocked_pools,
@@ -97,6 +97,7 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     rod_upgrade_state.set_recipe(
         "Vara Carbono",
         [UpgradeRequirement("Tilapia", "Comum", 3)],
+        stat="luck",
     )
 
     save_game(
@@ -139,9 +140,11 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     assert raw["rod_upgrades"] == {
         "bonuses": {"Vara Carbono": {"luck": 0.12, "kg_max": 0.08}},
         "recipes": {
-            "Vara Carbono": [
-                {"fish_name": "Tilapia", "rarity": "Comum", "count": 3},
-            ]
+            "Vara Carbono": {
+                "luck": [
+                    {"fish_name": "Tilapia", "rarity": "Comum", "count": 3},
+                ]
+            }
         },
     }
 
@@ -185,8 +188,9 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
 
     restored_rod_upgrades = restore_rod_upgrade_state(raw["rod_upgrades"])
     assert restored_rod_upgrades.to_dict() == {"Vara Carbono": {"luck": 0.12, "kg_max": 0.08}}
-    restored_recipe = restored_rod_upgrades.get_recipe("Vara Carbono")
+    restored_recipe = restored_rod_upgrades.get_recipe("Vara Carbono", "luck")
     assert restored_recipe is not None
+    assert restored_recipe.stat == "luck"
     assert restored_recipe.fish_requirements == [UpgradeRequirement("Tilapia", "Comum", 3)]
 
 
@@ -220,6 +224,21 @@ def test_restore_helpers_legacy_and_invalid_payloads() -> None:
     )
     assert restored_legacy_rod_upgrades.to_dict() == {"Vara Bambu": {"luck": 0.12}}
     assert restored_legacy_rod_upgrades.get_recipe("Vara Bambu") is None
+
+    restored_legacy_recipe_upgrades = restore_rod_upgrade_state(
+        {
+            "bonuses": {},
+            "recipes": {
+                "Vara Carbono": [
+                    {"fish_name": "Tilapia", "rarity": "Comum", "count": 2},
+                ]
+            },
+        }
+    )
+    legacy_recipe = restored_legacy_recipe_upgrades.get_recipe("Vara Carbono", "luck")
+    assert legacy_recipe is not None
+    assert legacy_recipe.stat == ""
+    assert legacy_recipe.fish_requirements == [UpgradeRequirement("Tilapia", "Comum", 2)]
 
 
 def test_restore_inventory_defaults_unsellable_for_legacy_payload() -> None:

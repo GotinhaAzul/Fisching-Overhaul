@@ -28,6 +28,7 @@ from utils.crafting import (
 from utils.dialogue import get_market_line
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.levels import apply_xp_gain
+from utils.shiny import ShinyConfig, roll_shiny_on_appraise
 from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel
 from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
@@ -39,6 +40,9 @@ from utils.rod_upgrades import (
     apply_stat_bonus,
     calculate_upgrade_bonus,
     compute_upgrade_cost,
+    format_rod_stats,
+    format_upgrade_stat_value,
+    format_upgrade_summary,
     generate_fish_requirements,
     get_effective_rod,
 )
@@ -527,6 +531,7 @@ def show_market(
     on_fish_sold=None,
     on_fish_delivered=None,
     on_appraise_completed: Optional[Callable[[InventoryEntry], Optional[List[str]]]] = None,
+    shiny_config: Optional[ShinyConfig] = None,
 ) -> tuple[float, int, int]:
     pool_orders = pool_orders if pool_orders is not None else {}
     resolved_pools = list(pools) if pools is not None else []
@@ -627,6 +632,8 @@ def show_market(
         for pool in source_pools:
             if not _is_upgrade_pool_unlocked(pool):
                 continue
+            if getattr(pool, "hidden_from_pool_selection", False):
+                continue
             for fish in pool.fish_profiles:
                 fish_name = getattr(fish, "name", "")
                 if not fish_name or fish_name in seen_fish_names:
@@ -641,24 +648,6 @@ def show_market(
         if not _get_upgrade_pool_fish():
             return False, "Melhoria indisponivel: nao ha peixes nas pools desbloqueadas."
         return True, ""
-
-    def _format_upgrade_stat_value(stat: str, value: float) -> str:
-        if stat == "luck":
-            return f"{value:.0%}"
-        if stat == "control":
-            return f"{value:+.2f}s"
-        return f"{value:g}"
-
-    def _format_upgrade_summary(rod: Rod) -> str:
-        rod_bonuses = resolved_rod_upgrade_state.upgrades.get(rod.name, {})
-        if not rod_bonuses:
-            return "Sem melhorias"
-        parts = [
-            f"{UPGRADEABLE_STATS[stat]['label']} +{int(bonus * 100)}%"
-            for stat, bonus in rod_bonuses.items()
-            if stat in UPGRADEABLE_STATS and bonus > 0
-        ]
-        return " | ".join(parts) if parts else "Sem melhorias"
 
     def _build_upgrade_requirement_lines(
         requirements: Sequence[UpgradeRequirement],
@@ -950,13 +939,39 @@ def show_market(
                     "KG Max: Nenhuma",
                     "Controle: Nenhuma",
                 ]
-            return [
+            effective_rod = get_effective_rod(rod, resolved_rod_upgrade_state)
+            summary_lines = [
                 title,
                 f"Nome: {rod.name}",
-                f"{luck_symbol}: {rod.luck:+.0%}",
-                f"KG Max: {rod.kg_max:g}",
-                f"Controle: {rod.control:+.1f}s",
+                (
+                    f"{luck_symbol}: {format_upgrade_stat_value('luck', rod.luck)}"
+                    if effective_rod.luck == rod.luck
+                    else (
+                        f"{luck_symbol}: {format_upgrade_stat_value('luck', rod.luck)} -> "
+                        f"{format_upgrade_stat_value('luck', effective_rod.luck)}"
+                    )
+                ),
+                (
+                    f"KG Max: {format_upgrade_stat_value('kg_max', rod.kg_max)}"
+                    if effective_rod.kg_max == rod.kg_max
+                    else (
+                        f"KG Max: {format_upgrade_stat_value('kg_max', rod.kg_max)} -> "
+                        f"{format_upgrade_stat_value('kg_max', effective_rod.kg_max)}"
+                    )
+                ),
+                (
+                    f"Controle: {format_upgrade_stat_value('control', rod.control)}"
+                    if effective_rod.control == rod.control
+                    else (
+                        f"Controle: {format_upgrade_stat_value('control', rod.control)} -> "
+                        f"{format_upgrade_stat_value('control', effective_rod.control)}"
+                    )
+                ),
             ]
+            upgrade_summary = format_upgrade_summary(rod, resolved_rod_upgrade_state)
+            if upgrade_summary != "Sem melhorias":
+                summary_lines.append(f"Melhorias: {upgrade_summary}")
+            return summary_lines
 
         def _clip_cell(text: str, cell_width: int) -> str:
             if len(text) <= cell_width:
@@ -969,7 +984,7 @@ def show_market(
             left_lines: Sequence[str],
             right_lines: Sequence[str],
             *,
-            cell_width: int = 34,
+            cell_width: int = 40,
         ) -> List[str]:
             merged: List[str] = []
             max_rows = max(len(left_lines), len(right_lines))
@@ -1035,15 +1050,11 @@ def show_market(
             input("\nEnter para voltar.")
             return balance_local
 
-        luck_symbol = get_ui_symbol("LUCK")
         rod_options = [
             MenuOption(
                 str(index),
                 f"{rod.name} - {format_currency(rod.price)}",
-                hint=(
-                    f"{luck_symbol} {rod.luck:+.0%} | "
-                    f"KGMax {rod.kg_max:g} | Controle {rod.control:+.1f}s"
-                ),
+                hint=format_rod_stats(rod),
             )
             for index, rod in enumerate(rods_for_sale, start=1)
         ]
@@ -1353,6 +1364,8 @@ def show_market(
             entry.mutation_name = mutation.name if mutation else None
             entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
             entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
+            if shiny_config is not None:
+                entry.is_shiny = roll_shiny_on_appraise(shiny_config)
             new_value = calculate_entry_value(entry)
 
             last_result = {
@@ -1420,7 +1433,11 @@ def show_market(
 
         clear_screen()
         rod_options = [
-            MenuOption(str(index), rod.name, hint=_format_upgrade_summary(rod))
+            MenuOption(
+                str(index),
+                rod.name,
+                hint=format_upgrade_summary(rod, resolved_rod_upgrade_state),
+            )
             for index, rod in enumerate(owned_rods, start=1)
         ]
         rod_options.append(MenuOption("0", "Voltar"))
@@ -1477,8 +1494,8 @@ def show_market(
                     str(index),
                     str(info["label"]),
                     hint=(
-                        f"Base {_format_upgrade_stat_value(stat, base_value)} | "
-                        f"Atual {_format_upgrade_stat_value(stat, current_value)}"
+                        f"Base {format_upgrade_stat_value(stat, base_value)} | "
+                        f"Atual {format_upgrade_stat_value(stat, current_value)}"
                         f"{bonus_hint}"
                     ),
                 )
@@ -1491,7 +1508,7 @@ def show_market(
             breadcrumb="MERCADO > MELHORAR VARA",
             header_lines=[
                 f"Vara: {selected_rod.name}",
-                f"Melhorias atuais: {_format_upgrade_summary(selected_rod)}",
+                f"Melhorias atuais: {format_upgrade_summary(selected_rod, resolved_rod_upgrade_state)}",
             ],
             options=stat_options,
             prompt="Digite o numero do stat:",
@@ -1514,11 +1531,19 @@ def show_market(
 
         selected_stat = stat_keys[stat_index - 1]
         stat_label = str(UPGRADEABLE_STATS[selected_stat]["label"])
-        recipe = resolved_rod_upgrade_state.get_recipe(selected_rod.name)
+        recipe = resolved_rod_upgrade_state.get_recipe(selected_rod.name, selected_stat)
         if recipe is None:
-            requirements = generate_fish_requirements(_get_upgrade_pool_fish(), selected_rod)
+            requirements = generate_fish_requirements(
+                _get_upgrade_pool_fish(),
+                selected_rod,
+                selected_stat,
+            )
             if requirements:
-                recipe = resolved_rod_upgrade_state.set_recipe(selected_rod.name, requirements)
+                recipe = resolved_rod_upgrade_state.set_recipe(
+                    selected_rod.name,
+                    requirements,
+                    stat=selected_stat,
+                )
         if recipe is None:
             print("Nao foi possivel gerar requisitos para a melhoria nas pools desbloqueadas.")
             input("\nEnter para voltar.")
@@ -1540,9 +1565,9 @@ def show_market(
             f"Stat escolhido: {stat_label}",
             (
                 f"Valor base: "
-                f"{_format_upgrade_stat_value(selected_stat, float(getattr(selected_rod, selected_stat, 0.0)))}"
+                f"{format_upgrade_stat_value(selected_stat, float(getattr(selected_rod, selected_stat, 0.0)))}"
             ),
-            f"Valor atual: {_format_upgrade_stat_value(selected_stat, current_value)}",
+            f"Valor atual: {format_upgrade_stat_value(selected_stat, current_value)}",
             f"Custo: {format_currency(cost)}",
             "",
             "Peixes necessarios:",
@@ -1589,9 +1614,13 @@ def show_market(
             if previous_bonus > 0
             else float(getattr(selected_rod, selected_stat, 0.0))
         )
-        bonus = calculate_upgrade_bonus(list(requirements))
+        bonus = calculate_upgrade_bonus(
+            list(requirements),
+            stat=selected_stat,
+            fish_by_name=fish_by_name,
+        )
         resolved_rod_upgrade_state.apply_upgrade(selected_rod.name, selected_stat, bonus)
-        resolved_rod_upgrade_state.clear_recipe(selected_rod.name)
+        resolved_rod_upgrade_state.clear_recipe(selected_rod.name, selected_stat)
         upgraded_value = apply_stat_bonus(selected_rod, selected_stat, bonus)
 
         clear_screen()
@@ -1603,8 +1632,8 @@ def show_market(
                 f"Vara: {selected_rod.name}",
                 (
                     f"{stat_label}: "
-                    f"{_format_upgrade_stat_value(selected_stat, previous_value)} -> "
-                    f"{_format_upgrade_stat_value(selected_stat, upgraded_value)}"
+                    f"{format_upgrade_stat_value(selected_stat, previous_value)} -> "
+                    f"{format_upgrade_stat_value(selected_stat, upgraded_value)}"
                 ),
             ],
             options=[MenuOption("0", "Voltar")],

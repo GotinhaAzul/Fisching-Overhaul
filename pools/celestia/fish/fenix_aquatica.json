@@ -1,0 +1,10 @@
+{
+  "name": "Fenix Aquatica",
+  "rarity": "Epico",
+  "kg_min": 14.0,
+  "kg_max": 28.0,
+  "base_value": 98,
+  "sequence_len": 9,
+  "reaction_time_s": 1.9,
+  "description": "A Fenix Aquatica irradia um calor seco que faz o ar ao redor tremeluzir como sobre brasas. Suas escamas alaranjadas parecem arder sem se consumir, e rastros de cinza flutuam atras dela como uma cauda de cometa. Dizem que, ao ser perdida na linha, ela desaparece em uma explosao de fagulhas e reaparece em outro ponto do ceu. Captura-la exige velocidade e determinacao em partes iguais."
+}

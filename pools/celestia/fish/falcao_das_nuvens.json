@@ -1,0 +1,10 @@
+{
+  "name": "Falcao das Nuvens",
+  "rarity": "Raro",
+  "kg_min": 6.0,
+  "kg_max": 14.0,
+  "base_value": 75,
+  "sequence_len": 7,
+  "reaction_time_s": 2.1,
+  "description": "O Falcao das Nuvens caca em mergulhos verticais que cortam o ar com precisao cirurgica. Suas nadadeiras rigidas funcionam como asas afiadas, e o som que produz ao acelerar lembra um assobio grave. Quando fisgado, alterna entre subidas explosivas e quedas livres que testam os reflexos de qualquer pescador."
+}

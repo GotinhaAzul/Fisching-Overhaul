@@ -1,0 +1,10 @@
+{
+  "name": "Enguia dos Ventos",
+  "rarity": "Incomum",
+  "kg_min": 3.5,
+  "kg_max": 9.0,
+  "base_value": 24,
+  "sequence_len": 6,
+  "reaction_time_s": 2.5,
+  "description": "A Enguia dos Ventos se enrosca nas correntes ascendentes como uma fita solta ao vento. Seu corpo fino e quase transparente dificulta qualquer tentativa de localiza-la antes da fisgada. Quando presa, usa a propria corrente de ar como aliada, deixando o corpo flacido para ganhar distancia antes de uma arrancada subita."
+}

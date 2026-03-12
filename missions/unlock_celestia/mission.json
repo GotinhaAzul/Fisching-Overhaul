@@ -1,0 +1,28 @@
+{
+  "id": "unlock_celestia",
+  "name": "Alem das nuvens.",
+  "description": "Voce ouviu rumores de pescadores que juram ter visto peixes nadando entre as nuvens. Uma ilha no ceu... sera possivel?",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 2,
+      "fish_name": "Carpa Eterea"
+    },
+    {
+      "type": "deliver_fish",
+      "count": 2,
+      "fish_name": "Peixe Farol"
+    },
+    {
+      "type": "level",
+      "level": 15
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pools": ["Celestia"]
+    }
+  ]
+}

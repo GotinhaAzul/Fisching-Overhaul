@@ -1,0 +1,10 @@
+{
+  "name": "Carpa Celeste",
+  "rarity": "Comum",
+  "kg_min": 3.0,
+  "kg_max": 7.0,
+  "base_value": 11,
+  "sequence_len": 5,
+  "reaction_time_s": 2.8,
+  "description": "A Carpa Celeste carrega escamas que refletem o ceu ao redor, tornando-a quase invisivel em dias claros. Ela nada em circulos lentos entre fragmentos de rocha suspensa, colhendo particulas luminosas que se acumulam na superficie. Seu brilho suave a noite e a unica pista de que ela ainda esta por perto."
+}
