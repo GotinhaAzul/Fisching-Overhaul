@@ -82,6 +82,7 @@ def save_game(
     bestiary_reward_state: Optional[Dict[str, object]] = None,
     cosmetics_state: Optional[Dict[str, object]] = None,
     rod_upgrade_state: Optional[RodUpgradeState] = None,
+    discovered_shiny_fish: Optional[Sequence[str]] = None,
 ) -> None:
     data = {
         "version": SAVE_VERSION,
@@ -123,6 +124,7 @@ def save_game(
             if isinstance(rod_upgrade_state, RodUpgradeState)
             else {"bonuses": {}, "recipes": {}}
         ),
+        "discovered_shiny_fish": list(discovered_shiny_fish) if discovered_shiny_fish else [],
     }
     save_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
@@ -326,6 +328,25 @@ def restore_discovered_fish(
     for name in raw_fish:
         if isinstance(name, str) and name:
             restored.add(name)
+    return restored
+
+
+def restore_discovered_shiny_fish(
+    raw_shiny: object,
+    inventory: Sequence[InventoryEntry],
+    storage: Sequence[InventoryEntry],
+) -> Set[str]:
+    restored: Set[str] = set()
+    if isinstance(raw_shiny, list):
+        for name in raw_shiny:
+            if isinstance(name, str) and name:
+                restored.add(name)
+    for entry in inventory:
+        if entry.is_shiny:
+            restored.add(entry.name)
+    for entry in storage:
+        if entry.is_shiny:
+            restored.add(entry.name)
     return restored
 
 

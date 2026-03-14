@@ -44,13 +44,15 @@ def format_inventory_entry(
     index: int,
     entry: InventoryEntry,
     hunt_fish_names: Optional[set[str]] = None,
+    shiny_label_text: str = "✦ Shiny",
+    shiny_color: str = "#FFD700",
 ) -> str:
     color = RARITY_COLORS.get(entry.rarity, "#F0F0F0")
     is_hunt_entry = entry.is_hunt or (
         bool(hunt_fish_names) and entry.name in hunt_fish_names
     )
     fish_name_color = "#FF6666" if is_hunt_entry else color
-    shiny_label = " ✦ Shiny" if entry.is_shiny else ""
+    shiny_label = f" [{shiny_color}]{shiny_label_text}[/{shiny_color}]" if entry.is_shiny else ""
     mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
     unsellable_label = " [bold red][Unsellable][/bold red]" if entry.is_unsellable else ""
     return (
@@ -66,6 +68,8 @@ def render_inventory(
     show_title: bool = True,
     hunt_fish_names: Optional[set[str]] = None,
     start_index: int = 1,
+    shiny_label_text: str = "✦ Shiny",
+    shiny_color: str = "#FFD700",
 ):
     if show_title:
         console.print("\n[bold]Inventário:[/bold]")
@@ -73,4 +77,13 @@ def render_inventory(
         console.print("[dim]- vazio -[/dim]")
         return
     for idx, entry in enumerate(inventory, start=start_index):
-        console.print(f"{idx}. {format_inventory_entry(idx, entry, hunt_fish_names=hunt_fish_names)}")
+        console.print(
+            f"{idx}. "
+            f"{format_inventory_entry(
+                idx,
+                entry,
+                hunt_fish_names=hunt_fish_names,
+                shiny_label_text=shiny_label_text,
+                shiny_color=shiny_color,
+            )}"
+        )

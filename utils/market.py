@@ -310,7 +310,7 @@ def _show_crafting_recipe_detail(
                 mutation_label = f" * {entry.mutation_name}" if entry.mutation_name else ""
                 print(
                     f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                    f"- {format_currency(calculate_entry_value(entry))}"
+                    f"- {format_currency(_calc_value(entry))}"
                 )
 
             print(f"\n[T] Entregar todos ({len(deliverable_indexes)} peixe(s))")
@@ -559,9 +559,13 @@ def show_market(
     inventory_fish_counts_cache: Dict[str, int] = {}
     inventory_mutation_counts_cache: Dict[str, int] = {}
     inventory_fish_counts_dirty = True
+    _shiny_mult = shiny_config.value_multiplier if shiny_config else 1.55
+
+    def _calc_value(entry: InventoryEntry) -> float:
+        return calculate_entry_value(entry, shiny_multiplier=_shiny_mult)
 
     def _appraise_cost(entry: InventoryEntry) -> float:
-        return max(1.0, calculate_entry_value(entry) * 0.35)
+        return max(1.0, _calc_value(entry) * 0.35)
 
     def _mark_inventory_fish_counts_dirty() -> None:
         nonlocal inventory_fish_counts_dirty
@@ -851,7 +855,7 @@ def show_market(
             clear_screen()
             print_spaced_lines(["Escolha o peixe para vender:"])
             for index, entry in enumerate(inventory, start=1):
-                value = calculate_entry_value(entry)
+                value = _calc_value(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
                 unsellable_label = " [Unsellable]" if entry.is_unsellable else ""
                 print(
@@ -880,7 +884,7 @@ def show_market(
 
             entry = inventory.pop(selected_index - 1)
             _mark_inventory_fish_counts_dirty()
-            value = calculate_entry_value(entry)
+            value = _calc_value(entry)
             balance_local += value
             if on_money_earned:
                 on_money_earned(value)
@@ -905,7 +909,7 @@ def show_market(
                 input("\nEnter para voltar.")
                 return balance_local
 
-            total = sum(calculate_entry_value(entry) for entry in sellable_entries)
+            total = sum(_calc_value(entry) for entry in sellable_entries)
             if on_fish_sold or on_fish_delivered:
                 for entry in sellable_entries:
                     if on_fish_sold:
@@ -1216,7 +1220,7 @@ def show_market(
                     status_message = ""
                 print_spaced_lines(header_lines)
                 for index, entry in enumerate(inventory, start=1):
-                    value = calculate_entry_value(entry)
+                    value = _calc_value(entry)
                     cost = _appraise_cost(entry)
                     mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
                     print(
@@ -1259,7 +1263,7 @@ def show_market(
                 status_message = "Esse peixe nao pode ser avaliado agora."
                 continue
 
-            current_value = calculate_entry_value(entry)
+            current_value = _calc_value(entry)
             cost = _appraise_cost(entry)
             mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
             lines = [
@@ -1348,7 +1352,7 @@ def show_market(
 
             old_kg = entry.kg
             old_mutation = entry.mutation_name
-            old_value = calculate_entry_value(entry)
+            old_value = _calc_value(entry)
 
             balance_local -= cost
             if on_money_spent:
@@ -1366,7 +1370,7 @@ def show_market(
             entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
             if shiny_config is not None:
                 entry.is_shiny = roll_shiny_on_appraise(shiny_config)
-            new_value = calculate_entry_value(entry)
+            new_value = _calc_value(entry)
 
             last_result = {
                 "old_kg": old_kg,

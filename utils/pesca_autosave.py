@@ -48,6 +48,7 @@ def autosave_state(
     rod_upgrade_state: RodUpgradeState,
     hunt_manager: Optional["HuntManager"],
     serialize_bestiary_reward_state,
+    discovered_shiny_fish: Optional[set[str]] = None,
 ) -> None:
     save_game(
         save_path,
@@ -73,4 +74,5 @@ def autosave_state(
         bestiary_reward_state=serialize_bestiary_reward_state(bestiary_reward_state),
         cosmetics_state=serialize_cosmetics_state(cosmetics_state),
         rod_upgrade_state=rod_upgrade_state,
+        discovered_shiny_fish=sorted(discovered_shiny_fish) if discovered_shiny_fish else [],
     )

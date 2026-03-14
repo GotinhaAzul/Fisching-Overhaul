@@ -37,5 +37,12 @@ def move_to_inventory(
     return new_storage, new_inventory
 
 
-def get_storage_value(storage: List[InventoryEntry]) -> float:
-    return sum(calculate_entry_value(entry) for entry in storage)
+def get_storage_value(
+    storage: List[InventoryEntry],
+    *,
+    shiny_multiplier: float = 1.55,
+) -> float:
+    return sum(
+        calculate_entry_value(entry, shiny_multiplier=shiny_multiplier)
+        for entry in storage
+    )

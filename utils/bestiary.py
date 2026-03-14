@@ -254,12 +254,13 @@ def _fish_label(
     unlocked_fish: Set[str],
     completion_fish_names: Set[str],
     discovered_shiny_fish: Optional[Set[str]] = None,
+    shiny_color: str = "#FFD700",
 ) -> str:
     if fish.name not in unlocked_fish:
         return "???"
     is_shiny = discovered_shiny_fish is not None and fish.name in discovered_shiny_fish
     if use_modern_ui():
-        name = f"[#FFD700]{fish.name}[/#FFD700]" if is_shiny else fish.name
+        name = f"[{shiny_color}]{fish.name}[/{shiny_color}]" if is_shiny else fish.name
         if fish.name not in completion_fish_names:
             return f"{name} [#FF6666](Hunt)[/#FF6666]"
         return name
@@ -507,6 +508,7 @@ def _show_fish_bestiary_section(
     unlocked_fish: Set[str],
     *,
     discovered_shiny_fish: Optional[Set[str]] = None,
+    shiny_color: str = "#FFD700",
     pending_pool_reward_count: Optional[Callable[[str], int]] = None,
     claim_pool_rewards: Optional[Callable[[str], List[str]]] = None,
     preview_pool_rewards: Optional[Callable[[str], List[str]]] = None,
@@ -575,7 +577,7 @@ def _show_fish_bestiary_section(
             options = [
                 MenuOption(
                     str(idx),
-                    _fish_label(fish, unlocked_fish, section.completion_fish_names, discovered_shiny_fish),
+                    _fish_label(fish, unlocked_fish, section.completion_fish_names, discovered_shiny_fish, shiny_color=shiny_color),
                 )
                 for idx, fish in enumerate(page_items, start=1)
             ]
@@ -640,7 +642,7 @@ def _show_fish_bestiary_section(
                 detail_lines.append("Origem: Hunt (nao conta para complecao)")
 
             fish_is_shiny = discovered_shiny_fish is not None and fish.name in discovered_shiny_fish
-            fish_subtitle = f"[#FFD700]{fish.name}[/#FFD700]" if fish_is_shiny else fish.name
+            fish_subtitle = f"[{shiny_color}]{fish.name}[/{shiny_color}]" if fish_is_shiny else fish.name
 
             clear_screen()
             print_menu_panel(
@@ -658,7 +660,7 @@ def _show_fish_bestiary_section(
 
         for idx, fish in enumerate(page_items, start=1):
             print(
-                f"{idx}. {_fish_label(fish, unlocked_fish, section.completion_fish_names, discovered_shiny_fish)}"
+                f"{idx}. {_fish_label(fish, unlocked_fish, section.completion_fish_names, discovered_shiny_fish, shiny_color=shiny_color)}"
             )
 
         _print_pagination_controls(total_pages)
@@ -715,6 +717,7 @@ def show_fish_bestiary(
     unlocked_fish: Set[str],
     *,
     discovered_shiny_fish: Optional[Set[str]] = None,
+    shiny_color: str = "#FFD700",
     pending_global_reward_count: Optional[Callable[[], int]] = None,
     claim_global_rewards: Optional[Callable[[], List[str]]] = None,
     preview_global_rewards: Optional[Callable[[], List[str]]] = None,
@@ -851,6 +854,7 @@ def show_fish_bestiary(
                 section,
                 unlocked_fish,
                 discovered_shiny_fish=discovered_shiny_fish,
+                shiny_color=shiny_color,
                 pending_pool_reward_count=pending_pool_reward_count,
                 claim_pool_rewards=claim_pool_rewards,
                 preview_pool_rewards=preview_pool_rewards,
@@ -926,6 +930,7 @@ def show_fish_bestiary(
             section,
             unlocked_fish,
             discovered_shiny_fish=discovered_shiny_fish,
+            shiny_color=shiny_color,
             pending_pool_reward_count=pending_pool_reward_count,
             claim_pool_rewards=claim_pool_rewards,
             preview_pool_rewards=preview_pool_rewards,
@@ -1450,6 +1455,7 @@ def show_bestiary(
         Callable[[BestiaryRewardDefinition], List[str]]
     ] = None,
     discovered_shiny_fish: Optional[Set[str]] = None,
+    shiny_color: str = "#FFD700",
 ):
     fish_sections = build_fish_bestiary_sections(
         pools,
@@ -1594,6 +1600,7 @@ def show_bestiary(
                 fish_sections,
                 discovered_fish,
                 discovered_shiny_fish=discovered_shiny_fish,
+                shiny_color=shiny_color,
                 pending_global_reward_count=pending_fish_global_rewards,
                 claim_global_rewards=claim_fish_global_rewards,
                 preview_global_rewards=preview_fish_global_rewards,

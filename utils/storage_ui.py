@@ -17,10 +17,13 @@ def render_storage(
     *,
     page: int = 0,
     hunt_fish_names: Optional[set[str]] = None,
+    shiny_multiplier: float = 1.55,
+    shiny_label_text: str = "✦ Shiny",
+    shiny_color: str = "#FFD700",
 ) -> PageSlice:
     page_slice = get_page_slice(len(storage), page, STORAGE_PAGE_SIZE)
     page_entries = storage[page_slice.start:page_slice.end]
-    total_value = get_storage_value(list(storage))
+    total_value = get_storage_value(list(storage), shiny_multiplier=shiny_multiplier)
 
     header_lines = [
         (
@@ -41,12 +44,18 @@ def render_storage(
             absolute_index = page_slice.start + display_index
             header_lines.append(
                 f"{display_index}. "
-                f"{format_inventory_entry(absolute_index, entry, hunt_fish_names=hunt_fish_names)}"
+                f"{format_inventory_entry(
+                    absolute_index,
+                    entry,
+                    hunt_fish_names=hunt_fish_names,
+                    shiny_label_text=shiny_label_text,
+                    shiny_color=shiny_color,
+                )}"
             )
             mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
             header_lines.append(
                 f"[dim]   {mutation_label} | "
-                f"Val: ~{format_currency(calculate_entry_value(entry))}[/dim]"
+                f"Val: ~{format_currency(calculate_entry_value(entry, shiny_multiplier=shiny_multiplier))}[/dim]"
             )
 
     options = [

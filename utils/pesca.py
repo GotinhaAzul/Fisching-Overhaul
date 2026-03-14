@@ -40,7 +40,7 @@ from utils.cosmetics import (
 )
 from utils.dialogue import get_menu_line
 from utils.inventory import InventoryEntry, format_inventory_entry, render_inventory
-from utils.shiny import ShinyConfig, load_shiny_config, roll_shiny_on_catch, roll_shiny_on_appraise
+from utils.shiny import ShinyConfig, load_shiny_config, roll_shiny_on_catch
 from utils.levels import RARITY_XP, apply_xp_gain, xp_for_rarity, xp_required_for_level
 from utils.menu_input import read_menu_choice
 from utils.market import (
@@ -132,6 +132,7 @@ from utils.save_system import (
     restore_balance,
     restore_bait_inventory,
     restore_discovered_fish,
+    restore_discovered_shiny_fish,
     restore_equipped_bait,
     restore_equipped_rod,
     restore_hunt_state,
@@ -2005,6 +2006,7 @@ def autosave_state(
     cosmetics_state: PlayerCosmeticsState,
     rod_upgrade_state: RodUpgradeState,
     hunt_manager: Optional[HuntManager],
+    discovered_shiny_fish: Optional[set[str]] = None,
 ) -> None:
     _autosave_state_impl(
         save_path,
@@ -2031,6 +2033,7 @@ def autosave_state(
         rod_upgrade_state,
         hunt_manager,
         serialize_bestiary_reward_state,
+        discovered_shiny_fish=discovered_shiny_fish,
     )
 def format_bait_stats(bait: BaitDefinition) -> str:
     return (
@@ -2054,6 +2057,9 @@ def show_inventory(
     on_cosmetics_changed: Optional[Callable[[], None]] = None,
     on_storage_changed: Optional[Callable[[], None]] = None,
     hunt_fish_names: Optional[set[str]] = None,
+    shiny_multiplier: float = 1.55,
+    shiny_label_text: str = "✦ Shiny",
+    shiny_color: str = "#FFD700",
 ) -> tuple[Rod, Optional[str]]:
     page_size = 12
     page = 0
@@ -2296,7 +2302,13 @@ def show_inventory(
                 absolute_index = page_slice.start + display_index
                 header_lines.append(
                     f"{display_index}. "
-                    f"{format_inventory_entry(absolute_index, entry, hunt_fish_names=hunt_fish_names)}"
+                    f"{format_inventory_entry(
+                        absolute_index,
+                        entry,
+                        hunt_fish_names=hunt_fish_names,
+                        shiny_label_text=shiny_label_text,
+                        shiny_color=shiny_color,
+                    )}"
                 )
 
             print_menu_panel(
@@ -2341,6 +2353,9 @@ def show_inventory(
                 storage,
                 page=storage_page,
                 hunt_fish_names=hunt_fish_names,
+                shiny_multiplier=shiny_multiplier,
+                shiny_label_text=shiny_label_text,
+                shiny_color=shiny_color,
             )
             choice = read_menu_choice(
                 "> ",
@@ -2482,6 +2497,8 @@ def show_inventory(
                     show_title=False,
                     hunt_fish_names=hunt_fish_names,
                     start_index=start + 1,
+                    shiny_label_text=shiny_label_text,
+                    shiny_color=shiny_color,
                 )
                 if total_pages > 1:
                     print(f"Mostrando {start + 1}-{end} de {len(inventory)}.")
@@ -2661,6 +2678,8 @@ def show_inventory(
             show_title=False,
             hunt_fish_names=hunt_fish_names,
             start_index=start + 1,
+            shiny_label_text=shiny_label_text,
+            shiny_color=shiny_color,
         )
         if total_pages > 1:
             print(f"Mostrando {start + 1}-{end} de {len(inventory)}.")
@@ -2797,6 +2816,8 @@ def run_fishing_round(
     event_manager: Optional[EventManager],
     hunt_manager: Optional[HuntManager],
     weather_manager: Optional[WeatherManager] = None,
+    shiny_config: Optional[ShinyConfig] = None,
+    discovered_shiny_fish: Optional[set[str]] = None,
     on_fish_caught: Optional[Callable[[FishProfile, Optional[Mutation], bool], None]] = None,
 ) -> tuple[int, int, Optional[str]]:
     recent_catch_times: deque[float] = deque()
@@ -3060,7 +3081,7 @@ def run_fishing_round(
             greed_triggered = game.greed_activated
             if greed_triggered:
                 mutation_gold_multiplier *= 2.0
-            is_shiny = roll_shiny_on_catch(shiny_config)
+            is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
             inventory.append(
                 InventoryEntry(
                     name=fish.name,
@@ -3093,6 +3114,8 @@ def run_fishing_round(
                         )
                     )
                     dupe_triggered = True
+            if is_shiny and discovered_shiny_fish is not None:
+                discovered_shiny_fish.add(fish.name)
             if on_fish_caught:
                 on_fish_caught(fish, mutation, is_shiny)
             if hunt_manager:
@@ -3152,8 +3175,8 @@ def run_fishing_round(
                 print(f"🔱 Pierce ativado {game.pierce_activations}x durante a pesca!")
             if greed_triggered:
                 print("💰 Greed ativado: valor do peixe dobrado!")
-            if is_shiny:
-                console.print(f"[#FFD700]{shiny_config.display.catch_message}[/#FFD700]")
+            if is_shiny and shiny_config:
+                console.print(f"[{shiny_config.display.color}]{shiny_config.display.catch_message}[/{shiny_config.display.color}]")
             print(f"✨ Ganhou {gained_xp} XP.")
             if level_ups:
                 print(f"⬆️  Subiu {level_ups} nível(is)! Agora está no nível {level}.")
@@ -3251,7 +3274,7 @@ def run_fishing_round(
                     frenzy_mut_name = frenzy_mutation.name if frenzy_mutation else None
                     frenzy_mut_xp = frenzy_mutation.xp_multiplier if frenzy_mutation else 1.0
                     frenzy_mut_gold = frenzy_mutation.gold_multiplier if frenzy_mutation else 1.0
-                    frenzy_is_shiny = roll_shiny_on_catch(shiny_config)
+                    frenzy_is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
                     inventory.append(
                         InventoryEntry(
                             name=frenzy_fish.name,
@@ -3266,6 +3289,8 @@ def run_fishing_round(
                             is_unsellable=bool(getattr(frenzy_fish, "unsellable", False)),
                         )
                     )
+                    if frenzy_is_shiny and discovered_shiny_fish is not None:
+                        discovered_shiny_fish.add(frenzy_fish.name)
                     if on_fish_caught:
                         on_fish_caught(frenzy_fish, frenzy_mutation, frenzy_is_shiny)
                     discovered_fish.add(frenzy_fish.name)
@@ -3287,8 +3312,8 @@ def run_fishing_round(
                     )
                     if frenzy_mutation:
                         print(f"🧬 Mutação: {frenzy_mutation.name}")
-                    if frenzy_is_shiny:
-                        console.print(f"[#FFD700]{shiny_config.display.catch_message}[/#FFD700]")
+                    if frenzy_is_shiny and shiny_config:
+                        console.print(f"[{shiny_config.display.color}]{shiny_config.display.catch_message}[/{shiny_config.display.color}]")
                     print(f"✨ +{frenzy_xp} XP")
                     if frenzy_lvl_ups:
                         print(f"⬆️  Subiu {frenzy_lvl_ups} nível(is)! Agora está no nível {level}.")
@@ -3392,6 +3417,7 @@ def main(dev_mode: bool = False):
     bait_inventory: Dict[str, int] = {}
     equipped_bait_id: Optional[str] = None
     discovered_fish: set[str] = set()
+    discovered_shiny_fish: set[str] = set()
     balance = 0.0
     level = 1
     xp = 0
@@ -3420,6 +3446,11 @@ def main(dev_mode: bool = False):
         discovered_fish = restore_discovered_fish(
             save_data.get("discovered_fish"),
             [*inventory, *storage],
+        )
+        discovered_shiny_fish = restore_discovered_shiny_fish(
+            save_data.get("discovered_shiny_fish"),
+            inventory,
+            storage,
         )
         balance = restore_balance(save_data.get("balance"), balance)
         owned_rods = restore_owned_rods(save_data.get("owned_rods"), available_rods, starter_rod)
@@ -3509,6 +3540,7 @@ def main(dev_mode: bool = False):
             cosmetics_state,
             rod_upgrade_state,
             hunt_manager,
+            discovered_shiny_fish=discovered_shiny_fish,
         )
 
     fish_by_name: Dict[str, FishProfile] = {
@@ -3780,6 +3812,8 @@ def main(dev_mode: bool = False):
                     event_manager,
                     hunt_manager,
                     weather_manager=weather_manager,
+                    shiny_config=shiny_config,
+                    discovered_shiny_fish=discovered_shiny_fish,
                     on_fish_caught=on_fish_caught_for_progress,
                 )
                 mark_inventory_fish_counts_dirty()
@@ -3800,6 +3834,9 @@ def main(dev_mode: bool = False):
                     on_cosmetics_changed=apply_active_cosmetics,
                     on_storage_changed=autosave_current_state,
                     hunt_fish_names=hunt_fish_names,
+                    shiny_multiplier=shiny_config.value_multiplier,
+                    shiny_label_text=shiny_config.display.label,
+                    shiny_color=shiny_config.display.color,
                 )
             elif choice == "4":
                 unlocked_pool_market_keys = {
@@ -3857,7 +3894,8 @@ def main(dev_mode: bool = False):
                     bestiary_rewards=bestiary_rewards,
                     bestiary_reward_state=bestiary_reward_state,
                     on_claim_bestiary_reward=apply_bestiary_reward,
-                    discovered_shiny_fish={e.name for e in inventory if e.is_shiny},
+                    discovered_shiny_fish=discovered_shiny_fish,
+                    shiny_color=shiny_config.display.color,
                 )
             elif choice == "6":
                 level, xp, balance = show_missions_menu(
@@ -3946,6 +3984,7 @@ def main(dev_mode: bool = False):
                     cosmetics_state,
                     rod_upgrade_state,
                     hunt_manager,
+                    discovered_shiny_fish=discovered_shiny_fish,
                 )
                 autosave_done = True
                 exit_requested = True
@@ -4008,6 +4047,7 @@ def main(dev_mode: bool = False):
                 cosmetics_state,
                 rod_upgrade_state,
                 hunt_manager,
+                discovered_shiny_fish=discovered_shiny_fish,
             )
         event_manager.stop()
         hunt_manager.stop()
