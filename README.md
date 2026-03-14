@@ -35,9 +35,9 @@ python3 -m pytest -q
 
 ## Versao Atual
 
-Versao atual: `1.4`
+Versao atual: `1.5`
 
-### Update 1.4: Skies of Rain
+### Update 1.5: Skies of Rain
 
 - Nova pool desbloqueavel: `Celestia`, uma ilha flutuante acima das nuvens com `16` peixes exclusivos.
 - Nova missao de desbloqueio: `Alem das nuvens.`, exigindo nivel `15` e entregas de `Carpa Eterea` e `Peixe Farol`.
@@ -52,6 +52,53 @@ Versao atual: `1.4`
   - `Ventania`
 - Os modificadores de clima afetam a gameplay em tempo real com bonus de XP, sorte e controle.
 - Suite de testes expandida para cobrir o carregamento de clima, rotacao, notificacoes e modificadores.
+
+## Previous Update Notes
+
+### Update 1.4: Luminosity
+
+- 2 novas pools desbloqueaveis:
+  - `Caverna Luminosa`, liberada entregando um Surubim com mutacao Brilhante apos 70% do bestiario de Profundezas Desoladas.
+  - `Caverna Carmesim`, liberada entregando um Dragao Azul com mutacao Carmesim apos 70% do bestiario de Caverna Luminosa.
+- 2 novas missoes de desbloqueio: `A Fenda Luminosa` e `Alem da Luz, o Vermelho`.
+- 3 novas hunts:
+  - `O Chamado Azul` - Dragao Azul (Lendario) na Caverna Luminosa.
+  - `A Chama Carmesim` - Dragao Carmesim (Lendario) na Caverna Carmesim.
+  - `O Ultimo Mito` - Dragao Etereo (Mitico) na Caverna Carmesim, hunt rarissima.
+- 3 novas mutacoes:
+  - `Carmesim` (0.16%, universal ultra-rara, 1.5x XP/Gold).
+  - `Prometido` (10%, exclusiva da Promessa Luminescente, 1.4x XP / 1.6x Gold).
+  - `Prometido` (15%, exclusiva da Ruina Prometida, 1.4x XP / 1.6x Gold).
+- 2 novas varas:
+  - `Promessa Luminescente` - Sorte/Controle/KG medios, desbloqueada com Caverna Luminosa.
+  - `Ruina Prometida` - Sorte alta, KG alto, Controle baixo; craftada com Dragao Carmesim + itens raros.
+- 18 novos peixes distribuidos entre as duas cavernas.
+
+### Update 1.3: Rods and the Forbidden
+
+- Nova pool desbloqueavel: `O Jardim`, liberada pela missao `Raizes Submersas`.
+- Nova questline `Densa Mata` com Prologo + Partes 1, 2 e 3.
+- Nova pool de endgame: `Templo de Micelio`, com 9 peixes e bestiario oculto ate o desbloqueio.
+- Nova hunt: `O Guardiao`, com `Mossjaw` e `Awakened Mossjaw`.
+- Nova mutacao: `Incinerado`, exclusiva da vara `Magnasas`.
+- 5 novas varas de alto nivel:
+  - `Trinity`
+  - `Perforatio` com habilidade `Pierce`
+  - `Frenesis` com habilidade `Frenzy`
+  - `Midas` com habilidade `Greed`
+  - `Magnasas`
+- Suporte de gameplay para as novas habilidades de vara ja integrado ao minigame de pesca.
+
+### Update 1.2: A fossa das Marianas
+
+- Uma nova questline completa explorando as profundezas do oceano, novos peixes desafiadores aguardam.
+- Nova raridade adicionada: `Mitico`.
+- `6` novas varas adicionadas.
+- Tem um pinguim agora em `snowcap`.
+- Rework na UI da pesca + melhorias no inventario.
+- `pynput` adicionado a paginas de navegacao.
+- Bug fixes:
+  - Algumas melhorias de performance.
 
 ## Estrutura do projeto
 
