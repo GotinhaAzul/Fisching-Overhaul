@@ -2,7 +2,7 @@
   "id": "magnasas_craft",
   "rod_name": "Magnasas",
   "name": "Cinzas de Obsidiana",
-  "description": "O fogo da obsidiana encontra a sombra do ninja. Tudo se incinera.",
+  "description": "O fogo da obsidiana encontra a sombra. Tudo se incinera.",
   "unlock": {
     "mode": "all",
     "requirements": [

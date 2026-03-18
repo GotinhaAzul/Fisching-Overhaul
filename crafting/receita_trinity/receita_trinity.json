@@ -2,7 +2,7 @@
   "id": "trinity_craft",
   "rod_name": "Trinity",
   "name": "Tres em Um",
-  "description": "Una tres formas do mesmo peixe para criar algo maior.",
+  "description": "Una tres formas do mesmo para criar algo maior.",
   "unlock": {
     "mode": "all",
     "requirements": [

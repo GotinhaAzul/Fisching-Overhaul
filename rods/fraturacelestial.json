@@ -1,0 +1,14 @@
+{
+  "name": "Fratura Celestial",
+  "luck": 0.28,
+  "kg_max": 1000.0,
+  "control": 0,
+  "description": "O céu em sua grande infinidade permite uma pesca divina.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_frenzy": true,
+  "frenzy_chance": 0.10,
+  "can_slam": true,
+  "slam_chance": 0.10,
+  "slam_time_bonus": 0.1
+}

@@ -2,7 +2,7 @@
   "id": "ruina_prometida_craft",
   "rod_name": "Ruina Prometida",
   "name": "A Promessa Quebrada.",
-  "description": "Apenas quem dominou completamente a Caverna Carmesim pode forjar esta vara.",
+  "description": "O carmesim... espalhe-se pelo quadro branco.",
   "unlock": {
     "mode": "all",
     "requirements": [

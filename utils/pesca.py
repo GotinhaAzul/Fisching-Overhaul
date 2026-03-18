@@ -157,6 +157,9 @@ PACE_WINDOW_S = 1.5
 PACE_TRIGGER_CATCHES = 2
 PACE_STEP_MULTIPLIER = 0.85
 PACE_MIN_TIME_MULTIPLIER = 0.55
+FRENZY_MIN_TIME_S = 0.3
+FRENZY_TWO_KEY_TIME_FACTOR_CAP = 0.45
+FRENZY_ONE_KEY_TIME_FACTOR_CAP = 0.30
 
 
 def flush_input_buffer() -> None:
@@ -180,6 +183,20 @@ def _reel_time_multiplier_from_pace(recent_catch_count: int) -> float:
     stacks = recent_catch_count - PACE_TRIGGER_CATCHES + 1
     multiplier = PACE_STEP_MULTIPLIER ** stacks
     return max(PACE_MIN_TIME_MULTIPLIER, multiplier)
+
+
+def _calculate_frenzy_time_limit(
+    base_time_window_s: float,
+    sequence_len: int,
+    time_factor: float,
+) -> float:
+    effective_factor = float(time_factor)
+    if sequence_len <= 1:
+        effective_factor = min(effective_factor, FRENZY_ONE_KEY_TIME_FACTOR_CAP)
+    elif sequence_len == 2:
+        effective_factor = min(effective_factor, FRENZY_TWO_KEY_TIME_FACTOR_CAP)
+
+    return max(FRENZY_MIN_TIME_S, float(base_time_window_s) * effective_factor)
 
 
 def _try_parse_bool(value: object) -> Optional[bool]:
@@ -3200,14 +3217,12 @@ def run_fishing_round(
                         random.choice(attempt.allowed_keys)
                         for _ in range(frenzy_seq_len)
                     ]
-                    frenzy_time = max(
-                        0.5,
-                        (
-                            fish.reaction_time_s
-                            + effective_control
-                            + (weather.control_bonus if weather else 0.0)
-                        )
-                        * frenzy_time_factor,
+                    frenzy_time = _calculate_frenzy_time_limit(
+                        fish.reaction_time_s
+                        + effective_control
+                        + (weather.control_bonus if weather else 0.0),
+                        frenzy_seq_len,
+                        frenzy_time_factor,
                     )
                     frenzy_attempt = FishingAttempt(
                         sequence=frenzy_sequence,

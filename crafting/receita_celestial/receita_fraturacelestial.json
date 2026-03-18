@@ -1,0 +1,39 @@
+{
+  "id": "fraturacelestial_craft",
+  "rod_name": "Fratura Celestial",
+  "name": "Arranque aos céus.",
+  "description": "Contemple.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "bestiary_percent",
+        "percent": 60,
+        "pool_name": "Celestia"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Wyvern",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Grifo Alado",
+        "count": 2
+      },
+      {
+        "type": "mutation",
+        "mutation_name": "Nuvem",
+        "count": 10
+      },
+      {
+        "type": "money",
+        "amount": 7000
+      }
+    ]
+  }
+}

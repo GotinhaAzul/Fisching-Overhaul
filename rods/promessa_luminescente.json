@@ -1,6 +1,6 @@
 {
   "name": "Promessa Luminescente",
-  "luck": 0.12,
+  "luck": 0.17,
   "kg_max": 105.0,
   "control": 0.4,
   "description": "Forjada com fragmentos da Caverna Luminosa. Sua luz suave tem a promessa de atrair criaturas.",
@@ -8,6 +8,6 @@
   "unlocked_default": false,
   "unlockswithpool": "Caverna Luminosa",
   "can_slash": true,
-  "slash_chance": 0.10,
+  "slash_chance": 0.15,
   "slash_power": 1
 }
