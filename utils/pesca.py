@@ -3098,7 +3098,10 @@ def run_fishing_round(
             greed_triggered = game.greed_activated
             if greed_triggered:
                 mutation_gold_multiplier *= 2.0
-            is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
+            if effective_rod.shiny_override is not None:
+                is_shiny = random.random() <= effective_rod.shiny_override
+            else:
+                is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
             inventory.append(
                 InventoryEntry(
                     name=fish.name,
@@ -3289,7 +3292,10 @@ def run_fishing_round(
                     frenzy_mut_name = frenzy_mutation.name if frenzy_mutation else None
                     frenzy_mut_xp = frenzy_mutation.xp_multiplier if frenzy_mutation else 1.0
                     frenzy_mut_gold = frenzy_mutation.gold_multiplier if frenzy_mutation else 1.0
-                    frenzy_is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
+                    if effective_rod.shiny_override is not None:
+                        frenzy_is_shiny = random.random() <= effective_rod.shiny_override
+                    else:
+                        frenzy_is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
                     inventory.append(
                         InventoryEntry(
                             name=frenzy_fish.name,
