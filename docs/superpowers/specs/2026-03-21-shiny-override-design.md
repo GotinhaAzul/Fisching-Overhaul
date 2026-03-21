@@ -19,7 +19,8 @@ The global shiny config (`config/shiny.json`) sets a single `catch_chance_percen
 
 ## Scope
 
-- **In scope:** fishing catches (main catch, frenzy catch). Dupe catches inherit the parent catch's `is_shiny` flag, so they are covered implicitly.
+- **In scope:** fishing catches (main catch, frenzy catch).
+- **Dupe catches:** copy `is_shiny` directly from the parent catch variable (the `is_shiny` / `frenzy_is_shiny` variable at the dupe site already reflects the override), so no additional change is required in the dupe block.
 - **Out of scope:** appraisal shiny rolls (`roll_shiny_on_appraise`), which remain driven solely by `ShinyConfig.appraise_chance_percent`.
 
 ---
@@ -32,18 +33,30 @@ Rod JSON gains an optional key `shiny_override`. When absent, shiny rolls use th
 { "shiny_override": 5 }
 ```
 
-Accepted value formats (consistent with other rod probability stats):
+Accepted value formats (parsed via `_normalize_probability` in `utils/rods.py`):
 
-| JSON value | Interpreted as |
-|------------|---------------|
-| `5`        | 5%            |
-| `"5%"`     | 5%            |
-| `0.05`     | 5%            |
-| `0`        | 0% (never shiny) |
-| `100`      | 100% (always shiny) |
-| *(absent)* | Use global shiny config |
+| JSON value | Parsed result | Effective chance | Notes |
+|------------|--------------|-----------------|-------|
+| `5`        | `0.05`       | 5%              | `_parse_number` returns 5.0; outer `> 1.0` branch divides by 100 |
+| `"5%"`     | `0.05`       | 5%              | `_parse_number` strips `%`, divides inside the parser |
+| `0.05`     | `0.05`       | 5%              | Already a fraction; `≤ 1.0`, kept as-is |
+| `"1%"`     | `0.01`       | 1%              | Correct way to write 1% |
+| `0.01`     | `0.01`       | 1%              | Also correct |
+| **`1`**    | **`1.0`**    | **100%**        | `1 ≤ 1.0` so NOT divided — use `"1%"` or `0.01` for 1% |
+| `0`        | `0.0`        | 0% (never)      | |
+| `100`      | `1.0`        | 100% (always)   | `100 > 1.0`, divided by 100 |
+| `"100%"`   | `1.0`        | 100% (always)   | |
+| *(absent)* | —            | Global config   | |
 
-Parsing uses `_normalize_probability` from `utils/rods.py`, which already handles all these forms and clamps to `[0.0, 1.0]`.
+> **Warning for rod authors:** `"shiny_override": 1` means **always shiny (100%)**, not 1%. Write `"shiny_override": "1%"` or `"shiny_override": 0.01` for a 1% chance. This is the same convention used by all other rod probability stats.
+
+The stored value is a fraction in `[0.0, 1.0]`.
+
+---
+
+## Persistence
+
+`Rod` objects are never serialized to the save file — only the equipped rod's name is stored. `shiny_override` is re-read from its JSON source on every game load. No save migration is needed.
 
 ---
 
@@ -51,12 +64,15 @@ Parsing uses `_normalize_probability` from `utils/rods.py`, which already handle
 
 ### `utils/rods.py`
 
-1. Import `Optional` from `typing` (already present via `List`).
-2. Add field to `Rod` dataclass:
+1. Add `Optional` to the existing typing import:
+   ```python
+   from typing import List, Optional
+   ```
+2. Add field to `Rod` dataclass (after the last existing field):
    ```python
    shiny_override: Optional[float] = None
    ```
-3. In `load_rods`, parse the key — `None` if absent, normalized fraction if present:
+3. In `load_rods`, parse the key before constructing the `Rod`:
    ```python
    raw_shiny_override = data.get("shiny_override")
    shiny_override = (
@@ -65,28 +81,43 @@ Parsing uses `_normalize_probability` from `utils/rods.py`, which already handle
        else None
    )
    ```
-4. Pass `shiny_override=shiny_override` into the `Rod(...)` constructor.
+4. Add `shiny_override=shiny_override` to the `Rod(...)` constructor call.
+
+> **Note:** Do not add `shiny_override` to `UPGRADEABLE_STATS` in `rod_upgrades.py`. That list drives linear float scaling; the `None` sentinel would need special-casing and upgrades to shiny chance are out of scope.
 
 ### `utils/pesca.py`
 
-At each of the two fishing shiny roll sites, replace:
+`effective_rod` is established at line ~2875 (`effective_rod = get_effective_rod(...)`) at the top of the `while True` loop in `run_fishing_round`. Both roll sites are nested within that same loop iteration, so `effective_rod.shiny_override` is always in scope.
 
+The roll uses `random.random() <= fraction`, matching the convention of all other rod ability checks in `pesca.py` (slash, slam, recover, dupe, frenzy, greed, pierce). In practice `random.random()` returns `[0.0, 1.0)`, so `<= 0.0` is effectively never True and `<= 1.0` is always True.
+
+**Main catch (~line 3101)** — replace:
 ```python
 is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
 ```
-
 with:
-
 ```python
 if effective_rod.shiny_override is not None:
-    is_shiny = random.random() < effective_rod.shiny_override
+    is_shiny = random.random() <= effective_rod.shiny_override
 else:
     is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
 ```
 
-The two sites are:
-- Main catch (~line 3101)
-- Frenzy catch (~line 3292)
+**Frenzy catch (~line 3292)** — replace:
+```python
+frenzy_is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
+```
+with:
+```python
+if effective_rod.shiny_override is not None:
+    frenzy_is_shiny = random.random() <= effective_rod.shiny_override
+else:
+    frenzy_is_shiny = roll_shiny_on_catch(shiny_config) if shiny_config else False
+```
+
+### `CLAUDE.md`
+
+Add `shiny_override` to the Rod JSON keys table in `CLAUDE.md`.
 
 No other files require changes.
 
@@ -95,16 +126,20 @@ No other files require changes.
 ## Testing
 
 Extend `tests/test_rods_characterization.py`:
-- Rod with `shiny_override` absent → field is `None`.
-- Rod with `shiny_override: 5` → field is `0.05`.
-- Rod with `shiny_override: "5%"` → field is `0.05`.
-- Rod with `shiny_override: 0.05` → field is `0.05`.
-- Rod with `shiny_override: 0` → field is `0.0`.
 
-Fishing logic can be tested by patching `random.random` to confirm the override path is used when the field is set.
+| Input | Expected `rod.shiny_override` |
+|-------|-------------------------------|
+| *(absent)* | `None` |
+| `5` | `0.05` |
+| `"5%"` | `0.05` |
+| `0.05` | `0.05` |
+| `0` | `0.0` |
+| `1` | `1.0` (documents the footgun) |
+
+Fishing logic: patch `random.random` and verify the override path is taken when `shiny_override` is set, and the global config path is taken when it is `None`.
 
 ---
 
 ## No-Op Guarantee
 
-Rods without `shiny_override` behave identically to before. The `ShinyConfig` is passed through unchanged; appraisal is untouched.
+Rods without `shiny_override` behave identically to before. `ShinyConfig` is passed through unchanged; appraisal is untouched.
