@@ -1,7 +1,7 @@
 {
   "id": "unlock_caverna_luminosa",
   "name": "A Fenda Luminosa",
-  "description": "Nas profundezas da ruina existe um brilho que nao deveria existir. Talvez um peixe que tambem brilha possa encontra-lo.",
+  "description": "Nas profundezas da ruina existe um brilho que nao deveria existir. Talvez um peixe que tambem brilha possa abrir esta passagem.",
   "starts_unlocked": false,
   "requirements": [
     {
