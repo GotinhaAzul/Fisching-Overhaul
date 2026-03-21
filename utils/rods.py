@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 
 def _parse_number(
@@ -96,6 +96,7 @@ class Rod:
     unlocked_default: bool = False
     unlocks_with_pool: str = ""
     counts_for_bestiary_completion: bool = True
+    shiny_override: Optional[float] = None
 
 
 def load_rods(base_dir: Path) -> List[Rod]:
@@ -130,6 +131,12 @@ def load_rods(base_dir: Path) -> List[Rod]:
             counts_for_bestiary_completion = not _safe_bool(
                 data.get("exclude_from_bestiary_completion", False)
             )
+        raw_shiny_override = data.get("shiny_override")
+        shiny_override = (
+            _normalize_probability(raw_shiny_override)
+            if raw_shiny_override is not None
+            else None
+        )
 
         rods.append(
             Rod(
@@ -161,6 +168,7 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 unlocked_default=_safe_bool(data.get("unlocked_default", False)),
                 unlocks_with_pool=unlocks_with_pool,
                 counts_for_bestiary_completion=counts_for_bestiary_completion,
+                shiny_override=shiny_override,
             )
         )
 

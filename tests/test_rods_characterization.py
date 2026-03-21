@@ -101,3 +101,59 @@ def test_real_repo_high_tier_rods_and_incinerado_characterization() -> None:
     assert incinerado.gold_multiplier == 1.4
     assert incinerado.chance == 0.20
     assert incinerado.required_rods == ("Magnasas",)
+
+
+def test_shiny_override_absent_defaults_to_none(tmp_path: Path) -> None:
+    _write_rod(
+        tmp_path,
+        "rod.json",
+        {"name": "Plain Rod", "luck": 0.0, "kg_max": 10.0, "control": 0.0, "description": "", "price": 0},
+    )
+    rod = load_rods(tmp_path)[0]
+    assert rod.shiny_override is None
+
+
+def test_shiny_override_integer_parsed_as_percent(tmp_path: Path) -> None:
+    _write_rod(
+        tmp_path,
+        "rod.json",
+        {"name": "Shiny Rod", "luck": 0.0, "kg_max": 10.0, "control": 0.0, "description": "", "price": 0, "shiny_override": 5},
+    )
+    rod = load_rods(tmp_path)[0]
+    assert rod.shiny_override == 0.05
+
+
+def test_shiny_override_percent_string(tmp_path: Path) -> None:
+    _write_rod(
+        tmp_path,
+        "rod.json",
+        {"name": "Rod", "luck": 0, "kg_max": 10, "control": 0, "description": "", "price": 0, "shiny_override": "5%"},
+    )
+    assert load_rods(tmp_path)[0].shiny_override == 0.05
+
+
+def test_shiny_override_decimal_fraction(tmp_path: Path) -> None:
+    _write_rod(
+        tmp_path,
+        "rod.json",
+        {"name": "Rod", "luck": 0, "kg_max": 10, "control": 0, "description": "", "price": 0, "shiny_override": 0.05},
+    )
+    assert load_rods(tmp_path)[0].shiny_override == 0.05
+
+
+def test_shiny_override_zero_means_never(tmp_path: Path) -> None:
+    _write_rod(
+        tmp_path,
+        "rod.json",
+        {"name": "Rod", "luck": 0, "kg_max": 10, "control": 0, "description": "", "price": 0, "shiny_override": 0},
+    )
+    assert load_rods(tmp_path)[0].shiny_override == 0.0
+
+
+def test_shiny_override_one_means_always(tmp_path: Path) -> None:
+    _write_rod(
+        tmp_path,
+        "rod.json",
+        {"name": "Rod", "luck": 0, "kg_max": 10, "control": 0, "description": "", "price": 0, "shiny_override": 1},
+    )
+    assert load_rods(tmp_path)[0].shiny_override == 1.0
