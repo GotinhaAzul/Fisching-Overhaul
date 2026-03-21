@@ -55,7 +55,7 @@ Requires Python 3.10+. Dependencies: `rich`, `pynput`.
 | `hunts/<id>/` | New boss hunt |
 | `weather/<name>.json` | New weather type |
 
-Rod JSON keys: `name`, `luck`, `kg_max`, `control`, `price`, `unlocked_default`, `slash_chance`, `slam_chance`, `recover_chance`, `dupe_chance`.
+Rod JSON keys: `name`, `luck`, `kg_max`, `control`, `price`, `unlocked_default`, `slash_chance`, `slam_chance`, `recover_chance`, `dupe_chance`, `shiny_override`.
 
 Fish JSON keys: `name`, `rarity`, `kg_min`, `kg_max`, `base_value`, `sequence_len`, `reaction_time_s`.
 
