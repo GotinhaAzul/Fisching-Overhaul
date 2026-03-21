@@ -21,7 +21,7 @@ from utils.cosmetics import (
     unlock_ui_color,
     unlock_ui_icon,
 )
-from utils.mutations import load_mutations, load_mutations_optional
+from utils.mutations import filter_mutations_for_rod, load_mutations, load_mutations_optional
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -75,6 +75,76 @@ def test_mutation_loaders_missing_directory_behavior(tmp_path: Path) -> None:
         pass
     else:
         raise AssertionError("load_mutations should raise FileNotFoundError for missing directory.")
+
+
+def test_mutation_filter_uses_rod_chance_overrides_without_entering_global_pool(
+    tmp_path: Path,
+) -> None:
+    mutations_dir = tmp_path / "mutations"
+    mutations_dir.mkdir()
+
+    _write_json(
+        mutations_dir / "prometido.json",
+        {
+            "name": "Prometido",
+            "description": "",
+            "xp_multiplier": 1.4,
+            "gold_multiplier": 1.6,
+            "chance_percent": 10,
+            "required_rods": ["Promessa Luminescente", "Ruina Prometida"],
+            "rod_chance_overrides": {"Ruina Prometida": 15},
+        },
+    )
+
+    mutations = load_mutations(mutations_dir)
+
+    global_pool = filter_mutations_for_rod(mutations, "Vara Bambu")
+    promessa_pool = filter_mutations_for_rod(mutations, "Promessa Luminescente")
+    ruina_pool = filter_mutations_for_rod(mutations, "Ruina Prometida")
+
+    assert global_pool == []
+    assert len(promessa_pool) == 1
+    assert promessa_pool[0].name == "Prometido"
+    assert promessa_pool[0].chance == 0.10
+    assert len(ruina_pool) == 1
+    assert ruina_pool[0].name == "Prometido"
+    assert ruina_pool[0].chance == 0.15
+
+
+def test_mutation_filter_keeps_base_chance_and_single_rod_override_exclusive(
+    tmp_path: Path,
+) -> None:
+    mutations_dir = tmp_path / "mutations"
+    mutations_dir.mkdir()
+
+    _write_json(
+        mutations_dir / "sereno.json",
+        {
+            "name": "Sereno",
+            "description": "",
+            "xp_multiplier": 1.4,
+            "gold_multiplier": 1.6,
+            "chance_percent": 3,
+            "required_rods": ["Hollow Dusk", "Serenidade"],
+            "rod_chance_overrides": {
+                "Serenidade": 30,
+            },
+        },
+    )
+
+    mutations = load_mutations(mutations_dir)
+
+    global_pool = filter_mutations_for_rod(mutations, "Vara Bambu")
+    hollow_pool = filter_mutations_for_rod(mutations, "Hollow Dusk")
+    serenidade_pool = filter_mutations_for_rod(mutations, "Serenidade")
+
+    assert global_pool == []
+    assert len(hollow_pool) == 1
+    assert hollow_pool[0].name == "Sereno"
+    assert hollow_pool[0].chance == 0.03
+    assert len(serenidade_pool) == 1
+    assert serenidade_pool[0].name == "Sereno"
+    assert serenidade_pool[0].chance == 0.30
 
 
 def test_cosmetics_state_roundtrip_and_order_characterization() -> None:

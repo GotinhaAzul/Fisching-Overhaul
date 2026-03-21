@@ -1,0 +1,13 @@
+{
+  "name": "Chave do Café (devcoffe)",
+  "rarity": "Lendario",
+  "description": "Oi, seja bem vindo ao Café secreto!",
+  "exclude_from_bestiary_completion": true,
+  "kg_min": 1.0,
+  "kg_max": 1.0,
+  "base_value": 1,
+  "sequence_len": 1,
+  "reaction_time_s": 0.5,
+  "unsellable": true
+}
+

@@ -1,0 +1,24 @@
+{
+  "id": "maos_craft",
+  "rod_name": "Mãos",
+  "name": "Instinto Primal.",
+  "description": "Uhm... limpe as primeiro pelo menos.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Cafeteria"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish",
+        "fish_name": "Peixe-Mão",
+        "count": 3
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Sereno",
+  "description": "O rio segue seu caminho, interrupto. O fluxo é constante, interminavel, sereno.",
+  "xp_multiplier": 1.4,
+  "gold_multiplier": 1.6,
+  "chance_percent": 3,
+  "required_rods": ["Hollow Dusk", "Serenidade"],
+  "rod_chance_overrides": {
+    "Serenidade": 30
+  }
+}

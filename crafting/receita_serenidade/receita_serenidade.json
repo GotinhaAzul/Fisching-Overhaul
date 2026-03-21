@@ -1,0 +1,31 @@
+{
+  "id": "serenidade_craft",
+  "rod_name": "Serenidade",
+  "name": "A lagoa.",
+  "description": "O caminho é perturbador, mas você o cruzara com calma e serenidade. Ouça a melodia.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Cafeteria"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Peixe-Corda",
+        "mutation_name": "Sereno",
+        "count": 3
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Leviata Congelado",
+        "mutation_name": "Congelado",
+        "count": 1
+      }
+    ]
+  }
+}

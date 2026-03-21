@@ -22,6 +22,11 @@
       "amount": 1200
     },
     {
+      "type": "fish",
+      "fish_name": "Chave do Café (devcoffe)",
+      "count": 1
+    },
+    {
       "type": "xp",
       "amount": 760
     },

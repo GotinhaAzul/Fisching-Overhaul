@@ -1,0 +1,35 @@
+{
+  "id": "azul_lamina_craft",
+  "rod_name": "Azul Lâmina",
+  "name": "Céu e o Sol.",
+  "description": "Até onde o céu se extende? Até onde o Azul, é verdadeiramente celeste e não mero tom aquatico? .",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Cafeteria"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Dragão Azul",
+        "mutation_name": "Prometido",
+        "count": 2
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Dragão Azul",
+        "mutation_name": "Solar",
+        "count": 2
+      },
+      {
+        "type": "money",
+        "amount": 15000
+      }
+    ]
+  }
+}

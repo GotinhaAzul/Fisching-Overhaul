@@ -324,6 +324,16 @@ def _format_reward_preview_item(reward_payload: Dict[str, object]) -> Optional[s
         icon_name = icon_def.name if icon_def is not None else icon_id
         return f"Icone: {icon_name}"
 
+    if reward_type == "fish":
+        fish_name = reward_payload.get("fish_name")
+        if not isinstance(fish_name, str) or not fish_name:
+            return None
+        try:
+            count = max(1, int(reward_payload.get("count", 1)))
+        except (TypeError, ValueError):
+            count = 1
+        return f"{count}x {fish_name}"
+
     if reward_type == "rod":
         rod_name = reward_payload.get("rod_name")
         if isinstance(rod_name, str) and rod_name:

@@ -18,6 +18,7 @@ Each JSON file defines one claimable bestiary reward.
 - `rod`: `{ "type": "rod", "rod_name": "Vara de Bambu" }`
 - `ui_color`: `{ "type": "ui_color", "color_id": "sunset_orange" }`
 - `ui_icon`: `{ "type": "ui_icon", "icon_id": "fish" }`
+- `fish`: `{ "type": "fish", "fish_name": "Tubarao", "count": 1 }` — adds fish to inventory and marks as discovered; optional `"kg"` field fixes the weight instead of randomising it
 
 `rod` is supported by code, but currently not used in the starter reward files.
 

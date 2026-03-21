@@ -1,0 +1,10 @@
+{
+  "name": "Caotico",
+  "description": "Puro Caos, o peixe se contorce de formas estranhas, tentando escapar de tudo que o prende.",
+  "xp_multiplier": 0.8,
+  "gold_multiplier": 0.8,
+  "chance_percent": 0.15,
+  "rod_chance_overrides": {
+    "Hollow Dusk": 50
+  }
+}

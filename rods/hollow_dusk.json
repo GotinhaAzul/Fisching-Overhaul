@@ -1,0 +1,9 @@
+{
+  "name": "Hollow Dusk",
+  "luck": 0.10,
+  "kg_max": 200.0,
+  "control": 0.4,
+  "price": 3000,
+  "unlocked_default": false,
+  "unlockswithpool": "Cafeteria"
+}

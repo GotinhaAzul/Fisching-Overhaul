@@ -1,0 +1,15 @@
+{
+  "name": "Serenidade",
+  "luck": 1.20,
+  "kg_max": 1000.0,
+  "control": 0.2,
+  "description": "Paz. (For @FischDevs)",
+  "price": 0,
+  "unlocked_default": false,
+  "can_alter": true,
+  "timecount": 200,
+  "hardcount": 100,
+  "can_dupe": true,
+  "dupe_chance": 0.30,
+  "shiny_override": 3
+}

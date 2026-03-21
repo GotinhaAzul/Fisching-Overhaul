@@ -3724,6 +3724,40 @@ def main(dev_mode: bool = False):
                         notes.append(f"⬆️ Subiu {level_ups} nivel(is)!")
                 continue
 
+            if reward_type == "fish":
+                fish_name = reward_payload.get("fish_name")
+                if not isinstance(fish_name, str):
+                    continue
+                fish_profile = fish_by_name.get(fish_name)
+                if fish_profile is None:
+                    continue
+                try:
+                    count = max(1, int(reward_payload.get("count", 1)))
+                except (TypeError, ValueError):
+                    count = 1
+                fixed_kg = reward_payload.get("kg")
+                for _ in range(count):
+                    if fixed_kg is not None:
+                        try:
+                            kg = float(fixed_kg)
+                        except (TypeError, ValueError):
+                            kg = fish_profile.kg_min
+                    elif fish_profile.kg_min == fish_profile.kg_max:
+                        kg = fish_profile.kg_min
+                    else:
+                        kg = random.uniform(fish_profile.kg_min, fish_profile.kg_max)
+                    inventory.append(
+                        InventoryEntry(
+                            name=fish_profile.name,
+                            rarity=fish_profile.rarity,
+                            kg=kg,
+                            base_value=fish_profile.base_value,
+                        )
+                    )
+                discovered_fish.add(fish_profile.name)
+                notes.append(f"🎣 +{count}x {fish_profile.name}")
+                continue
+
             if reward_type == "bait":
                 bait_id = reward_payload.get("bait_id")
                 try:

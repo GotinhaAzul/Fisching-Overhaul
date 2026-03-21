@@ -1,0 +1,14 @@
+{
+  "name": "Mãos",
+  "luck": 0.01,
+  "kg_max": 100.0,
+  "control": 0,
+  "description": "... Eu não sei se quero te questionar sobre isso.",
+  "price": 0,
+  "unlocked_default": false,
+  "can_frenzy": true,
+  "frenzy_chance": 0.50,
+  "can_alter": true,
+  "timecount": 0,
+  "hardcount": 20
+}
