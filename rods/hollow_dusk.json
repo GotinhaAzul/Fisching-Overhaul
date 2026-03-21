@@ -4,6 +4,7 @@
   "kg_max": 200.0,
   "control": 0.4,
   "price": 3000,
+  "description": "Esse é um nome bem legal para uma guitarra...",
   "unlocked_default": false,
   "unlockswithpool": "Cafeteria"
 }

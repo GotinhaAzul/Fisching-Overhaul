@@ -35,7 +35,25 @@ python3 -m pytest -q
 
 ## Versao Atual
 
-Versao atual: `1.5`
+Versao atual: `1.6`
+
+### Update 1.6: Devs'n Secrets
+
+- Varas agora podem modificar a chance de pescar peixes `shiny`.
+- Completar bestiarios pode agora recompensar peixes.
+- 3 novas varas adicionadas:
+  - `Azul Lamina`
+  - `Serenidade`
+  - `Maos`
+- 2 novas mutacoes:
+  - `Sereno` (exclusiva da `Serenidade` e da `Hollow Dusk`).
+  - `Caotico`
+- Alem dos cristais da angra, uma passagem se abre para uma... cafeteria? Talvez completar o seu bestiario te de um *Codigo* para entrar na cafeteria. (Digite o codigo na aba de selecao de Pool)
+- Bug fixes:
+  - A habilidade `Pierce` nao deve mais encerrar a sequencia; cada erro corrigido conta como uma tecla acertada.
+  - `Frenzy` estava forte demais — tempo reduzido, tornando sequencias longas mais dificeis.
+
+## Previous Update Notes
 
 ### Update 1.5: Skies of Rain
 
@@ -52,8 +70,6 @@ Versao atual: `1.5`
   - `Ventania`
 - Os modificadores de clima afetam a gameplay em tempo real com bonus de XP, sorte e controle.
 - Suite de testes expandida para cobrir o carregamento de clima, rotacao, notificacoes e modificadores.
-
-## Previous Update Notes
 
 ### Update 1.4: Luminosity
 

@@ -6,5 +6,7 @@
   "description": "Leve como o ar rarefeito de Celestia. Responde bem ao toque, mas nao aguenta os maiores monstros do ceu.",
   "price": 4500,
   "unlocked_default": false,
-  "unlockswithpool": "Celestia"
+  "unlockswithpool": "Celestia",
+  "can_dupe": true,
+  "dupe_chance": 0.10
 }

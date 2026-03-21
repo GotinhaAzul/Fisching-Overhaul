@@ -157,7 +157,7 @@ PACE_WINDOW_S = 1.5
 PACE_TRIGGER_CATCHES = 2
 PACE_STEP_MULTIPLIER = 0.85
 PACE_MIN_TIME_MULTIPLIER = 0.55
-FRENZY_MIN_TIME_S = 0.3
+FRENZY_MIN_TIME_S = 0.1
 FRENZY_TWO_KEY_TIME_FACTOR_CAP = 0.45
 FRENZY_ONE_KEY_TIME_FACTOR_CAP = 0.30
 
@@ -1033,7 +1033,10 @@ class FishingMiniGame:
             if random.random() <= self.pierce_chance:
                 self.pierce_activations += 1
                 self.last_ability_label = "Pierce!"
-                # Ignora o erro, nao avanca o indice
+                self.index += 1
+                if self.is_done():
+                    elapsed = time.perf_counter() - self.start_time
+                    return FishingResult(True, "Capturou o peixe!", self.typed[:], elapsed)
                 return None
 
         elapsed = time.perf_counter() - self.start_time

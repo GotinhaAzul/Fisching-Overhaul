@@ -23,7 +23,7 @@ def test_frenzy_time_limit_caps_one_key_rounds_characterization() -> None:
     )
 
 
-def test_frenzy_time_limit_uses_point_three_second_floor_characterization() -> None:
-    assert _calculate_frenzy_time_limit(0.4, sequence_len=1, time_factor=0.30) == pytest.approx(
-        0.3
+def test_frenzy_time_limit_uses_point_one_second_floor_characterization() -> None:
+    assert _calculate_frenzy_time_limit(0.3, sequence_len=1, time_factor=0.30) == pytest.approx(
+        0.1
     )
