@@ -49,9 +49,12 @@ Versao atual: `1.6`
   - `Sereno` (exclusiva da `Serenidade` e da `Hollow Dusk`).
   - `Caotico`
 - Alem dos cristais da angra, uma passagem se abre para uma... cafeteria? Talvez completar o seu bestiario te de um *Codigo* para entrar na cafeteria. (Digite o codigo na aba de selecao de Pool)
-- Bug fixes:
-  - A habilidade `Pierce` nao deve mais encerrar a sequencia; cada erro corrigido conta como uma tecla acertada.
+- Bug fixes and changes:
+  - A habilidade `Pierce` nao deve mais fazer o jogador perder a sequencia; cada erro corrigido conta como uma tecla acertada.
   - `Frenzy` estava forte demais — tempo reduzido, tornando sequencias longas mais dificeis.
+  - Adicionada paginação no Appraise
+  - Adicionada paginação na venda de peixe individual
+  - Banshee Ígnea da missão do Prologo agora é entregável, permitindo acesso a Fossa das Marianas. Este bug foi causado por um erro no nome do peixe. (Desculpa por esse bug...)
 
 ## Previous Update Notes
 
