@@ -1,15 +1,16 @@
 {
   "name": "Serenidade",
-  "luck": 0.80,
+  "luck": 0.40,
   "kg_max": 1000.0,
   "control": 0.2,
   "description": "Paz. (For @FischDevs)",
   "price": 0,
   "unlocked_default": false,
+  "counts_for_bestiary_completion": false,
   "can_alter": true,
   "timecount": 200,
   "hardcount": 150,
   "can_dupe": true,
-  "dupe_chance": 0.30,
+  "dupe_chance": 0.25,
   "shiny_override": 3
 }

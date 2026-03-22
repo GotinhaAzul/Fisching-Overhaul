@@ -8,6 +8,7 @@ import utils.market as market
 from utils.baits import BaitDefinition
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.mutations import Mutation
+from utils.pagination import PAGE_NEXT_KEY
 from utils.rods import Rod
 
 
@@ -90,6 +91,16 @@ def _make_pool_and_fish() -> tuple[_DummyPool, _DummyFish]:
         folder=Path("lagoa"),
     )
     return pool, fish
+
+
+def _make_named_fish(index: int) -> _DummyFish:
+    return _DummyFish(
+        name=f"Peixe {index}",
+        rarity="Comum",
+        base_value=10.0 + index,
+        kg_min=1.0,
+        kg_max=5.0,
+    )
 
 
 def test_show_market_sell_individual_flow_characterization(monkeypatch) -> None:
@@ -185,6 +196,56 @@ def test_show_market_sell_individual_blocks_unsellable_characterization(monkeypa
     assert money_earned == []
     assert sold_names == []
     assert delivered_names == []
+
+
+def test_show_market_sell_individual_pagination_flow_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, _ = _make_pool_and_fish()
+    fishes = [_make_named_fish(index) for index in range(1, 12)]
+    inventory = [
+        InventoryEntry(
+            name=fish.name,
+            rarity=fish.rarity,
+            kg=1.0 + (index * 0.1),
+            base_value=fish.base_value,
+        )
+        for index, fish in enumerate(fishes, start=1)
+    ]
+    target_entry = inventory[-1]
+    money_earned: list[float] = []
+    sold_names: list[str] = []
+    delivered_names: list[str] = []
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(
+        "builtins.input",
+        _InputFeeder(["1", "1", PAGE_NEXT_KEY, "1", "", "0"]),
+    )
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=0.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish for fish in fishes},
+        available_mutations=[],
+        on_money_earned=money_earned.append,
+        on_fish_sold=lambda entry: sold_names.append(entry.name),
+        on_fish_delivered=lambda entry: delivered_names.append(entry.name),
+    )
+
+    expected_value = calculate_entry_value(target_entry)
+    assert balance == expected_value
+    assert level == 1
+    assert xp == 0
+    assert len(inventory) == 10
+    assert target_entry.name not in [entry.name for entry in inventory]
+    assert money_earned == [expected_value]
+    assert sold_names == [target_entry.name]
+    assert delivered_names == [target_entry.name]
 
 
 def test_show_market_sell_all_keeps_unsellable_characterization(monkeypatch) -> None:
@@ -406,6 +467,48 @@ def test_show_market_appraise_flow_characterization(monkeypatch) -> None:
     assert entry.mutation_name == "Albino"
     assert entry.mutation_xp_multiplier == 1.5
     assert entry.mutation_gold_multiplier == 1.1
+
+
+def test_show_market_appraise_selection_pagination_flow_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, _ = _make_pool_and_fish()
+    fishes = [_make_named_fish(index) for index in range(1, 12)]
+    inventory = [
+        InventoryEntry(
+            name=fish.name,
+            rarity=fish.rarity,
+            kg=2.0,
+            base_value=fish.base_value,
+        )
+        for fish in fishes
+    ]
+    target_entry = inventory[-1]
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.random, "uniform", lambda _a, _b: 4.2)
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", PAGE_NEXT_KEY, "1", "t", "0", "0"]))
+
+    expected_cost = max(1.0, calculate_entry_value(target_entry) * 0.35)
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=100.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish for fish in fishes},
+        available_mutations=[],
+        equipped_rod=starter,
+    )
+
+    assert level == 1
+    assert xp == 0
+    assert balance == 100.0 - expected_cost
+    assert target_entry.kg == 4.2
+    assert target_entry.mutation_name is None
+    assert all(entry.kg == 2.0 for entry in inventory[:-1])
 
 
 def test_show_market_appraise_quick_repeat_same_fish_characterization(monkeypatch) -> None:

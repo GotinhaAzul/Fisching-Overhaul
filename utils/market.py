@@ -32,6 +32,7 @@ from utils.shiny import ShinyConfig, roll_shiny_on_appraise
 from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel
 from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
+from utils.pagination import PAGE_NEXT_KEY, PAGE_PREV_KEY, apply_page_hotkey, get_page_slice
 from utils.rods import Rod
 from utils.rod_upgrades import (
     UPGRADEABLE_STATS,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
 ORDER_ROTATION_SECONDS = 6 * 60
 ORDER_MIN_COUNT = 2
 ORDER_MAX_COUNT = 7
+MARKET_INVENTORY_PAGE_SIZE = 10
 
 
 RARITY_REWARD_MULTIPLIER: Dict[str, float] = {
@@ -707,6 +709,116 @@ def show_market(
             f"Controle: {bait.control:+.1f}s"
         )
 
+    def _read_paginated_inventory_choice(total_pages: int) -> str:
+        if sys.stdin is not None and sys.stdin.isatty():
+            instant_keys = {PAGE_PREV_KEY, PAGE_NEXT_KEY} if total_pages > 1 else set()
+            return read_menu_choice(
+                "> ",
+                instant_keys=instant_keys,
+            ).strip().lower()
+        return input("> ").strip().lower()
+
+    def _prompt_inventory_entry_index(
+        *,
+        title: str,
+        header_lines: List[str],
+        render_entry: Callable[[InventoryEntry], MenuOption],
+        empty_message: str,
+        page: int = 0,
+        status_message: str = "",
+    ) -> tuple[Optional[int], int]:
+        current_page = page
+        message = status_message
+
+        while True:
+            clear_screen()
+            if not inventory:
+                print(empty_message)
+                input("\nEnter para voltar.")
+                return None, current_page
+
+            page_slice = get_page_slice(
+                len(inventory),
+                current_page,
+                MARKET_INVENTORY_PAGE_SIZE,
+            )
+            current_page = page_slice.page
+            page_entries = inventory[page_slice.start:page_slice.end]
+
+            panel_header_lines = list(header_lines)
+            panel_header_lines.append(
+                (
+                    f"Pagina {current_page + 1}/{page_slice.total_pages} "
+                    f"({page_slice.start + 1}-{page_slice.end} de {len(inventory)})"
+                )
+            )
+            if message:
+                panel_header_lines.append(f"Aviso: {message}")
+                message = ""
+            options: List[MenuOption] = []
+            for display_index, entry in enumerate(page_entries, start=1):
+                rendered_option = render_entry(entry)
+                options.append(
+                    MenuOption(
+                        str(display_index),
+                        rendered_option.label,
+                        hint=rendered_option.hint,
+                        enabled=rendered_option.enabled,
+                        status=rendered_option.status,
+                    )
+                )
+            if page_slice.total_pages > 1:
+                options.extend(
+                    [
+                        MenuOption(
+                            PAGE_NEXT_KEY.upper(),
+                            "Proxima pagina",
+                            f"Itens {current_page + 1}/{page_slice.total_pages}",
+                            enabled=page_slice.has_next,
+                        ),
+                        MenuOption(
+                            PAGE_PREV_KEY.upper(),
+                            "Pagina anterior",
+                            f"Itens {current_page + 1}/{page_slice.total_pages}",
+                            enabled=page_slice.has_prev,
+                        ),
+                    ]
+                )
+            options.append(MenuOption("0", "Voltar"))
+
+            print_menu_panel(
+                title,
+                header_lines=panel_header_lines,
+                options=options,
+                prompt="Digite o numero do peixe:",
+                show_badge=False,
+                width=92,
+            )
+
+            choice = _read_paginated_inventory_choice(page_slice.total_pages)
+            if choice == "0":
+                return None, current_page
+
+            next_page, moved = apply_page_hotkey(
+                choice,
+                current_page,
+                page_slice.total_pages,
+            )
+            if moved:
+                current_page = next_page
+                continue
+
+            if not choice.isdigit():
+                message = "Entrada invalida."
+                continue
+
+            selected_index = int(choice) - 1
+            if not (0 <= selected_index < len(page_entries)):
+                message = "Numero fora do intervalo."
+                continue
+
+            return page_slice.start + selected_index, current_page
+
     def _format_rarity_distribution(crate: BaitCrateDefinition) -> str:
         if not crate.rarity_chances:
             return "Distribuicao: uniforme"
@@ -852,37 +964,32 @@ def show_market(
             return balance_local
 
         if sell_choice == "1":
-            clear_screen()
-            print_spaced_lines(["Escolha o peixe para vender:"])
-            for index, entry in enumerate(inventory, start=1):
+            def _render_sell_entry(entry: InventoryEntry) -> MenuOption:
                 value = _calc_value(entry)
                 mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
                 unsellable_label = " [Unsellable]" if entry.is_unsellable else ""
-                print(
-                    f"{index}. {entry.name} "
-                    f"({entry.kg:0.2f}kg){mutation_label}{unsellable_label} "
-                    f"- {format_currency(value)}"
+                return MenuOption(
+                    "",
+                    f"{entry.name} ({entry.kg:0.2f}kg){mutation_label}{unsellable_label}",
+                    hint=format_currency(value),
                 )
 
-            selection = input("Digite o numero do peixe: ").strip()
-            if not selection.isdigit():
-                print("Entrada invalida.")
-                input("\nEnter para voltar.")
+            selected_index, _ = _prompt_inventory_entry_index(
+                title="Vender peixe",
+                header_lines=["Escolha o peixe para vender:"],
+                render_entry=_render_sell_entry,
+                empty_message="Inventario vazio.",
+            )
+            if selected_index is None:
                 return balance_local
 
-            selected_index = int(selection)
-            if not (1 <= selected_index <= len(inventory)):
-                print("Numero fora do intervalo.")
-                input("\nEnter para voltar.")
-                return balance_local
-
-            entry = inventory[selected_index - 1]
+            entry = inventory[selected_index]
             if entry.is_unsellable:
                 print("Este peixe está marcado como não vendável.")
                 input("\nEnter para voltar.")
                 return balance_local
 
-            entry = inventory.pop(selected_index - 1)
+            entry = inventory.pop(selected_index)
             _mark_inventory_fish_counts_dirty()
             value = _calc_value(entry)
             balance_local += value
@@ -1188,6 +1295,7 @@ def show_market(
             return balance_local
 
         selected_index: Optional[int] = None
+        selection_page = 0
         last_result: Optional[Dict[str, object]] = None
         session_notes: List[str] = []
         status_message = ""
@@ -1209,42 +1317,36 @@ def show_market(
 
         while True:
             if selected_index is None:
-                clear_screen()
-                header_lines = [
-                    "=== Appraise ===",
-                    "Selecione um peixe uma vez e rerole rapidamente.",
-                    "0. Voltar",
-                ]
-                if status_message:
-                    header_lines.append(f"Aviso: {status_message}")
-                    status_message = ""
-                print_spaced_lines(header_lines)
-                for index, entry in enumerate(inventory, start=1):
+                def _render_appraise_entry(entry: InventoryEntry) -> MenuOption:
                     value = _calc_value(entry)
                     cost = _appraise_cost(entry)
                     mutation_label = entry.mutation_name if entry.mutation_name else "Sem mutacao"
-                    print(
-                        f"{index}. {entry.name} [{entry.rarity}] "
-                        f"({entry.kg:0.2f}kg | {mutation_label}) "
-                        f"- Valor: {format_currency(value)} | Custo: {format_currency(cost)}"
+                    return MenuOption(
+                        "",
+                        f"{entry.name} [{entry.rarity}] ({entry.kg:0.2f}kg | {mutation_label})",
+                        hint=(
+                            f"Valor {format_currency(value)} | "
+                            f"Custo {format_currency(cost)}"
+                        ),
                     )
 
-                selection = input("Digite o numero do peixe: ").strip()
-                if selection == "0":
+                selected_entry_index, selection_page = _prompt_inventory_entry_index(
+                    title="Appraise",
+                    header_lines=[
+                        "Selecione um peixe uma vez e rerole rapidamente.",
+                    ],
+                    render_entry=_render_appraise_entry,
+                    empty_message="Inventario vazio.",
+                    page=selection_page,
+                    status_message=status_message,
+                )
+                status_message = ""
+                if selected_entry_index is None:
                     return balance_local
-                if not selection.isdigit():
-                    status_message = "Entrada invalida."
-                    continue
 
-                selected_candidate = int(selection) - 1
-                if not (0 <= selected_candidate < len(inventory)):
-                    status_message = "Numero fora do intervalo."
-                    continue
-
-                selected_index = selected_candidate
+                selected_index = selected_entry_index
                 last_result = None
                 session_notes = []
-                status_message = ""
                 continue
 
             if selected_index >= len(inventory):
