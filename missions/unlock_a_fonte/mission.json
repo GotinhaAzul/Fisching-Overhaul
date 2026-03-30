@@ -1,0 +1,28 @@
+{
+  "id": "unlock_a_fonte",
+  "name": "Abaixo da Areia",
+  "description": "O Deserto Taara esconde algo abaixo dele. Dizem que quem conhece bem o deserto consegue ouvir a água.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "bestiary_pool_percent",
+      "pool_name": "Deserto Taara",
+      "percent": 70
+    },
+    {
+      "type": "deliver_mutation",
+      "count": 2,
+      "mutation_name": "Arenoso"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["A Fonte"]
+    },
+    {
+      "type": "xp",
+      "amount": 500
+    }
+  ]
+}

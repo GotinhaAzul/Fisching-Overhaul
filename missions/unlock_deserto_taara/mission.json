@@ -1,0 +1,31 @@
+{
+  "id": "unlock_deserto_taara",
+  "name": "Marcas de Areia",
+  "description": "Boatos de um deserto antigo chegam até você. Um leito de mar seco que guarda criaturas de outro tempo. Mas o deserto só se abre para quem carrega sua marca.",
+  "starts_unlocked": true,
+  "requirements": [
+    {
+      "type": "level",
+      "level": 9
+    },
+    {
+      "type": "deliver_mutation",
+      "count": 1,
+      "mutation_name": "Arenoso"
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_pools",
+      "pool_names": ["Deserto Taara"]
+    },
+    {
+      "type": "unlock_missions",
+      "mission_ids": ["unlock_a_fonte", "unlock_ouro_fervente_rod"]
+    },
+    {
+      "type": "xp",
+      "amount": 400
+    }
+  ]
+}

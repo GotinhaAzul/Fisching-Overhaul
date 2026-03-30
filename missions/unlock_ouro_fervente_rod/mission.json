@@ -1,0 +1,33 @@
+{
+  "id": "unlock_ouro_fervente_rod",
+  "name": "Calor que Forja",
+  "description": "Algo no coração de Taara guarda uma vara. Ela só pode ser alcançada por quem já dominou o que o deserto tem de mais duro.",
+  "starts_unlocked": false,
+  "requirements": [
+    {
+      "type": "deliver_fish",
+      "count": 1,
+      "fish_name": "Xeique de Taara"
+    },
+    {
+      "type": "deliver_fish_with_mutation",
+      "count": 1,
+      "fish_name": "Serpente Dunária",
+      "mutation_name": "Incinerado"
+    },
+    {
+      "type": "earn_money",
+      "amount": 5000
+    }
+  ],
+  "rewards": [
+    {
+      "type": "unlock_rods",
+      "rod_names": ["Ouro Fervente"]
+    },
+    {
+      "type": "xp",
+      "amount": 800
+    }
+  ]
+}
