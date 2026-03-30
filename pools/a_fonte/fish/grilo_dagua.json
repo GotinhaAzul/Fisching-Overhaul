@@ -1,0 +1,10 @@
+{
+  "name": "Grilo d'Água",
+  "rarity": "Comum",
+  "description": "Um peixe cujas nadadeiras vibram em frequência audível, criando um som de grilo que ecoa pelas paredes da caverna. Para de soar imediatamente ao sair da água. Não oferece resistência, parece mais curioso do que assustado.",
+  "kg_min": 0.1,
+  "kg_max": 0.5,
+  "base_value": 7,
+  "sequence_len": 3,
+  "reaction_time_s": 2.5
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Borboleta Aquática",
+  "rarity": "Incomum",
+  "description": "Batizada pelas nadadeiras simétricas que se abrem como asas ao desacelerar. Navega A Fonte por mudanças de pressão na água com precisão quase sobrenatural entre as formações rochosas. Ao ser fisgada, abre as nadadeiras completamente, criando arrasto desproporcional ao tamanho.",
+  "kg_min": 1.5,
+  "kg_max": 4.5,
+  "base_value": 36,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

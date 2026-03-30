@@ -1,0 +1,10 @@
+{
+  "name": "Espírito de Taara",
+  "rarity": "Lendario",
+  "description": "Tão antigo que alguns acreditam que A Fonte se formou ao redor dele, não o contrário. Seu corpo é quase indistinguível da água, visível apenas pela distorção que cria ao se mover. Quando capturado, os pescadores relatam que a água ao redor fica, por um breve instante, completamente imóvel.",
+  "kg_min": 22.0,
+  "kg_max": 55.0,
+  "base_value": 168,
+  "sequence_len": 8,
+  "reaction_time_s": 0.8
+}

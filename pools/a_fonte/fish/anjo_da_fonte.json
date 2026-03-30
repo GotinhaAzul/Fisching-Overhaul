@@ -1,0 +1,10 @@
+{
+  "name": "Anjo da Fonte",
+  "rarity": "Epico",
+  "description": "Branco, de nadadeiras semi-transparentes com bordas bioluminescentes que pulsam lentamente. Perfeitamente adaptado à calma de A Fonte, reage a perturbações com um único arranco veloz antes de se estabilizar novamente.",
+  "kg_min": 7.0,
+  "kg_max": 18.0,
+  "base_value": 106,
+  "sequence_len": 7,
+  "reaction_time_s": 1.2
+}

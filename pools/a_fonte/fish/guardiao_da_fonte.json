@@ -1,0 +1,10 @@
+{
+  "name": "Guardião da Fonte",
+  "rarity": "Epico",
+  "description": "Um peixe de porte grande coberto por placas calcárias acumuladas ao longo de décadas. Mantém posição fixa perto do ponto mais profundo da nascente. Não foge quando fisgado, usa a corrente da fonte como alavanca contra a linha.",
+  "kg_min": 14.0,
+  "kg_max": 38.0,
+  "base_value": 112,
+  "sequence_len": 7,
+  "reaction_time_s": 1.0
+}

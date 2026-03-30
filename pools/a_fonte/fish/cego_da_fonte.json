@@ -1,0 +1,10 @@
+{
+  "name": "Cego da Fonte",
+  "rarity": "Raro",
+  "description": "Sem olhos, navega inteiramente pela pressão da água e campos elétricos imperceptíveis. Gerações em A Fonte tornaram os olhos redundantes. Lento, mas capaz de sentir o anzol antes de tocá-lo, escapando por uma fração de segundo.",
+  "kg_min": 3.0,
+  "kg_max": 8.0,
+  "base_value": 65,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

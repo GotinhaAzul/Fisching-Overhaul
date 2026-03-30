@@ -1,0 +1,10 @@
+{
+  "name": "Peixe de Copo",
+  "rarity": "Comum",
+  "description": "Completamente transparente. Cada órgão interno é visível através da pele como vidro. Evoluiu em A Fonte onde a camuflagem por transparência provou ser mais eficaz que qualquer cor. Quase não resiste ao anzol.",
+  "kg_min": 0.2,
+  "kg_max": 1.0,
+  "base_value": 10,
+  "sequence_len": 4,
+  "reaction_time_s": 2.5
+}

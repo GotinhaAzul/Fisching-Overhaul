@@ -1,0 +1,10 @@
+{
+  "name": "Sereia Subterrânea",
+  "rarity": "Raro",
+  "description": "Comprido, iridescente, e associado às lendas mais antigas sobre A Fonte. Sua vocalização, uma vibração grave sentida mais do que ouvida, ressoa por toda a caverna. Raro o suficiente para que a maioria dos pescadores nunca o veja. Quando fisgado, não luta. Apenas observa.",
+  "kg_min": 4.0,
+  "kg_max": 11.0,
+  "base_value": 70,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Lanterna das Cavernas",
+  "rarity": "Raro",
+  "description": "Peixe bioluminescente que serve de fonte de luz natural nos trechos mais profundos de A Fonte. Casais sincronizam pulsações para atrair presas. Sob estresse, pulsa em ritmo acelerado, fazendo a caverna piscar.",
+  "kg_min": 2.5,
+  "kg_max": 7.0,
+  "base_value": 62,
+  "sequence_len": 5,
+  "reaction_time_s": 1.5
+}

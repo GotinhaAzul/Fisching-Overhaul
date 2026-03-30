@@ -1,0 +1,12 @@
+{
+  "name": "A Fonte",
+  "description": "Escondida sob o Deserto Taara, uma nascente subterrânea preserva um ecossistema que o mundo acima desconhece.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 50,
+    "Incomum": 25,
+    "Raro": 16,
+    "Epico": 8,
+    "Lendario": 1
+  }
+}
