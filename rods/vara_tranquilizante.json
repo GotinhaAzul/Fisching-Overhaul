@@ -1,0 +1,13 @@
+{
+  "name": "Vara Tranquilizante",
+  "luck": 0.20,
+  "kg_max": 130.0,
+  "control": 0.35,
+  "description": "A nascente acalma até os peixes mais agitados. E também quem a segura.",
+  "price": 7500,
+  "unlocked_default": false,
+  "unlockswithpool": "A Fonte",
+  "can_alter": true,
+  "timecount": 60,
+  "hardcount": 20
+}
