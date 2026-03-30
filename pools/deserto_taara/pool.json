@@ -1,0 +1,12 @@
+{
+  "name": "Deserto Taara",
+  "description": "Um leito de mar antigo que secou há milênios. A areia guarda criaturas que se recusam a desaparecer.",
+  "unlocked_default": false,
+  "rarity_chances": {
+    "Comum": 55,
+    "Incomum": 23,
+    "Raro": 14,
+    "Epico": 7,
+    "Lendario": 1
+  }
+}

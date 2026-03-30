@@ -1,0 +1,10 @@
+{
+  "name": "Aruanã Sepultado",
+  "rarity": "Incomum",
+  "description": "Uma linhagem de Aruanã que migrou para as correntes subterrâneas de Taara gerações atrás. A ausência de luz clareou suas escamas ao branco e apurou seus reflexos. Quando fisgado, salta com força desproporcional ao corpo.",
+  "kg_min": 2.0,
+  "kg_max": 6.0,
+  "base_value": 30,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

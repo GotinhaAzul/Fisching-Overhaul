@@ -1,0 +1,10 @@
+{
+  "name": "Ancião de Areia",
+  "rarity": "Epico",
+  "description": "Uma criatura de porte imenso que habita os canais mais fundos de Taara. Sua idade é estimada pelos minerais incrustados no casco, camadas que levam décadas para se formar. Não foge do anzol.",
+  "kg_min": 15.0,
+  "kg_max": 35.0,
+  "base_value": 100,
+  "sequence_len": 8,
+  "reaction_time_s": 1.2
+}

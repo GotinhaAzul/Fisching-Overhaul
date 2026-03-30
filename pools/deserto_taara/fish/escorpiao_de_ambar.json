@@ -1,0 +1,10 @@
+{
+  "name": "Escorpião de Âmbar",
+  "rarity": "Epico",
+  "description": "Preservado em âmbar por tempo incalculável, inexplicavelmente ainda vivo. As patas ainda se movem com precisão mecânica. Quando fisgado, o âmbar ao redor de seu corpo cria resistência lateral intensa.",
+  "kg_min": 8.0,
+  "kg_max": 20.0,
+  "base_value": 95,
+  "sequence_len": 7,
+  "reaction_time_s": 1.2
+}

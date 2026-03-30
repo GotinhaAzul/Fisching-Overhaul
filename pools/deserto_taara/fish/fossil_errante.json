@@ -1,0 +1,10 @@
+{
+  "name": "Fóssil Errante",
+  "rarity": "Raro",
+  "description": "Uma criatura cujo metabolismo abrandou ao ponto de suspender o envelhecimento. Suas escamas têm textura calcária, como se já estivesse fossilizado. Resiste ao anzol com uma teimosia silenciosa e constante.",
+  "kg_min": 5.0,
+  "kg_max": 13.0,
+  "base_value": 62,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

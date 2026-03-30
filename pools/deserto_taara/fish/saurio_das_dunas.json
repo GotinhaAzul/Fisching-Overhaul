@@ -1,0 +1,10 @@
+{
+  "name": "Saurio das Dunas",
+  "rarity": "Raro",
+  "description": "Um réptil aquático de escamas largas adaptadas para deslizar sobre areia. Detecta presas pela vibração do substrato e reage com arrancadas curtas e precisas. Na linha, alterna entre resistência passiva e arrancos bruscos.",
+  "kg_min": 4.0,
+  "kg_max": 10.0,
+  "base_value": 65,
+  "sequence_len": 6,
+  "reaction_time_s": 1.5
+}

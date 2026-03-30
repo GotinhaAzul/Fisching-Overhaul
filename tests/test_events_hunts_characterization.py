@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from utils.pesca import load_hunts, load_pools
+from utils.pesca import FishProfile, load_hunts, load_pools
 from utils.events import EventDefinition, EventManager
 from utils.hunts import HuntDefinition, HuntManager
 
@@ -34,6 +34,7 @@ def _hunt(
     name: str = "Hunt",
     pool_name: str = "Rio",
     duration_s: float = 40.0,
+    fish_profiles: list[FishProfile] | None = None,
 ) -> HuntDefinition:
     return HuntDefinition(
         hunt_id=hunt_id,
@@ -45,9 +46,28 @@ def _hunt(
         disturbance_per_catch=2.0,
         disturbance_max=10.0,
         rarity_weights={},
-        fish_profiles=[],
+        fish_profiles=list(fish_profiles or []),
         cooldown_s=20.0,
         disturbance_decay_per_check=0.0,
+    )
+
+
+def _fish(
+    name: str,
+    *,
+    rarity: str = "Raro",
+    kg_min: float = 1.0,
+    kg_max: float = 5.0,
+) -> FishProfile:
+    return FishProfile(
+        name=name,
+        rarity=rarity,
+        description="Descricao",
+        kg_min=kg_min,
+        kg_max=kg_max,
+        base_value=10.0,
+        sequence_len=4,
+        reaction_time_s=2.0,
     )
 
 
@@ -99,7 +119,7 @@ def test_hunt_manager_force_hunt_notification_queue_characterization(monkeypatch
     now = {"value": 80.0}
     monkeypatch.setattr("utils.hunts.time.monotonic", lambda: now["value"])
 
-    hunt = _hunt("h1", name="Caos")
+    hunt = _hunt("h1", name="Caos", fish_profiles=[_fish("Lula Gigante")])
     manager = HuntManager([hunt], dev_tools_enabled=True)
     manager.suppress_notifications(True)
 
@@ -118,6 +138,7 @@ def test_hunt_manager_force_hunt_notification_queue_characterization(monkeypatch
     assert active.definition.hunt_id == "h1"
     assert active.started_at == 80.0
     assert active.ends_at == 120.0
+    assert active.remaining_fish_names == ["Lula Gigante"]
     assert manager.pop_notifications() == ["Hunt iniciada em Rio: Caos"]
 
     after_state = manager.serialize_state()
@@ -128,12 +149,21 @@ def test_hunt_manager_serialize_restore_roundtrip_characterization(monkeypatch) 
     now = {"value": 500.0}
     monkeypatch.setattr("utils.hunts.time.monotonic", lambda: now["value"])
 
-    hunts = [_hunt("h1", name="Caos"), _hunt("h2", name="Marola", pool_name="Lagoa")]
+    hunts = [
+        _hunt("h1", name="Caos", fish_profiles=[_fish("Lula Gigante"), _fish("Kraken Jovem")]),
+        _hunt("h2", name="Marola", pool_name="Lagoa", fish_profiles=[_fish("Pirarucu Ancestral")]),
+    ]
     manager = HuntManager(hunts, dev_tools_enabled=True)
     manager.suppress_notifications(True)
 
     manager.record_catch("Rio")
     manager.force_hunt("h1")
+    ended = manager.consume_hunt_fish(
+        "Rio",
+        "Lula Gigante",
+        catchable_fish_names={"Kraken Jovem"},
+    )
+    assert ended is False
     raw_state = manager.serialize_state()
 
     restored = HuntManager(hunts, dev_tools_enabled=True)
@@ -149,6 +179,39 @@ def test_hunt_manager_serialize_restore_roundtrip_characterization(monkeypatch) 
     assert "Rio" in active_by_pool
     assert active_by_pool["Rio"]["hunt_id"] == "h1"
     assert active_by_pool["Rio"]["remaining_s"] > 0.0
+    assert active_by_pool["Rio"]["remaining_fish_names"] == ["Kraken Jovem"]
+    assert [fish.name for fish in restored.get_available_fish_for_pool("Rio")] == ["Kraken Jovem"]
+
+
+def test_hunt_manager_consumes_only_current_hunt_instance_and_ends_when_exhausted(
+    monkeypatch,
+) -> None:
+    now = {"value": 900.0}
+    monkeypatch.setattr("utils.hunts.time.monotonic", lambda: now["value"])
+
+    hunt = _hunt("h1", name="Ataque", fish_profiles=[_fish("Lula Gigante")])
+    manager = HuntManager([hunt], dev_tools_enabled=True)
+    manager.suppress_notifications(True)
+
+    manager.force_hunt("h1")
+    assert [fish.name for fish in manager.get_available_fish_for_pool("Rio")] == ["Lula Gigante"]
+
+    ended = manager.consume_hunt_fish(
+        "Rio",
+        "Lula Gigante",
+        catchable_fish_names=set(),
+    )
+    assert ended is True
+    assert manager.get_active_hunt_for_pool("Rio") is None
+    assert manager.get_available_fish_for_pool("Rio") == []
+    assert manager.pop_notifications() == [
+        "Hunt iniciada em Rio: Ataque",
+        "A hunt 'Ataque' terminou.",
+    ]
+
+    now["value"] = 930.0
+    manager.force_hunt("h1")
+    assert [fish.name for fish in manager.get_available_fish_for_pool("Rio")] == ["Lula Gigante"]
 
 
 def test_real_repo_forbidden_forest_pool_and_hunt_characterization() -> None:
@@ -175,3 +238,169 @@ def test_real_repo_forbidden_forest_pool_and_hunt_characterization() -> None:
         "Mossjaw",
         "Awakened Mossjaw",
     }
+
+
+def test_deserto_taara_pool_loads_correct_fish_count(tmp_path: Path) -> None:
+    import json as _json
+
+    pool_dir = tmp_path / "deserto_taara"
+    pool_dir.mkdir()
+    fish_dir = pool_dir / "fish"
+    fish_dir.mkdir()
+
+    pool_data = {
+        "name": "Deserto Taara",
+        "description": "Um leito de mar antigo que secou ha milenios. A areia guarda criaturas que se recusam a desaparecer.",
+        "unlocked_default": False,
+        "rarity_chances": {
+            "Comum": 55,
+            "Incomum": 23,
+            "Raro": 14,
+            "Epico": 7,
+            "Lendario": 1,
+        },
+    }
+    (pool_dir / "pool.json").write_text(_json.dumps(pool_data), encoding="utf-8")
+
+    rarities = [
+        ("areia", "Comum"),
+        ("piramboia_taara", "Comum"),
+        ("bagre_sedimentar", "Incomum"),
+        ("aruana_sepultado", "Incomum"),
+        ("fossil_errante", "Raro"),
+        ("saurio_das_dunas", "Raro"),
+        ("serpente_dunaria", "Raro"),
+        ("escorpiao_de_ambar", "Epico"),
+        ("anciao_de_areia", "Epico"),
+        ("xeique_de_taara", "Lendario"),
+    ]
+    for slug, rarity in rarities:
+        fish_data = {
+            "name": slug,
+            "rarity": rarity,
+            "description": "",
+            "kg_min": 1.0,
+            "kg_max": 2.0,
+            "base_value": 10,
+            "sequence_len": 4,
+            "reaction_time_s": 2.0,
+        }
+        (fish_dir / f"{slug}.json").write_text(_json.dumps(fish_data), encoding="utf-8")
+
+    pools = load_pools(tmp_path)
+    taara = next(p for p in pools if p.name == "Deserto Taara")
+    assert len(taara.fish_profiles) == 10
+    rarities_found = {f.rarity for f in taara.fish_profiles}
+    assert "Lendario" in rarities_found
+    assert "Epico" in rarities_found
+
+    repo_pools = {
+        pool.name: pool for pool in load_pools(Path(__file__).resolve().parent.parent / "pools")
+    }
+    assert "Deserto Taara" in repo_pools
+    assert len(repo_pools["Deserto Taara"].fish_profiles) == 10
+
+
+def test_a_fonte_pool_loads_correct_fish_count(tmp_path: Path) -> None:
+    import json as _json
+
+    pool_dir = tmp_path / "a_fonte"
+    pool_dir.mkdir()
+    fish_dir = pool_dir / "fish"
+    fish_dir.mkdir()
+
+    pool_data = {
+        "name": "A Fonte",
+        "description": "Escondida sob o Deserto Taara, uma nascente subterranea preserva um ecossistema que o mundo acima desconhece.",
+        "unlocked_default": False,
+        "rarity_chances": {
+            "Comum": 50,
+            "Incomum": 25,
+            "Raro": 16,
+            "Epico": 8,
+            "Lendario": 1,
+        },
+    }
+    (pool_dir / "pool.json").write_text(_json.dumps(pool_data), encoding="utf-8")
+
+    rarities = [
+        ("grilo_dagua", "Comum"),
+        ("peixe_de_copo", "Comum"),
+        ("camarao_aurora", "Incomum"),
+        ("borboleta_aquatica", "Incomum"),
+        ("lanterna_das_cavernas", "Raro"),
+        ("cego_da_fonte", "Raro"),
+        ("sereia_subterranea", "Raro"),
+        ("anjo_da_fonte", "Epico"),
+        ("guardiao_da_fonte", "Epico"),
+        ("espirito_de_taara", "Lendario"),
+    ]
+    for slug, rarity in rarities:
+        fish_data = {
+            "name": slug,
+            "rarity": rarity,
+            "description": "",
+            "kg_min": 1.0,
+            "kg_max": 2.0,
+            "base_value": 10,
+            "sequence_len": 4,
+            "reaction_time_s": 2.0,
+        }
+        (fish_dir / f"{slug}.json").write_text(_json.dumps(fish_data), encoding="utf-8")
+
+    pools = load_pools(tmp_path)
+    fonte = next(p for p in pools if p.name == "A Fonte")
+    assert len(fonte.fish_profiles) == 10
+    rarities_found = {f.rarity for f in fonte.fish_profiles}
+    assert "Lendario" in rarities_found
+    assert "Epico" in rarities_found
+
+    repo_pools = {
+        pool.name: pool for pool in load_pools(Path(__file__).resolve().parent.parent / "pools")
+    }
+    assert "A Fonte" in repo_pools
+    assert len(repo_pools["A Fonte"].fish_profiles) == 10
+
+
+def test_coroa_de_espinhos_hunt_loads_for_grandreef(tmp_path: Path) -> None:
+    import json as _json
+
+    hunt_dir = tmp_path / "coroa_de_espinhos"
+    hunt_dir.mkdir()
+    fish_dir = hunt_dir / "fish"
+    fish_dir.mkdir()
+    payload = {
+        "name": "Coroa de Espinhos",
+        "description": "Uma forma estrelada de proporções absurdas avança pelo recife. Cada coral que toca desaparece. O recife está em silêncio.",
+        "pool_name": "Grande Recife",
+        "duration_minutes": 6,
+        "check_interval_seconds": 60,
+        "disturbance_per_catch": 2,
+        "disturbance_max": 1800,
+        "rarity_chances": {"Epico": 6, "Lendario": 4},
+        "cooldown_minutes": 10,
+        "disturbance_decay_per_check": 3,
+    }
+    (hunt_dir / "hunt.json").write_text(_json.dumps(payload), encoding="utf-8")
+    fish_payload = {
+        "name": "Coroa de Espinhos",
+        "rarity": "Lendario",
+        "description": "Uma estrela-do-mar colossal que devora o recife em seu caminho.",
+        "kg_min": 18.0,
+        "kg_max": 52.0,
+        "base_value": 145,
+        "sequence_len": 8,
+        "reaction_time_s": 1.0,
+    }
+    (fish_dir / "coroa_de_espinhos.json").write_text(_json.dumps(fish_payload), encoding="utf-8")
+    hunts = load_hunts(tmp_path)
+    hunt = next(x for x in hunts if x.name == "Coroa de Espinhos")
+    assert hunt.pool_name == "Grande Recife"
+    assert hunt.rarity_weights.get("Lendario", 0) > 0
+
+    repo_hunts = {
+        hunt.hunt_id: hunt for hunt in load_hunts(Path(__file__).resolve().parent.parent / "hunts")
+    }
+    assert "coroa_de_espinhos" in repo_hunts
+    assert repo_hunts["coroa_de_espinhos"].pool_name == "Grande Recife"
+    assert repo_hunts["coroa_de_espinhos"].rarity_weights.get("Lendario", 0) > 0

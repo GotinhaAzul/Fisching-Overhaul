@@ -1,0 +1,10 @@
+{
+  "name": "Serpente Dunária",
+  "rarity": "Raro",
+  "description": "Uma serpente de escamas que absorvem e irradiam calor. Caça de noite, quando o deserto esfria e suas presas ficam lentas. Suas escamas reagem a certos métodos de pesca com uma intensidade inesperada, como se algo dentro dela fosse ativado.",
+  "kg_min": 7.0,
+  "kg_max": 16.0,
+  "base_value": 75,
+  "sequence_len": 7,
+  "reaction_time_s": 1.5
+}

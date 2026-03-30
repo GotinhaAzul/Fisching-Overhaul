@@ -1,0 +1,10 @@
+{
+  "name": "Xeique de Taara",
+  "rarity": "Lendario",
+  "description": "O predador dominante do Deserto Taara. Patrulha os corredores subterrâneos com autoridade absoluta, afastando qualquer criatura do seu caminho. A lenda local diz que o deserto obedece a ele. Na linha, dita o ritmo, não o contrário.",
+  "kg_min": 50.0,
+  "kg_max": 130.0,
+  "base_value": 165,
+  "sequence_len": 9,
+  "reaction_time_s": 0.8
+}
