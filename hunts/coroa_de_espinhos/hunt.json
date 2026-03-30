@@ -1,0 +1,15 @@
+{
+  "name": "Coroa de Espinhos",
+  "description": "Uma forma estrelada de proporções absurdas avança pelo recife. Cada coral que toca desaparece. O recife está em silêncio.",
+  "pool_name": "Grande Recife",
+  "duration_minutes": 6,
+  "check_interval_seconds": 60,
+  "disturbance_per_catch": 2,
+  "disturbance_max": 1800,
+  "rarity_chances": {
+    "Epico": 6,
+    "Lendario": 4
+  },
+  "cooldown_minutes": 10,
+  "disturbance_decay_per_check": 3
+}

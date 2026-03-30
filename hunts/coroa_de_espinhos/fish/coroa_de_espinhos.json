@@ -1,0 +1,10 @@
+{
+  "name": "Coroa de Espinhos",
+  "rarity": "Lendario",
+  "description": "Uma estrela-do-mar colossal que devora o recife em seu caminho.",
+  "kg_min": 18.0,
+  "kg_max": 52.0,
+  "base_value": 145,
+  "sequence_len": 8,
+  "reaction_time_s": 1.0
+}
