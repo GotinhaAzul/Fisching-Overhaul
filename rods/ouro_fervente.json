@@ -1,0 +1,14 @@
+{
+  "name": "Ouro Fervente",
+  "luck": 0.38,
+  "kg_max": 500.0,
+  "control": -0.10,
+  "description": "A forja do deserto transforma os peixes em seu anzol no mais puro desejo dourado. Pode puxa-los?",
+  "price": 0,
+  "unlocked_default": false,
+  "can_alter": true,
+  "timecount": -25,
+  "hardcount": 50,
+  "can_greed": true,
+  "greed_chance": 0.18
+}
