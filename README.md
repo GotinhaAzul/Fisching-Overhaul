@@ -35,26 +35,46 @@ python3 -m pytest -q
 
 ## Versao Atual
 
-Versao atual: `1.6`
+Versao atual: `1.7`
+
+### Update 1.7: Deserto Taara
+
+- Nova pool desbloqueavel: `Deserto Taara`, com 10 peixes e acesso por level 9 + mutação `Arenoso`.
+- Nova sub-pool: `A Fonte`, oásis subterrâneo desbloqueado dentro de Taara.
+- Nova mutação universal: `Arenoso` (0.22%, +1.1x XP, +1.15x gold).
+- 2 novas varas com `can_alter`:
+  - `Ouro Fervente` - sequências longas, tempo reduzido, alto retorno econômico. Desbloqueada por missão.
+  - `Vara Tranquilizante` - mais tempo, leve aumento de teclas. Comprada em A Fonte.
+- Nova vara tributo adicionada à Cafeteria:
+  - `Retribuição` - homenagem aos jogadores. Stats ruins, 4 habilidades: Slash, Dupe, Greed e Pierce.
+- Nova hunt: `Coroa de Espinhos`, uma estrela-do-mar colossal invade o Grande Recife.
+- 3 novas missões encadeadas: `Marcas de Areia`, `Abaixo da Areia`, `Calor que Forja`.
 
 ### Update 1.6: Devs'n Secrets
 
 - Varas agora podem modificar a chance de pescar peixes `shiny`.
 - Completar bestiarios pode agora recompensar peixes.
-- 3 novas varas adicionadas:
+- 4 novas varas adicionadas:
+  - `Hollow Dusk`
   - `Azul Lamina`
   - `Serenidade`
   - `Maos`
 - 2 novas mutacoes:
   - `Sereno` (exclusiva da `Serenidade` e da `Hollow Dusk`).
   - `Caotico`
-- Alem dos cristais da angra, uma passagem se abre para uma... cafeteria? Talvez completar o seu bestiario te de um *Codigo* para entrar na cafeteria. (Digite o codigo na aba de selecao de Pool)
+- Alem dos cristais da angra, uma passagem se abre para uma... cafeteria? Talvez completar o seu bestiario da Angra Cristal te de um *Codigo* para entrar na cafeteria. (Digite o codigo na aba de selecao de Pool)
+
 - Bug fixes and changes:
+  - A caverna Luminosa agora é desbloqueavel normalmente.
+  - Melhorar a vara agora deve se adaptar melhor a vara que está sendo melhorada.
   - A habilidade `Pierce` nao deve mais fazer o jogador perder a sequencia; cada erro corrigido conta como uma tecla acertada.
   - `Frenzy` estava forte demais — tempo reduzido, tornando sequencias longas mais dificeis.
   - Adicionada paginação no Appraise
   - Adicionada paginação na venda de peixe individual
   - Banshee Ígnea da missão do Prologo agora é entregável, permitindo acesso a Fossa das Marianas. Este bug foi causado por um erro no nome do peixe. (Desculpa por esse bug...)
+  - Entregar todos os peixes em missoes com `[T]` nao deve mais consumir peixes alem do necessario; o envio agora para assim que os requisitos da missao forem atendidos.
+  - Shiny agora não pode mais ser removido durante appraise, além de tambem ser anunciado.
+  - Appraise agora não pode mais obter mutações exclusivas.
 
 ## Previous Update Notes
 
