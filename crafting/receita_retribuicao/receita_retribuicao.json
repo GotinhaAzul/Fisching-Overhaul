@@ -1,0 +1,48 @@
+{
+  "id": "retribuicao_craft",
+  "rod_name": "Retribuição",
+  "name": "As Quatro Formas",
+  "description": "Cada fragmento carrega uma punição diferente. Reúna-os e espalhe a retribuição.",
+  "unlock": {
+    "mode": "all",
+    "requirements": [
+      {
+        "type": "unlock_pool",
+        "pool_name": "Cafeteria"
+      }
+    ]
+  },
+  "craft": {
+    "requirements": [
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Gladio Escaldante",
+        "mutation_name": "Carmesim",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Peixe Tres-Olhos",
+        "mutation_name": "Espiral",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Lagosta Cristal",
+        "mutation_name": "Cristalizado",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
+        "fish_name": "Enguia Ancia",
+        "mutation_name": "Profundo",
+        "count": 1
+      },
+      {
+        "type": "fish",
+        "fish_name": "Cafe",
+        "count": 1
+      }
+    ]
+  }
+}
