@@ -31,11 +31,18 @@ from utils.levels import apply_xp_gain
 from utils.shiny import ShinyConfig, roll_shiny_on_appraise
 from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel
-from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
+from utils.mutations import (
+    Mutation,
+    choose_mutation,
+    filter_mutations_for_appraisal,
+    filter_mutations_for_rod,
+)
 from utils.pagination import PAGE_NEXT_KEY, PAGE_PREV_KEY, apply_page_hotkey, get_page_slice
+from utils.rod_presentation import format_rod_abilities
 from utils.rods import Rod
 from utils.rod_upgrades import (
     UPGRADEABLE_STATS,
+    _UPGRADE_RECIPE_BALANCE_VERSION,
     RodUpgradeState,
     UpgradeRequirement,
     apply_stat_bonus,
@@ -174,6 +181,14 @@ def format_currency(value: float) -> str:
     return f"R$ {value:0.2f}"
 
 
+def _calculate_market_entry_value(
+    entry: InventoryEntry,
+    shiny_config: Optional[ShinyConfig] = None,
+) -> float:
+    shiny_multiplier = shiny_config.value_multiplier if shiny_config else 1.55
+    return calculate_entry_value(entry, shiny_multiplier=shiny_multiplier)
+
+
 def format_rod_entry(index: int, rod: Rod) -> str:
     return (
         f"{index}. {rod.name} "
@@ -226,6 +241,7 @@ def _show_crafting_recipe_detail(
     crafting_state: CraftingState,
     crafting_progress: CraftingProgress,
     on_money_spent,
+    shiny_config: Optional[ShinyConfig] = None,
     on_inventory_changed: Optional[Callable[[], None]] = None,
 ) -> float:
     while True:
@@ -312,7 +328,7 @@ def _show_crafting_recipe_detail(
                 mutation_label = f" * {entry.mutation_name}" if entry.mutation_name else ""
                 print(
                     f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                    f"- {format_currency(_calc_value(entry))}"
+                    f"- {format_currency(_calculate_market_entry_value(entry, shiny_config))}"
                 )
 
             print(f"\n[T] Entregar todos ({len(deliverable_indexes)} peixe(s))")
@@ -428,6 +444,7 @@ def _show_crafting_menu(
     crafting_progress: CraftingProgress,
     on_money_spent,
     refresh_unlocks: Callable[[], None],
+    shiny_config: Optional[ShinyConfig] = None,
     on_inventory_changed: Optional[Callable[[], None]] = None,
 ) -> float:
     crafting_by_id = {definition.craft_id: definition for definition in crafting_definitions}
@@ -498,6 +515,7 @@ def _show_crafting_menu(
             crafting_state,
             crafting_progress,
             on_money_spent,
+            shiny_config,
             on_inventory_changed,
         )
 
@@ -561,10 +579,8 @@ def show_market(
     inventory_fish_counts_cache: Dict[str, int] = {}
     inventory_mutation_counts_cache: Dict[str, int] = {}
     inventory_fish_counts_dirty = True
-    _shiny_mult = shiny_config.value_multiplier if shiny_config else 1.55
-
     def _calc_value(entry: InventoryEntry) -> float:
-        return calculate_entry_value(entry, shiny_multiplier=_shiny_mult)
+        return _calculate_market_entry_value(entry, shiny_config)
 
     def _appraise_cost(entry: InventoryEntry) -> float:
         return max(1.0, _calc_value(entry) * 0.35)
@@ -1082,6 +1098,7 @@ def show_market(
             upgrade_summary = format_upgrade_summary(rod, resolved_rod_upgrade_state)
             if upgrade_summary != "Sem melhorias":
                 summary_lines.append(f"Melhorias: {upgrade_summary}")
+            summary_lines.append(f"Habilidades: {format_rod_abilities(rod)}")
             return summary_lines
 
         def _clip_cell(text: str, cell_width: int) -> str:
@@ -1165,7 +1182,7 @@ def show_market(
             MenuOption(
                 str(index),
                 f"{rod.name} - {format_currency(rod.price)}",
-                hint=format_rod_stats(rod),
+                hint=f"Stats: {format_rod_stats(rod)}",
             )
             for index, rod in enumerate(rods_for_sale, start=1)
         ]
@@ -1453,6 +1470,7 @@ def show_market(
                     continue
 
             old_kg = entry.kg
+            old_is_shiny = entry.is_shiny
             old_mutation = entry.mutation_name
             old_value = _calc_value(entry)
 
@@ -1461,17 +1479,13 @@ def show_market(
                 on_money_spent(cost)
 
             entry.kg = random.uniform(profile.kg_min, profile.kg_max)
-            appraise_mutations = (
-                filter_mutations_for_rod(available_mutations, equipped_rod.name)
-                if equipped_rod is not None
-                else list(available_mutations)
-            )
+            appraise_mutations = filter_mutations_for_appraisal(available_mutations)
             mutation = choose_mutation(appraise_mutations)
             entry.mutation_name = mutation.name if mutation else None
             entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
             entry.mutation_gold_multiplier = mutation.gold_multiplier if mutation else 1.0
             if shiny_config is not None:
-                entry.is_shiny = roll_shiny_on_appraise(shiny_config)
+                entry.is_shiny = entry.is_shiny or roll_shiny_on_appraise(shiny_config)
             new_value = _calc_value(entry)
 
             last_result = {
@@ -1484,6 +1498,8 @@ def show_market(
             }
             status_message = "Appraise concluido."
             session_notes = []
+            if shiny_config is not None and not old_is_shiny and entry.is_shiny:
+                session_notes.append(f"{entry.name} ficou {shiny_config.display.label}!")
 
             if on_appraise_completed:
                 notes = on_appraise_completed(entry)
@@ -1517,6 +1533,7 @@ def show_market(
             crafting_progress,
             on_money_spent,
             _refresh_crafting_unlocks,
+            shiny_config,
             _mark_inventory_fish_counts_dirty,
         )
 
@@ -1638,11 +1655,18 @@ def show_market(
         selected_stat = stat_keys[stat_index - 1]
         stat_label = str(UPGRADEABLE_STATS[selected_stat]["label"])
         recipe = resolved_rod_upgrade_state.get_recipe(selected_rod.name, selected_stat)
+        if (
+            recipe is not None
+            and recipe.balance_version < _UPGRADE_RECIPE_BALANCE_VERSION
+        ):
+            resolved_rod_upgrade_state.clear_recipe(selected_rod.name, selected_stat)
+            recipe = None
         if recipe is None:
             requirements = generate_fish_requirements(
                 _get_upgrade_pool_fish(),
                 selected_rod,
                 selected_stat,
+                all_rods=available_rods,
             )
             if requirements:
                 recipe = resolved_rod_upgrade_state.set_recipe(
@@ -1724,6 +1748,8 @@ def show_market(
             list(requirements),
             stat=selected_stat,
             fish_by_name=fish_by_name,
+            rod=selected_rod,
+            all_rods=available_rods,
         )
         resolved_rod_upgrade_state.apply_upgrade(selected_rod.name, selected_stat, bonus)
         resolved_rod_upgrade_state.clear_recipe(selected_rod.name, selected_stat)

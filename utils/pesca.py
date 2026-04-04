@@ -4,6 +4,7 @@ import json
 import math
 import os
 import random
+import re
 import signal
 import sys
 import threading
@@ -14,6 +15,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from pynput import keyboard
+from rich.text import Text
 
 from utils.baits import BaitDefinition, build_bait_lookup, load_bait_crates
 from utils.bestiary import show_bestiary
@@ -119,6 +121,7 @@ from utils.perfect_catch import (
     is_perfect_catch,
     parse_perfect_catch_config,
 )
+from utils.rod_presentation import format_rod_abilities
 from utils.rods import Rod, load_rods
 from utils.rod_upgrades import (
     RodUpgradeState,
@@ -160,6 +163,8 @@ PACE_MIN_TIME_MULTIPLIER = 0.55
 FRENZY_MIN_TIME_S = 0.1
 FRENZY_TWO_KEY_TIME_FACTOR_CAP = 0.45
 FRENZY_ONE_KEY_TIME_FACTOR_CAP = 0.30
+VFX_FLASH_DURATION_S = 0.16
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 def flush_input_buffer() -> None:
@@ -211,6 +216,101 @@ def _try_parse_bool(value: object) -> Optional[bool]:
         if normalized in {"false", "0", "no", "nao", "não"}:
             return False
     return None
+
+
+def _finalize_market_appraise(
+    entry: InventoryEntry,
+    crafting_progress: CraftingProgress,
+    refresh_crafting_unlocks: Callable[[], List[str]],
+    *,
+    discovered_shiny_fish: Optional[set[str]] = None,
+    mark_inventory_counts_dirty: Optional[Callable[[], None]] = None,
+) -> List[str]:
+    if entry.is_shiny and discovered_shiny_fish is not None:
+        discovered_shiny_fish.add(entry.name)
+    crafting_progress.record_find(entry.name, entry.mutation_name)
+    if mark_inventory_counts_dirty is not None:
+        mark_inventory_counts_dirty()
+    return refresh_crafting_unlocks()
+
+
+def _normalize_vfx_color(raw_value: object) -> Optional[str]:
+    if not isinstance(raw_value, str):
+        return None
+    normalized = raw_value.strip()
+    return normalized or None
+
+
+def _normalize_positive_count(raw_value: object, default: int = 1) -> int:
+    try:
+        normalized = int(raw_value)
+    except (TypeError, ValueError):
+        return default
+    return max(1, normalized)
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text)
+
+
+def _render_colored_segment(
+    prefix: str,
+    content: str,
+    *,
+    color: str = "",
+    suffix: str = "",
+) -> str:
+    if not color.strip() or not content:
+        return f"{prefix}{content}{suffix}"
+
+    styled_text = Text()
+    if prefix:
+        styled_text.append(prefix)
+    styled_text.append(content, style=color.strip())
+    if suffix:
+        styled_text.append(suffix)
+
+    try:
+        with console.capture() as capture:
+            console.print(styled_text, end="")
+        return capture.get().rstrip("\n")
+    except Exception:
+        return f"{prefix}{content}{suffix}"
+
+
+def _build_fishing_minigame(
+    attempt: "FishingAttempt",
+    rod: Rod,
+    *,
+    include_rod_abilities: bool = True,
+) -> "FishingMiniGame":
+    base_kwargs = {
+        "vfx_seq_color": getattr(rod, "vfxseq", None),
+        "vfx_seq_count": getattr(rod, "vfxseqcount", 1),
+        "vfx_ability_color": getattr(rod, "vfxability", None),
+        "vfx_ability_count": getattr(rod, "vfxabilitycount", 1),
+    }
+
+    if not include_rod_abilities:
+        return FishingMiniGame(attempt, **base_kwargs)
+
+    return FishingMiniGame(
+        attempt,
+        can_slash=rod.can_slash,
+        slash_chance=rod.slash_chance,
+        slash_power=rod.slash_power,
+        can_slam=rod.can_slam,
+        slam_chance=rod.slam_chance,
+        slam_time_bonus=rod.slam_time_bonus,
+        can_curse=rod.can_curse,
+        curse_chance=rod.curse_chance,
+        curse_time_penalty=rod.curse_time_penalty,
+        can_pierce=rod.can_pierce,
+        pierce_chance=rod.pierce_chance,
+        can_greed=rod.can_greed,
+        greed_chance=rod.greed_chance,
+        **base_kwargs,
+    )
 
 
 @dataclass(frozen=True)
@@ -899,11 +999,18 @@ class FishingMiniGame:
         can_slam: bool = False,
         slam_chance: float = 0.0,
         slam_time_bonus: float = 0.0,
+        can_curse: bool = False,
+        curse_chance: float = 0.0,
+        curse_time_penalty: float = 0.0,
         can_pierce: bool = False,
         pierce_chance: float = 0.0,
         can_greed: bool = False,
         greed_chance: float = 0.0,
-    ):
+        vfx_seq_color: Optional[str] = None,
+        vfx_seq_count: int = 1,
+        vfx_ability_color: Optional[str] = None,
+        vfx_ability_count: int = 1,
+    ) -> None:
         self.attempt = attempt
         self.typed: List[str] = []
         self.index = 0
@@ -914,6 +1021,9 @@ class FishingMiniGame:
         self.can_slam = can_slam
         self.slam_chance = max(0.0, min(1.0, float(slam_chance)))
         self.slam_time_bonus = max(0.0, float(slam_time_bonus))
+        self.can_curse = can_curse
+        self.curse_chance = max(0.0, min(1.0, float(curse_chance)))
+        self.curse_time_penalty = max(0.0, float(curse_time_penalty))
         self.can_pierce = can_pierce
         self.pierce_chance = max(0.0, min(1.0, float(pierce_chance)))
         self.can_greed = can_greed
@@ -921,11 +1031,22 @@ class FishingMiniGame:
         self.bonus_time_s = 0.0
         self.slam_activations: int = 0
         self.slam_bonus_accum_s: float = 0.0
+        self.curse_activations: int = 0
+        self.curse_penalty_accum_s: float = 0.0
         self.slash_activations: int = 0
         self.slash_cuts_accum: int = 0
         self.pierce_activations: int = 0
         self.greed_activated: bool = False
         self.last_ability_label: str = ""
+        self.vfx_seq_color = _normalize_vfx_color(vfx_seq_color)
+        self.vfx_seq_count = _normalize_positive_count(vfx_seq_count)
+        self.vfx_ability_color = _normalize_vfx_color(vfx_ability_color)
+        self.vfx_ability_count = _normalize_positive_count(vfx_ability_count)
+        self.vfx_seq_progress = 0
+        self.vfx_ability_progress = 0
+        self.active_vfx_color = ""
+        self.active_vfx_source = ""
+        self.vfx_active_until = 0.0
 
     def expected_key(self) -> Optional[str]:
         if self.index >= len(self.attempt.sequence):
@@ -942,19 +1063,63 @@ class FishingMiniGame:
         elapsed = time.perf_counter() - self.start_time
         return max(0.0, self.total_time_limit() - elapsed)
 
-    def begin(self):
+    def begin(self) -> None:
         self.start_time = time.perf_counter()
 
     def get_ability_counter_text(self) -> str:
+        if self.last_ability_label == "Greed!" and self.greed_activated:
+            return "Greed! x2 Gold"
+        if self.last_ability_label == "Pierce!" and self.pierce_activations > 0:
+            return f"Pierce! x{self.pierce_activations}"
+        if self.last_ability_label == "Slam!" and self.slam_activations > 0:
+            return f"Slam! +{self.slam_bonus_accum_s:0.1f}s"
+        if self.last_ability_label == "Curse!" and self.curse_activations > 0:
+            return f"Curse! -{self.curse_penalty_accum_s:0.1f}s"
+        if self.last_ability_label == "Slash!" and self.slash_activations > 0:
+            return f"Slash! x{self.slash_activations}"
         if self.greed_activated:
             return "Greed! x2 Gold"
         if self.pierce_activations > 0:
             return f"Pierce! x{self.pierce_activations}"
         if self.slam_activations > 0:
             return f"Slam! +{self.slam_bonus_accum_s:0.1f}s"
+        if self.curse_activations > 0:
+            return f"Curse! -{self.curse_penalty_accum_s:0.1f}s"
         if self.slash_activations > 0:
             return f"Slash! x{self.slash_activations}"
         return ""
+
+    def _trigger_vfx(self, *, color: Optional[str], source: str) -> None:
+        if not color:
+            return
+        self.active_vfx_color = color
+        self.active_vfx_source = source
+        self.vfx_active_until = time.perf_counter() + VFX_FLASH_DURATION_S
+
+    def _register_sequence_progress(self) -> None:
+        if not self.vfx_seq_color:
+            return
+        self.vfx_seq_progress += 1
+        if self.vfx_seq_progress >= self.vfx_seq_count:
+            self.vfx_seq_progress = 0
+            self._trigger_vfx(color=self.vfx_seq_color, source="sequence")
+
+    def _register_ability_activation(self) -> None:
+        if not self.vfx_ability_color:
+            return
+        self.vfx_ability_progress += 1
+        if self.vfx_ability_progress >= self.vfx_ability_count:
+            self.vfx_ability_progress = 0
+            self._trigger_vfx(color=self.vfx_ability_color, source="ability")
+
+    def get_active_vfx_color(self) -> str:
+        if not self.active_vfx_color:
+            return ""
+        if time.perf_counter() > self.vfx_active_until:
+            self.active_vfx_color = ""
+            self.active_vfx_source = ""
+            return ""
+        return self.active_vfx_color
 
     def handle_key(self, key: str) -> Optional[FishingResult]:
         """
@@ -975,6 +1140,7 @@ class FishingMiniGame:
             if random.random() <= self.slash_chance:
                 self.slash_activations += 1
                 self.last_ability_label = "Slash!"
+                self._register_ability_activation()
                 remaining_letters = len(self.attempt.sequence) - self.index
                 if self.slash_power > remaining_letters:
                     self.slash_cuts_accum += remaining_letters
@@ -998,6 +1164,18 @@ class FishingMiniGame:
                 self.slam_activations += 1
                 self.slam_bonus_accum_s += self.slam_time_bonus
                 self.last_ability_label = "Slam!"
+                self._register_ability_activation()
+
+        if self.can_curse and self.curse_chance > 0 and self.curse_time_penalty > 0:
+            if random.random() <= self.curse_chance:
+                self.bonus_time_s -= self.curse_time_penalty
+                self.curse_activations += 1
+                self.curse_penalty_accum_s += self.curse_time_penalty
+                self.last_ability_label = "Curse!"
+                self._register_ability_activation()
+                elapsed = time.perf_counter() - self.start_time
+                if elapsed > self.total_time_limit():
+                    return FishingResult(False, "Tempo esgotado", self.typed[:], elapsed)
 
         expected = self.expected_key()
         if expected is None:
@@ -1005,6 +1183,7 @@ class FishingMiniGame:
             return None
 
         self.typed.append(key)
+        self._register_sequence_progress()
 
         # Greed: chance per key press to activate (once per minigame)
         if (
@@ -1015,6 +1194,7 @@ class FishingMiniGame:
             if random.random() <= self.greed_chance:
                 self.greed_activated = True
                 self.last_ability_label = "Greed!"
+                self._register_ability_activation()
                 # Speed up timer by 30% (reduce remaining time)
                 elapsed_now = time.perf_counter() - self.start_time
                 remaining = self.total_time_limit() - elapsed_now
@@ -1033,6 +1213,7 @@ class FishingMiniGame:
             if random.random() <= self.pierce_chance:
                 self.pierce_activations += 1
                 self.last_ability_label = "Pierce!"
+                self._register_ability_activation()
                 self.index += 1
                 if self.is_done():
                     elapsed = time.perf_counter() - self.start_time
@@ -1062,6 +1243,7 @@ def render(
     perfect_catch_enabled: bool = True,
     ability_counter_text: str = "",
     weather_text: str = "",
+    sequence_vfx_color: str = "",
 ):
     def _terminal_line_width(default: int = 80) -> int:
         try:
@@ -1072,22 +1254,34 @@ def render(
         return max(20, columns - 1)
 
     def _trim_line(line: str, limit: int) -> str:
-        if len(line) <= limit:
+        if len(_strip_ansi(line)) <= limit:
             return line
         if limit <= 3:
-            return line[:limit]
-        return f"{line[:limit - 3]}..."
+            return _strip_ansi(line)[:limit]
+        return f"{_strip_ansi(line)[:limit - 3]}..."
 
     def _render_two_lines(line1: str, line2: str) -> None:
         # Draw HUD + sequence and keep cursor at first line for next frame redraw.
         print(f"\r\033[2K{line1}\n\033[2K{line2}\033[1A\r", end="", flush=True)
+
+    def _build_sequence_line(prefix: str, sequence_text: str, limit: int) -> str:
+        plain_line = _trim_line(f"{prefix}{sequence_text}", limit)
+        if not sequence_vfx_color.strip():
+            return plain_line
+        if not plain_line.startswith(prefix):
+            return plain_line
+        return _render_colored_segment(
+            prefix,
+            plain_line[len(prefix):],
+            color=sequence_vfx_color,
+        )
 
     line_width = _terminal_line_width()
 
     if use_modern_ui():
         remaining = attempt.sequence[len(typed):]
         seq_str = " ".join(k.upper() for k in remaining) if remaining else "OK"
-        seq_line = _trim_line(f"Seq: {seq_str}", line_width)
+        seq_line = _build_sequence_line("Seq: ", seq_str, line_width)
 
         if line_width >= 96:
             line = render_fishing_hud_line(
@@ -1142,11 +1336,23 @@ def render(
     filled = int(bar_len * ratio)
     bar = "▮" * filled + " " * (bar_len - filled)
 
-    line = (
-        f"Seq: {seq_str:<15} "
-        f"Tempo: [{bar}] {time_left:0.2f}s   (ESC sai)"
-    )
-    line = _trim_line(line, line_width)
+    sequence_prefix = "Seq: "
+    sequence_content = f"{seq_str:<15}"
+    suffix = f" Tempo: [{bar}] {time_left:0.2f}s   (ESC sai)"
+    plain_line = _trim_line(f"{sequence_prefix}{sequence_content}{suffix}", line_width)
+    if sequence_vfx_color.strip() and plain_line.startswith(sequence_prefix):
+        suffix_start = plain_line.find(" Tempo: ")
+        if suffix_start != -1:
+            line = _render_colored_segment(
+                sequence_prefix,
+                plain_line[len(sequence_prefix):suffix_start],
+                color=sequence_vfx_color,
+                suffix=plain_line[suffix_start:],
+            )
+        else:
+            line = plain_line
+    else:
+        line = plain_line
     print(f"\r\033[2K{line}", end="", flush=True)
 
 def show_main_menu(
@@ -2546,7 +2752,7 @@ def show_inventory(
                         MenuOption(
                             str(idx),
                             rod.name,
-                            format_rod_stats(rod, rod_upgrade_state),
+                            f"Stats: {format_rod_stats(rod, rod_upgrade_state)}",
                             status="equipada" if rod.name == equipped_rod.name else "",
                         )
                         for idx, rod in enumerate(rods_on_page, start=1)
@@ -2674,7 +2880,8 @@ def show_inventory(
         start, end, total_pages = get_page_bounds()
         print("=== Inventario ===")
         print("\nVara equipada:")
-        print(f"- {equipped_rod.name} ({format_rod_stats(equipped_rod, rod_upgrade_state)})")
+        print(f"- {equipped_rod.name}")
+        print(f"  Stats: {format_rod_stats(equipped_rod, rod_upgrade_state)}")
         print("\nIsca ativa:")
         print(f"- {active_bait_label}")
         if active_bait_stats:
@@ -2726,10 +2933,8 @@ def show_inventory(
                 print("Escolha a vara para equipar:")
                 for idx, rod in enumerate(rods_on_page, start=1):
                     selected_marker = " (equipada)" if rod.name == equipped_rod.name else ""
-                    print(
-                        f"{idx}. {rod.name} - "
-                        f"{format_rod_stats(rod, rod_upgrade_state)}{selected_marker}"
-                    )
+                    print(f"{idx}. {rod.name}{selected_marker}")
+                    print(f"   Stats: {format_rod_stats(rod, rod_upgrade_state)}")
                     print(f"   {rod.description}")
                 if rod_page_slice.total_pages > 1:
                     print(
@@ -2884,6 +3089,7 @@ def run_fishing_round(
         print(f"Pool selecionada: {selected_pool.name}")
         print(f"Vara equipada: {equipped_rod.name}")
         print(f"Stats da vara: {format_rod_stats(equipped_rod, rod_upgrade_state)}")
+        print(f"Habilidades da vara: {format_rod_abilities(equipped_rod)}")
         if active_bait:
             print(f"Isca ativa: {active_bait.name} x{active_bait_quantity}")
             print(f"Buff da isca: {format_bait_stats(active_bait)}")
@@ -2902,8 +3108,12 @@ def run_fishing_round(
             else None
         )
         hunt_def = active_hunt.definition if active_hunt else None
-        hunt_fish = hunt_def.fish_profiles if hunt_def else []
-        combined_fish = combine_fish_profiles(selected_pool, event_def, hunt_def)
+        hunt_fish = (
+            hunt_manager.get_available_fish_for_pool(selected_pool.name)
+            if hunt_manager
+            else []
+        )
+        combined_fish = combine_fish_profiles(selected_pool, event_def, hunt_fish)
         eligible_fish = filter_eligible_fish(combined_fish, kg_max=effective_kg_max)
         if not eligible_fish:
             ks.stop()
@@ -2999,19 +3209,7 @@ def run_fishing_round(
             time_limit_s=max(0.5, base_time_limit_s * pace_multiplier),
             allowed_keys=attempt.allowed_keys,
         )
-        game = FishingMiniGame(
-            attempt,
-            can_slash=effective_rod.can_slash,
-            slash_chance=effective_rod.slash_chance,
-            slash_power=effective_rod.slash_power,
-            can_slam=effective_rod.can_slam,
-            slam_chance=effective_rod.slam_chance,
-            slam_time_bonus=effective_rod.slam_time_bonus,
-            can_pierce=effective_rod.can_pierce,
-            pierce_chance=effective_rod.pierce_chance,
-            can_greed=effective_rod.can_greed,
-            greed_chance=effective_rod.greed_chance,
-        )
+        game = _build_fishing_minigame(attempt, effective_rod)
         game.begin()
 
         consumed_bait_name: Optional[str] = None
@@ -3072,6 +3270,7 @@ def run_fishing_round(
                 perfect_catch_enabled=perfect_catch_cfg.enabled,
                 ability_counter_text=ability_counter_text,
                 weather_text=weather_hud_text,
+                sequence_vfx_color=game.get_active_vfx_color(),
             )
             time.sleep(0.016)
 
@@ -3143,6 +3342,20 @@ def run_fishing_round(
                 on_fish_caught(fish, mutation, is_shiny)
             if hunt_manager:
                 hunt_manager.record_catch(selected_pool.name)
+                if is_hunt_fish:
+                    current_hunt_fish = hunt_manager.get_available_fish_for_pool(selected_pool.name)
+                    catchable_hunt_fish_names = {
+                        candidate.name
+                        for candidate in filter_eligible_fish(
+                            current_hunt_fish,
+                            kg_max=effective_kg_max,
+                        )
+                    }
+                    hunt_manager.consume_hunt_fish(
+                        selected_pool.name,
+                        fish.name,
+                        catchable_fish_names=catchable_hunt_fish_names,
+                    )
             discovered_fish.add(fish.name)
             base_xp = xp_for_rarity(fish.rarity)
             event_xp_multiplier = event_def.xp_multiplier if event_def else 1.0
@@ -3235,7 +3448,11 @@ def run_fishing_round(
                         time_limit_s=frenzy_time,
                         allowed_keys=attempt.allowed_keys,
                     )
-                    frenzy_game = FishingMiniGame(frenzy_attempt)
+                    frenzy_game = _build_fishing_minigame(
+                        frenzy_attempt,
+                        effective_rod,
+                        include_rod_abilities=False,
+                    )
                     frenzy_game.begin()
                     print(f"\n🔥 Frenzy #{frenzy_round}! ({frenzy_seq_len} teclas, {frenzy_time:0.1f}s)")
 
@@ -3265,6 +3482,7 @@ def run_fishing_round(
                             perfect_catch_enabled=False,
                             ability_counter_text=f"Frenzy #{frenzy_round}",
                             weather_text=f"{weather.icon} {weather.name}" if weather else "",
+                            sequence_vfx_color=frenzy_game.get_active_vfx_color(),
                         )
                         time.sleep(0.016)
 
@@ -3605,6 +3823,7 @@ def main(dev_mode: bool = False):
         level=level,
         pools=pools,
         discovered_fish=discovered_fish,
+        regionless_fish_profiles=event_fish_profiles,
     )
 
     def unlocked_pool_keys() -> set[str]:
@@ -3695,8 +3914,13 @@ def main(dev_mode: bool = False):
         mark_inventory_fish_counts_dirty()
 
     def on_market_appraise_completed(entry: InventoryEntry) -> List[str]:
-        crafting_progress.record_find(entry.name, entry.mutation_name)
-        return refresh_crafting_unlocks(print_notifications=False)
+        return _finalize_market_appraise(
+            entry,
+            crafting_progress,
+            lambda: refresh_crafting_unlocks(print_notifications=False),
+            discovered_shiny_fish=discovered_shiny_fish,
+            mark_inventory_counts_dirty=mark_inventory_fish_counts_dirty,
+        )
 
     def apply_bestiary_reward(reward: BestiaryRewardDefinition) -> List[str]:
         nonlocal balance, level, xp
@@ -3970,6 +4194,7 @@ def main(dev_mode: bool = False):
                     unlocked_rods=unlocked_rods,
                     available_rods=available_rods,
                     fish_by_name=fish_by_name,
+                    regionless_fish_profiles=event_fish_profiles,
                 )
                 mark_inventory_fish_counts_dirty()
             elif choice == "7" and dev_mode:
@@ -4016,6 +4241,7 @@ def main(dev_mode: bool = False):
                     level=level,
                     pools=pools,
                     discovered_fish=discovered_fish,
+                    regionless_fish_profiles=event_fish_profiles,
                 )
                 refresh_crafting_unlocks(print_notifications=True)
                 autosave_state(
@@ -4060,6 +4286,7 @@ def main(dev_mode: bool = False):
                 level=level,
                 pools=pools,
                 discovered_fish=discovered_fish,
+                regionless_fish_profiles=event_fish_profiles,
             )
             refresh_crafting_unlocks(print_notifications=True)
     except KeyboardInterrupt:
@@ -4072,6 +4299,7 @@ def main(dev_mode: bool = False):
                 level=level,
                 pools=pools,
                 discovered_fish=discovered_fish,
+                regionless_fish_profiles=event_fish_profiles,
             )
             refresh_crafting_unlocks(print_notifications=False)
         exit_requested = True

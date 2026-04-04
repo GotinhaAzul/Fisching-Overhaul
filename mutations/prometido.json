@@ -4,8 +4,9 @@
   "xp_multiplier": 1.4,
   "gold_multiplier": 1.6,
   "chance_percent": 10.0,
-  "required_rods": ["Promessa Luminescente", "Ruina Prometida"],
+  "required_rods": ["Promessa Luminescente", "Ruina Prometida", "Azul Lâmina"],
   "rod_chance_overrides": {
-    "Ruina Prometida": 15.0
+    "Ruina Prometida": 15.0,
+    "Azul Lâmina": 5
   }
 }

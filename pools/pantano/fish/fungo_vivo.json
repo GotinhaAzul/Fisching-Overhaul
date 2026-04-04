@@ -1,0 +1,10 @@
+{
+  "name": "Fungo Vivo",
+  "rarity": "Epico",
+  "description": "O Fungo Vivo e uma criatura enigmatica cujo corpo foi gradualmente colonizado pelos esporos do pantano. Os fungos crescem sobre suas escamas formando um manto esponjoso de coloracoes variaveis — branco, vermelho e ocre. Nao esta claro se o peixe controla os fungos ou o contrario. O que se sabe e que captura-lo libera uma nuvem de esporos densa o suficiente para escurecer a agua ao redor.",
+  "kg_min": 5.0,
+  "kg_max": 12.0,
+  "base_value": 82,
+  "sequence_len": 8,
+  "reaction_time_s": 2.2
+}

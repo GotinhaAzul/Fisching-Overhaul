@@ -1,0 +1,10 @@
+{
+  "name": "Aurumim",
+  "rarity": "Raro",
+  "description": "O Aurumim tem escamas de um amarelo-dourado intenso que refletem a luz filtrada pelas plantas do jardim, criando lampejos que piscam a cada movimento. Vive nas zonas mais iluminadas do jardim subaquatico, onde as folhas sao mais densas. E um peixe exibicionista — nada devagar e conspicuo, como se soubesse que e belo. Sua captura, no entanto, exige precisao.",
+  "kg_min": 3.0,
+  "kg_max": 7.0,
+  "base_value": 44,
+  "sequence_len": 6,
+  "reaction_time_s": 1.6
+}

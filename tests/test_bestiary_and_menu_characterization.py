@@ -139,6 +139,65 @@ def test_show_rods_bestiary_modern_flow_characterization(monkeypatch) -> None:
     assert feeder.calls == feeder.total_expected
 
 
+def test_show_rods_bestiary_modern_detail_includes_abilities(monkeypatch) -> None:
+    rod = Rod(
+        name="Perforatio",
+        luck=0.0,
+        kg_max=100.0,
+        control=0.0,
+        description="Perfura a captura.",
+        price=0.0,
+        can_pierce=True,
+        pierce_chance=0.3,
+    )
+    feeder = _ChoiceFeeder(["1", "0"])
+    captured_panels: list[dict[str, object]] = []
+
+    monkeypatch.setattr(bestiary, "use_modern_ui", lambda: True)
+    monkeypatch.setattr(bestiary, "clear_screen", lambda: None)
+    monkeypatch.setattr(
+        bestiary,
+        "print_menu_panel",
+        lambda title, **kwargs: captured_panels.append({"title": title, **kwargs}),
+    )
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    monkeypatch.setattr(bestiary, "_read_choice", feeder)
+
+    bestiary.show_rods_bestiary([rod], {rod.name})
+
+    detail_panel = next(panel for panel in captured_panels if panel["title"] == "VARA")
+    header_lines = detail_panel["header_lines"]
+    assert isinstance(header_lines, list)
+    rendered_lines = "\n".join(str(line) for line in header_lines)
+    assert "Habilidades: Pierce 30%" in rendered_lines
+
+
+def test_show_rods_bestiary_legacy_detail_includes_abilities(
+    monkeypatch,
+    capsys,
+) -> None:
+    rod = Rod(
+        name="Perforatio",
+        luck=0.0,
+        kg_max=100.0,
+        control=0.0,
+        description="Perfura a captura.",
+        price=0.0,
+        can_pierce=True,
+        pierce_chance=0.3,
+    )
+    feeder = _ChoiceFeeder(["1", "0"])
+
+    monkeypatch.setattr(bestiary, "use_modern_ui", lambda: False)
+    monkeypatch.setattr(bestiary, "clear_screen", lambda: None)
+    monkeypatch.setattr("builtins.input", lambda _prompt="": "")
+    monkeypatch.setattr(bestiary, "_read_choice", feeder)
+
+    bestiary.show_rods_bestiary([rod], {rod.name})
+
+    assert "Habilidades: Pierce 30%" in capsys.readouterr().out
+
+
 def test_show_fish_bestiary_section_pagination_flow_characterization(monkeypatch) -> None:
     fish = [_DummyFish(f"Fish {index:02d}") for index in range(1, 13)]
     section = bestiary.FishBestiarySection(

@@ -46,6 +46,9 @@ _MAX_FISH_VALUE = 10_000.0
 _MIN_REACTION_TIME = 0.8
 _MAX_REACTION_TIME = 8.0
 _UPGRADE_SCORE_TARGET = 4.0
+_RARITY_SELECTION_FLOOR = 0.2
+_RARITY_BONUS_DAMPING = 0.7
+_UPGRADE_RECIPE_BALANCE_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -60,6 +63,7 @@ class UpgradeRecipe:
     rod_name: str
     stat: str
     fish_requirements: List[UpgradeRequirement]
+    balance_version: int = _UPGRADE_RECIPE_BALANCE_VERSION
 
 
 @dataclass
@@ -97,6 +101,7 @@ class RodUpgradeState:
             rod_name=rod_name,
             stat=normalized_stat,
             fish_requirements=normalized_requirements,
+            balance_version=_UPGRADE_RECIPE_BALANCE_VERSION,
         )
         self.recipes.setdefault(rod_name, {})[normalized_stat] = recipe
         return recipe
@@ -142,17 +147,17 @@ class RodUpgradeState:
             if len(recipes_by_stat) == 1:
                 only_recipe = next(iter(recipes_by_stat.values()))
                 if not only_recipe.stat:
-                    serialized_requirements = _serialize_recipe_requirements(only_recipe)
-                    if serialized_requirements:
-                        serialized[rod_name] = serialized_requirements
+                    serialized_recipe = _serialize_recipe_payload(only_recipe)
+                    if serialized_recipe:
+                        serialized[rod_name] = serialized_recipe
                     continue
-            serialized_by_stat: Dict[str, List[Dict[str, object]]] = {}
+            serialized_by_stat: Dict[str, Dict[str, object]] = {}
             for stat, recipe in recipes_by_stat.items():
                 if stat not in UPGRADEABLE_STATS:
                     continue
-                serialized_requirements = _serialize_recipe_requirements(recipe)
-                if serialized_requirements:
-                    serialized_by_stat[stat] = serialized_requirements
+                serialized_recipe = _serialize_recipe_payload(recipe)
+                if serialized_recipe:
+                    serialized_by_stat[stat] = serialized_recipe
             if serialized_by_stat:
                 serialized[rod_name] = serialized_by_stat
         return serialized
@@ -206,6 +211,16 @@ def _serialize_recipe_requirements(
         }
         for requirement in recipe.fish_requirements
     ]
+
+
+def _serialize_recipe_payload(recipe: UpgradeRecipe) -> Dict[str, object]:
+    serialized_requirements = _serialize_recipe_requirements(recipe)
+    if not serialized_requirements:
+        return {}
+    return {
+        "version": int(recipe.balance_version),
+        "requirements": serialized_requirements,
+    }
 
 
 def _restore_upgrade_bonuses(raw: object) -> Dict[str, Dict[str, float]]:
@@ -265,6 +280,25 @@ def _restore_recipe_requirements(raw_requirements: object) -> List[UpgradeRequir
     return normalized_requirements
 
 
+def _restore_recipe_payload(raw: object) -> tuple[int, List[UpgradeRequirement]]:
+    if isinstance(raw, list):
+        return 1, _restore_recipe_requirements(raw)
+    if not isinstance(raw, dict):
+        return 1, []
+
+    version = raw.get("version", 1)
+    try:
+        balance_version = int(version)
+    except (TypeError, ValueError):
+        balance_version = 1
+    if balance_version <= 0:
+        balance_version = 1
+
+    if "requirements" not in raw:
+        return balance_version, []
+    return balance_version, _restore_recipe_requirements(raw.get("requirements"))
+
+
 def _restore_upgrade_recipes(raw: object) -> Dict[str, Dict[str, UpgradeRecipe]]:
     restored: Dict[str, Dict[str, UpgradeRecipe]] = {}
     if not isinstance(raw, dict):
@@ -281,23 +315,36 @@ def _restore_upgrade_recipes(raw: object) -> Dict[str, Dict[str, UpgradeRecipe]]
                         rod_name=rod_name,
                         stat="",
                         fish_requirements=normalized_requirements,
+                        balance_version=1,
                     )
                 }
             continue
         if not isinstance(raw_requirements, dict):
+            continue
+        legacy_version, legacy_requirements = _restore_recipe_payload(raw_requirements)
+        if legacy_requirements:
+            restored[rod_name] = {
+                "": UpgradeRecipe(
+                    rod_name=rod_name,
+                    stat="",
+                    fish_requirements=legacy_requirements,
+                    balance_version=legacy_version,
+                )
+            }
             continue
         restored_by_stat: Dict[str, UpgradeRecipe] = {}
         for stat, stat_requirements in raw_requirements.items():
             normalized_stat = _normalize_recipe_stat(stat if isinstance(stat, str) else None)
             if normalized_stat not in UPGRADEABLE_STATS:
                 continue
-            normalized_requirements = _restore_recipe_requirements(stat_requirements)
+            balance_version, normalized_requirements = _restore_recipe_payload(stat_requirements)
             if not normalized_requirements:
                 continue
             restored_by_stat[normalized_stat] = UpgradeRecipe(
                 rod_name=rod_name,
                 stat=normalized_stat,
                 fish_requirements=normalized_requirements,
+                balance_version=balance_version,
             )
         if restored_by_stat:
             restored[rod_name] = restored_by_stat
@@ -368,12 +415,34 @@ def _rod_tier_focus(rod: Rod) -> float:
     return min(1.0, math.log10(capped_price + 1.0) / 6.0)
 
 
+def _effective_stat_strength_value(rod: Rod, stat: str) -> float:
+    if stat == "luck":
+        return max(0.0, float(rod.luck))
+    if stat == "kg_max":
+        return math.log10(max(1.0, float(rod.kg_max)))
+    if stat == "control":
+        return max(0.0, float(rod.control))
+    raise KeyError(stat)
+
+
+def _stat_strength(rod: Rod, stat: str, all_rods: Sequence[Rod]) -> float:
+    if stat not in UPGRADEABLE_STATS or not all_rods:
+        return 0.5
+    values = [_effective_stat_strength_value(candidate, stat) for candidate in all_rods]
+    value = _effective_stat_strength_value(rod, stat)
+    lo, hi = min(values), max(values)
+    if hi <= lo:
+        return 0.5
+    return max(0.0, min(1.0, (value - lo) / (hi - lo)))
+
+
 def _requirement_selection_score(
     fish: "FishProfile",
     *,
     stat: str,
     rod_focus: float,
     tier_focus: float,
+    stat_strength: float = 0.5,
     rarity_bounds: tuple[float, float],
     weight_bounds: tuple[float, float],
     value_bounds: tuple[float, float],
@@ -390,14 +459,18 @@ def _requirement_selection_score(
     weight_score = _normalize_metric(weight, *weight_bounds)
     value_score = _normalize_metric(value, *value_bounds)
     control_score = _normalize_metric(control_challenge, *control_bounds)
+    effective_rarity = rarity_score * (
+        _RARITY_SELECTION_FLOOR
+        + ((1.0 - _RARITY_SELECTION_FLOOR) * stat_strength)
+    )
 
-    generic_profile = (rarity_score * 0.55) + (value_score * 0.25) + (weight_score * 0.20)
+    generic_profile = (effective_rarity * 0.55) + (value_score * 0.25) + (weight_score * 0.20)
     if stat == "kg_max":
-        stat_profile = (weight_score * 0.70) + (rarity_score * 0.20) + (value_score * 0.10)
+        stat_profile = (weight_score * 0.70) + (effective_rarity * 0.20) + (value_score * 0.10)
     elif stat == "control":
-        stat_profile = (control_score * 0.70) + (rarity_score * 0.20) + (value_score * 0.10)
+        stat_profile = (control_score * 0.70) + (effective_rarity * 0.20) + (value_score * 0.10)
     elif stat == "luck":
-        stat_profile = (rarity_score * 0.70) + (value_score * 0.30)
+        stat_profile = (effective_rarity * 0.70) + (value_score * 0.30)
     else:
         stat_profile = generic_profile
 
@@ -410,11 +483,13 @@ def _requirement_bonus_profile(
     *,
     stat: str,
     fish_by_name: Mapping[str, object] | None = None,
+    stat_strength: float = 0.5,
 ) -> float:
     rarity_score = _normalized_rarity_score(requirement.rarity)
+    effective_rarity = rarity_score * (1.0 - (_RARITY_BONUS_DAMPING * stat_strength))
     fish = fish_by_name.get(requirement.fish_name) if fish_by_name is not None else None
     if fish is None:
-        return rarity_score
+        return effective_rarity
 
     weight = max(
         float(getattr(fish, "kg_max", 0.0)),
@@ -427,18 +502,20 @@ def _requirement_bonus_profile(
     control_score = _normalized_control_score(reaction_time_s)
 
     if stat == "kg_max":
-        return (weight_score * 0.65) + (rarity_score * 0.20) + (value_score * 0.15)
+        return (weight_score * 0.65) + (effective_rarity * 0.20) + (value_score * 0.15)
     if stat == "control":
-        return (control_score * 0.65) + (rarity_score * 0.20) + (value_score * 0.15)
+        return (control_score * 0.65) + (effective_rarity * 0.20) + (value_score * 0.15)
     if stat == "luck":
-        return (rarity_score * 0.60) + (value_score * 0.40)
-    return rarity_score
+        return (effective_rarity * 0.60) + (value_score * 0.40)
+    return effective_rarity
 
 
 def generate_fish_requirements(
     pool_fish: Sequence["FishProfile"],
     rod: Rod,
     stat: str = "",
+    *,
+    all_rods: Sequence[Rod] = (),
 ) -> List[UpgradeRequirement]:
     available_fish = [fish for fish in pool_fish if getattr(fish, "name", "")]
     if not available_fish:
@@ -464,6 +541,7 @@ def generate_fish_requirements(
     ]
     rod_focus = _rod_stat_focus(rod, normalized_stat)
     tier_focus = _rod_tier_focus(rod)
+    strength = _stat_strength(rod, normalized_stat, all_rods)
     ranked_fish = sorted(
         available_fish,
         key=lambda fish: _requirement_selection_score(
@@ -471,6 +549,7 @@ def generate_fish_requirements(
             stat=normalized_stat,
             rod_focus=rod_focus,
             tier_focus=tier_focus,
+            stat_strength=strength,
             rarity_bounds=(min(rarity_values), max(rarity_values)),
             weight_bounds=(min(weight_values), max(weight_values)),
             value_bounds=(min(value_values), max(value_values)),
@@ -499,14 +578,22 @@ def calculate_upgrade_bonus(
     *,
     stat: str = "",
     fish_by_name: Mapping[str, object] | None = None,
+    rod: Rod | None = None,
+    all_rods: Sequence[Rod] = (),
 ) -> float:
     normalized_stat = _normalize_recipe_stat(stat)
+    strength = (
+        _stat_strength(rod, normalized_stat, all_rods)
+        if rod is not None
+        else 0.5
+    )
     total_score = sum(
         requirement.count
         * _requirement_bonus_profile(
             requirement,
             stat=normalized_stat,
             fish_by_name=fish_by_name,
+            stat_strength=strength,
         )
         for requirement in requirements
     )

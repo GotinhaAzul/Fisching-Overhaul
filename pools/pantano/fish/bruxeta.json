@@ -1,0 +1,10 @@
+{
+  "name": "Bruxeta",
+  "rarity": "Raro",
+  "description": "A Bruxeta e um predador noturno de corpo esguio e coloracao quase negra, com olhos amarelos que brilham levemente no escuro do pantano. Espera imóvel entre as raizes dos cogumelos gigantes e ataca com velocidade surpresa. Os pescadores locais relatam que ela parece escolher quando ser capturada. A luta que oferece e impulsiva e desorientadora.",
+  "kg_min": 3.0,
+  "kg_max": 8.0,
+  "base_value": 48,
+  "sequence_len": 6,
+  "reaction_time_s": 1.9
+}

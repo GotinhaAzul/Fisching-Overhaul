@@ -1,0 +1,10 @@
+{
+  "name": "Bonito",
+  "rarity": "Comum",
+  "description": "O Bonito e um carangideo de corpo compacto e listras escuras longitudinais. Nada em alta velocidade e raramente para, pois precisa manter agua passando pelas guelras para respirar. Forma cardumes modestos e e oportunista na alimentacao, atacando qualquer presa menor que apareca. E um peixe honesto: nao e raro, nao e exotico, mas vale cada quilo.",
+  "kg_min": 0.8,
+  "kg_max": 3.0,
+  "base_value": 10,
+  "sequence_len": 4,
+  "reaction_time_s": 2.4
+}

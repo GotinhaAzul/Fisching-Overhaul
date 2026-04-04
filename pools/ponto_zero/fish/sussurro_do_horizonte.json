@@ -1,0 +1,10 @@
+{
+  "name": "Sussurro do Horizonte",
+  "rarity": "Incomum",
+  "description": "O Sussurro do Horizonte e uma criatura alongada e quase plana que se move paralela ao limite entre o mar e o vazio. Nao tem olhos — apenas uma faixa sensorial que percebe variações de pressao e temperatura no ponto exato onde a agua termina. Nao e claro de onde veio. Aparece e desaparece sem aviso. Fisgado, oferece resistencia minima, como se ja esperasse.",
+  "kg_min": 5.0,
+  "kg_max": 12.0,
+  "base_value": 28,
+  "sequence_len": 7,
+  "reaction_time_s": 2.1
+}

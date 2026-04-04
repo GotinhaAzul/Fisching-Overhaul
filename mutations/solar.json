@@ -3,5 +3,8 @@
   "description": "Abençoado pelo sol, brilha quando exposto a uma tarde ensolarada.",
   "xp_multiplier": 1.7,
   "gold_multiplier": 1.7,
-  "chance_percent": 0.19
+  "chance_percent": 0.19,
+  "rod_chance_overrides": {
+    "Azul Lâmina": 3
+  }
 }

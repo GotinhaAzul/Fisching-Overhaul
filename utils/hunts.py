@@ -32,6 +32,7 @@ class ActiveHunt:
     definition: HuntDefinition
     started_at: float
     ends_at: float
+    remaining_fish_names: List[str]
 
     def time_left(self) -> float:
         return max(0.0, self.ends_at - time.monotonic())
@@ -87,6 +88,18 @@ class HuntManager:
         with self._lock:
             return list(self._hunts)
 
+    def get_available_fish_for_pool(self, pool_name: str) -> List["FishProfile"]:
+        with self._lock:
+            active = self._active_by_pool.get(pool_name)
+            if not active:
+                return []
+            remaining_names = set(active.remaining_fish_names)
+            return [
+                fish
+                for fish in active.definition.fish_profiles
+                if fish.name in remaining_names
+            ]
+
     def force_hunt(self, hunt_id: str) -> Optional[HuntDefinition]:
         if not self._dev_tools_enabled:
             return None
@@ -109,6 +122,7 @@ class HuntManager:
                 definition=selected,
                 started_at=now,
                 ends_at=now + selected.duration_s,
+                remaining_fish_names=[fish.name for fish in selected.fish_profiles],
             )
             progress = self._progress_by_hunt.get(selected.hunt_id)
             if progress:
@@ -136,6 +150,51 @@ class HuntManager:
                 updated = progress.disturbance + max(0.0, definition.disturbance_per_catch)
                 progress.disturbance = self._clamp_disturbance(definition, updated)
 
+    def consume_hunt_fish(
+        self,
+        pool_name: str,
+        fish_name: str,
+        *,
+        catchable_fish_names: Optional[set[str]] = None,
+    ) -> bool:
+        notifications: List[str] = []
+        ended = False
+
+        with self._lock:
+            active = self._active_by_pool.get(pool_name)
+            if not active:
+                return False
+            if fish_name not in active.remaining_fish_names:
+                return False
+
+            active.remaining_fish_names = [
+                name for name in active.remaining_fish_names if name != fish_name
+            ]
+            if catchable_fish_names is None:
+                remaining_catchable = bool(active.remaining_fish_names)
+            else:
+                remaining_catchable = any(
+                    name in catchable_fish_names for name in active.remaining_fish_names
+                )
+
+            if remaining_catchable:
+                return False
+
+            self._active_by_pool.pop(pool_name, None)
+            progress = self._progress_by_hunt.get(active.definition.hunt_id)
+            now = time.monotonic()
+            if progress:
+                progress.cooldown_ends_at = max(
+                    progress.cooldown_ends_at,
+                    now + max(0.0, active.definition.cooldown_s),
+                )
+            notifications.append(f"A hunt '{active.definition.name}' terminou.")
+            ended = True
+
+        for message in notifications:
+            self._emit_notification(message)
+        return ended
+
     def serialize_state(self) -> Dict[str, object]:
         now = time.monotonic()
         with self._lock:
@@ -162,6 +221,7 @@ class HuntManager:
                 active_data[pool_name] = {
                     "hunt_id": active.definition.hunt_id,
                     "remaining_s": remaining_s,
+                    "remaining_fish_names": list(active.remaining_fish_names),
                 }
 
         return {
@@ -226,10 +286,20 @@ class HuntManager:
                 remaining_s = max(0.0, self._safe_float(raw_entry.get("remaining_s")))
                 if remaining_s <= 0:
                     continue
+                raw_remaining_fish = raw_entry.get("remaining_fish_names")
+                valid_fish_names = {fish.name for fish in definition.fish_profiles}
+                remaining_fish_names = [
+                    name
+                    for name in raw_remaining_fish
+                    if isinstance(name, str) and name in valid_fish_names
+                ] if isinstance(raw_remaining_fish, list) else [
+                    fish.name for fish in definition.fish_profiles
+                ]
                 self._active_by_pool[pool_name] = ActiveHunt(
                     definition=definition,
                     started_at=now,
                     ends_at=now + remaining_s,
+                    remaining_fish_names=remaining_fish_names,
                 )
 
     def _emit_notification(self, message: str) -> None:
@@ -288,6 +358,7 @@ class HuntManager:
                         definition=definition,
                         started_at=now,
                         ends_at=now + definition.duration_s,
+                        remaining_fish_names=[fish.name for fish in definition.fish_profiles],
                     )
                     progress.disturbance = 0.0
                     notifications.append(

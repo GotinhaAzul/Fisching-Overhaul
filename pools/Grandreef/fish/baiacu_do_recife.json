@@ -1,0 +1,10 @@
+{
+  "name": "Baiacu do Recife",
+  "rarity": "Incomum",
+  "description": "O Baiacu do Recife infla o corpo em resposta a qualquer ameaca, transformando-se em uma esfera coberta de espinhos. Apesar da aparencia intimidante, nao e um predador agressivo — prefere escapar do que confrontar. Habita as bordas do recife onde a agua e um pouco mais agitada. Requer cuidado no manuseio apos a captura.",
+  "kg_min": 0.5,
+  "kg_max": 2.0,
+  "base_value": 17,
+  "sequence_len": 5,
+  "reaction_time_s": 2.2
+}

@@ -56,7 +56,8 @@ def format_inventory_entry(
     mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
     unsellable_label = " [bold red][Unsellable][/bold red]" if entry.is_unsellable else ""
     return (
-        f"[{color}]\\[{entry.rarity}] "
+        f"[{color}]\\[{entry.rarity}][/]"
+        f" "
         f"[{fish_name_color}]{entry.name}[/] "
         f"[{color}]({entry.kg:0.2f}kg){shiny_label}{mutation_label}[/]"
         f"{unsellable_label}"

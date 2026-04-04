@@ -1,0 +1,10 @@
+{
+  "name": "Raia-Coroa",
+  "rarity": "Epico",
+  "description": "A Raia-Coroa desliza entre as formacoes do Grande Recife com uma envergadura impressionante, exibindo marcas simetricas no dorso que lembram uma coroa dourada. Alimenta-se de moluscos e crustaceos escondidos nas fendas dos corais, usando movimentos amplos das nadadeiras para desenterrar presas. Apesar da aparencia serena, reage com arrancadas violentas quando sente o anzol, usando o peso do corpo achatado para gerar uma resistencia lateral dificil de controlar.",
+  "kg_min": 8.0,
+  "kg_max": 18.0,
+  "base_value": 85,
+  "sequence_len": 7,
+  "reaction_time_s": 1.5
+}

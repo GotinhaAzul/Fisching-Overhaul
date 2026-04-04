@@ -1,0 +1,10 @@
+{
+  "name": "Bijupirá",
+  "rarity": "Raro",
+  "description": "O Bijupira e um predador solitario e veloz do mar aberto, com corpo aerodinamico e nadadeira dorsal alongada que parece uma antena. Segue grandes peixes e embarcacoes, aproveitando os restos que deixam para tras. E dificil de localizar porque nao forma grupos. Uma vez fisgado, corre longas distancias antes de ceder, exigindo linha firme e paciencia.",
+  "kg_min": 4.0,
+  "kg_max": 12.0,
+  "base_value": 62,
+  "sequence_len": 6,
+  "reaction_time_s": 1.9
+}

@@ -22,6 +22,12 @@
       },
       {
         "type": "fish_with_mutation",
+        "fish_name": "Disco de Diamante",
+        "mutation_name": "Sereno",
+        "count": 1
+      },
+      {
+        "type": "fish_with_mutation",
         "fish_name": "Leviata Congelado",
         "mutation_name": "Congelado",
         "count": 1

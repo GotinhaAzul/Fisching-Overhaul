@@ -1,0 +1,10 @@
+{
+  "name": "Borboleta d'Água",
+  "rarity": "Raro",
+  "description": "A Borboleta d'Agua possui barbatanas peitorais enormes e translucidas que se abrem como asas ao nadar devagar entre as flores subaquaticas do jardim. Cada movimento parece intencional, quase ceremonioso. E timida e some ao menor sinal de perturbacao. Pescadores pacientes que ficam imóveis por tempo suficiente conseguem avista-la — e eventualmente fisga-la.",
+  "kg_min": 2.0,
+  "kg_max": 5.0,
+  "base_value": 40,
+  "sequence_len": 5,
+  "reaction_time_s": 1.6
+}

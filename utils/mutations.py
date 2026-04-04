@@ -156,6 +156,12 @@ def filter_mutations_for_rod(
     return result
 
 
+def filter_mutations_for_appraisal(
+    mutations: Sequence[Mutation],
+) -> List[Mutation]:
+    return [mutation for mutation in mutations if not mutation.required_rods]
+
+
 def choose_mutation(mutations: List[Mutation]) -> Optional[Mutation]:
     available = [mutation for mutation in mutations if mutation.chance > 0]
     if not available:

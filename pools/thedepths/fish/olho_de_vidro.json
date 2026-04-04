@@ -1,0 +1,10 @@
+{
+  "name": "Olho-de-Vidro",
+  "rarity": "Incomum",
+  "description": "Os olhos do Olho-de-Vidro sao grandes, esfericos e completamente transparentes, como bolhas de cristal fixadas no cranio. Por tras deles, toda a estrutura interna e visivel a olho nu. Acredita-se que essa transparencia seja adaptacao a ambientes sem luz, maximizando a captacao de qualquer foton residual. Nada com movimentos suaves e deliberados.",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

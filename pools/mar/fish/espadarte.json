@@ -1,0 +1,10 @@
+{
+  "name": "Espadarte",
+  "rarity": "Epico",
+  "description": "O Espadarte e um dos maiores predadores do mar aberto, armado com um rostro achatado e afiado capaz de atordoar peixes a distancia. Caca sozinho, em mergulhos profundos durante o dia e retornando a superficie a noite. Sua velocidade e lendaria — poucos pescadores conseguem mante-lo na linha por tempo suficiente. Captura-lo e uma das maiores provas de tecnica no mar aberto.",
+  "kg_min": 15.0,
+  "kg_max": 40.0,
+  "base_value": 90,
+  "sequence_len": 8,
+  "reaction_time_s": 1.7
+}

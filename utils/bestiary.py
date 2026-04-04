@@ -11,6 +11,7 @@ from utils.pagination import (
     apply_page_hotkey,
     get_page_slice,
 )
+from utils.rod_presentation import format_rod_abilities
 from utils.rods import Rod
 from utils.ui import clear_screen, print_spaced_lines
 from utils.bestiary_rewards import (
@@ -1051,7 +1052,10 @@ def show_rods_bestiary(
                 continue
 
             clear_screen()
-            detail_lines = [f"Descricao: {rod.description or '-'}"]
+            detail_lines = [
+                f"Descricao: {rod.description or '-'}",
+                f"Habilidades: {format_rod_abilities(rod)}",
+            ]
             if not _rod_counts_for_completion(rod):
                 detail_lines.append("Esta vara nao conta para a complecao do bestiario.")
             print_menu_panel(
@@ -1116,6 +1120,7 @@ def show_rods_bestiary(
         clear_screen()
         print(f"=== {rod.name} ===")
         print(f"Descricao: {rod.description or '-'}")
+        print(f"Habilidades: {format_rod_abilities(rod)}")
         if not _rod_counts_for_completion(rod):
             print("Esta vara nao conta para a complecao do bestiario.")
         input("\nEnter para voltar.")

@@ -1,0 +1,10 @@
+{
+  "name": "Fada das Águas",
+  "rarity": "Raro",
+  "description": "A Fada das Aguas e uma criatura minuscula e eterea que habita a queda d'agua da Angra Cristal. Suas barbatanas sao finas como musselina e capturam a luz em arcos de cores. Nao e tecnicamente um peixe — taxonomicamente, ninguem sabe ao certo o que e. Aparece somente onde a agua cai sobre cristal. Fisga-la parece quase um sacrilégio. Mas o valor que tem compensa.",
+  "kg_min": 0.8,
+  "kg_max": 2.5,
+  "base_value": 65,
+  "sequence_len": 6,
+  "reaction_time_s": 1.4
+}

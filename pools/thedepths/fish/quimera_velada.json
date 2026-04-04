@@ -1,0 +1,10 @@
+{
+  "name": "Quimera Velada",
+  "rarity": "Raro",
+  "description": "A Quimera Velada e um parente distante dos tubaroes, com barbatanas peitorais longas e translucidas que se arrastam como um veu atras do corpo. Sua pele muda de tonalidade conforme a pressao da agua, variando entre o azul escuro e o negro profundo. Caaca em silencio absoluto, detectando vibracoes por sensores na lateral do corpo. A resistencia que oferece na linha e firme e precisa.",
+  "kg_min": 8.0,
+  "kg_max": 20.0,
+  "base_value": 72,
+  "sequence_len": 7,
+  "reaction_time_s": 1.7
+}

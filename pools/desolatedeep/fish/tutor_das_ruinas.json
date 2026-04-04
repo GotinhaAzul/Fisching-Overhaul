@@ -1,0 +1,10 @@
+{
+  "name": "Tutor das Ruínas",
+  "rarity": "Epico",
+  "description": "O Tutor das Ruinas e o maior habitante das Profundezas Desoladas. Patrulha os limites das ruinas em circulos lentos e regulares, como se guardasse algo que nao pode ser visto. Sua presenca afasta outras especies da area. Tem cicatrizes antigas que sugerem conflitos com criaturas hoje desaparecidas. Fisgado, resiste com uma persistencia que parece mais intencional do que instintiva.",
+  "kg_min": 10.0,
+  "kg_max": 25.0,
+  "base_value": 88,
+  "sequence_len": 9,
+  "reaction_time_s": 1.7
+}

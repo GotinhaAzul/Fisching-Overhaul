@@ -22,7 +22,7 @@
   "rewards": [
     {
       "type": "unlock_pools",
-      "pools": ["Celestia"]
+      "pool_names": ["Celestia"]
     }
   ]
 }

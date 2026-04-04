@@ -1,0 +1,10 @@
+{
+  "name": "Girondina",
+  "rarity": "Incomum",
+  "description": "A Girondina e uma criatura pequena que nao consegue nadar em linha reta — seu sistema de equilibrio e calibrado para correntes circulares, tornando toda sua existencia uma espiral continua. Em aguas paradas ficaria completamente desorientada. Em Vertigo, e perfeitamente adaptada. Sua trajetoria em espiral confunde a linha e o pescador antes mesmo de confirmar a captura.",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 1.7
+}

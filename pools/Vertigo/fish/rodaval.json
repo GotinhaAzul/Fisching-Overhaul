@@ -1,0 +1,10 @@
+{
+  "name": "Rodaval",
+  "rarity": "Raro",
+  "description": "O Rodaval usa as correntes descendentes de Vertigo como propulsao, entrando nas espirais para ganhar velocidade e saindo delas em disparadas imprevisiveis. Seu corpo e achatado e aerodinamico, ideal para aproveitar cada curva da corrente. Pescadores que tentam prever sua trajetoria invariavelmente erram. A unica estrategia funcionando e soltar linha e esperar que ele prenda sozinho.",
+  "kg_min": 6.0,
+  "kg_max": 15.0,
+  "base_value": 68,
+  "sequence_len": 6,
+  "reaction_time_s": 2.0
+}

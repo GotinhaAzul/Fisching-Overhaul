@@ -6,6 +6,7 @@
   "description": "Amigos!",
   "price": 950,
   "unlocked_default": false,
+  "can_slam": true,
   "slam_chance": 0.65,
   "slam_time_bonus": 0.05
 }

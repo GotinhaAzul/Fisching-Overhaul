@@ -43,10 +43,10 @@ def calculate_effective_rod_stats(
 def combine_fish_profiles(
     selected_pool: "FishingPool",
     event_def: Optional["EventDefinition"],
-    hunt_def: Optional["HuntDefinition"],
+    hunt_fish_profiles: Optional[Sequence["FishProfile"]],
 ) -> List["FishProfile"]:
     event_fish = event_def.fish_profiles if event_def else []
-    hunt_fish = hunt_def.fish_profiles if hunt_def else []
+    hunt_fish = list(hunt_fish_profiles or [])
     return (
         list(selected_pool.fish_profiles)
         + list(event_fish)

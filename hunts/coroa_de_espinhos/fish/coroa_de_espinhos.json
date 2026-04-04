@@ -1,10 +1,10 @@
 {
   "name": "Coroa de Espinhos",
   "rarity": "Lendario",
-  "description": "Uma estrela-do-mar colossal que devora o recife em seu caminho.",
-  "kg_min": 18.0,
-  "kg_max": 52.0,
-  "base_value": 145,
-  "sequence_len": 8,
-  "reaction_time_s": 1.0
+  "description": "Uma estrela-do-mar colossal, coberta de espinhos densos e placas vivas que rangem contra o coral. Avança lentamente pelo recife, consumindo tudo o que toca e deixando apenas pedra nua para trás. Quando fisgada, parece arrancar corais junto com cada investida.",
+  "kg_min": 70.0,
+  "kg_max": 300.0,
+  "base_value": 800,
+  "sequence_len": 12,
+  "reaction_time_s": 1.8
 }

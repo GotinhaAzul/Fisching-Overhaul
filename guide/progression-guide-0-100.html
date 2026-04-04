@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fisching Overhaul — Progression Guide: First Run to 100%</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design Tokens ── */
+    :root {
+      --bg:           #0F0F23;
+      --bg-card:      #1A1830;
+      --bg-raised:    #22203A;
+      --bg-muted:     #27253F;
+      --primary:      #7C3AED;
+      --primary-mid:  #9B5CF6;
+      --primary-soft: #A78BFA;
+      --accent:       #F43F5E;
+      --teal:         #2DD4BF;
+      --gold:         #F59E0B;
+      --text:         #E2E8F0;
+      --text-muted:   #94A3B8;
+      --text-subtle:  #64748B;
+      --border:       rgba(124, 58, 237, 0.25);
+      --border-soft:  rgba(255,255,255,0.07);
+      --ring:         rgba(124, 58, 237, 0.5);
+
+      --radius-sm:  6px;
+      --radius:     10px;
+      --radius-lg:  16px;
+
+      --shadow-glow: 0 0 20px rgba(124,58,237,0.15);
+      --shadow-card: 0 4px 24px rgba(0,0,0,0.35);
+
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration: 200ms;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; color-scheme: dark; }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ── Base ── */
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Skip link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 16px;
+      background: var(--primary);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 0 0 var(--radius) var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+      z-index: 9999;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* ── Reading progress bar ── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--teal));
+      z-index: 1000;
+      transition: width 50ms linear;
+    }
+
+    /* ── Layout ── */
+    .wrapper {
+      display: grid;
+      grid-template-columns: 272px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-soft);
+      padding: 24px 12px 32px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary) transparent;
+    }
+
+    nav::-webkit-scrollbar { width: 4px; }
+    nav::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 8px 20px;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 16px;
+    }
+
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-soft));
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .nav-logo-text {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .nav-logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* Search */
+    .nav-search {
+      position: relative;
+      margin-bottom: 16px;
+      padding: 0 4px;
+    }
+
+    .nav-search input {
+      width: 100%;
+      background: var(--bg-muted);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 10px 7px 30px;
+      outline: none;
+      transition: border-color var(--duration) var(--ease-out),
+                  box-shadow var(--duration) var(--ease-out);
+    }
+
+    .nav-search input::placeholder { color: var(--text-subtle); }
+
+    .nav-search input:focus {
+      border-color: var(--primary-mid);
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+
+    .nav-search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-subtle);
+      pointer-events: none;
+    }
+
+    /* Nav links */
+    nav ul { list-style: none; }
+    nav li + li { margin-top: 1px; }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      padding: 14px 12px 4px;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 450;
+      cursor: pointer;
+      transition: background var(--duration) var(--ease-out),
+                  color var(--duration) var(--ease-out);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    nav a:hover {
+      background: var(--bg-muted);
+      color: var(--text);
+    }
+
+    nav a.active {
+      background: rgba(124, 58, 237, 0.18);
+      color: var(--primary-soft);
+      font-weight: 500;
+    }
+
+    nav a:focus-visible {
+      outline: 2px solid var(--primary-mid);
+      outline-offset: -2px;
+    }
+
+    .nav-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity var(--duration);
+    }
+
+    nav a.active .nav-dot { opacity: 1; }
+
+    /* ── Main ── */
+    main {
+      padding: 56px 64px 96px;
+      max-width: 880px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 56px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary-soft);
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.25);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, #A78BFA 0%, #2DD4BF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-desc {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.75;
+      max-width: 660px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-soft);
+    }
+
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hero-stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary-soft);
+    }
+
+    .hero-stat-label {
+      font-size: 12px;
+      color: var(--text-subtle);
+      font-weight: 500;
+    }
+
+    /* ── Section headings ── */
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin: 56px 0 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-soft);
+      scroll-margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 22px;
+      background: linear-gradient(to bottom, var(--primary), var(--teal));
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--teal);
+      margin: 24px 0 10px;
+      scroll-margin-top: 24px;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Stage cards ── */
+    .stage {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin: 32px 0;
+      position: relative;
+      transition: border-color var(--duration) var(--ease-out),
+                  box-shadow var(--duration) var(--ease-out);
+    }
+
+    .stage:hover {
+      border-color: var(--border);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .stage-header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stage-num {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary-soft);
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .stage-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .stage-band {
+      font-size: 12px;
+      color: var(--text-subtle);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stage-band::before {
+      content: '';
+      display: inline-block;
+      width: 14px;
+      height: 1px;
+      background: var(--text-subtle);
+    }
+
+    .stage h3 { margin-top: 20px; }
+
+    /* ── Bottleneck block ── */
+    .bottleneck {
+      background: rgba(244,63,94,0.07);
+      border: 1px solid rgba(244,63,94,0.2);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin: 20px 0;
+    }
+
+    .bottleneck-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .bottleneck-label svg { flex-shrink: 0; }
+
+    .bottleneck-item {
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14.5px;
+      line-height: 1.6;
+      display: flex;
+      gap: 10px;
+    }
+
+    .bottleneck-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .bottleneck-item:first-of-type { padding-top: 0; }
+
+    .bottleneck-item-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+
+    .bottleneck-item strong { color: var(--text); }
+
+    /* ── Tip block ── */
+    .tip {
+      background: rgba(45,212,191,0.07);
+      border: 1px solid rgba(45,212,191,0.2);
+      border-radius: var(--radius);
+      padding: 13px 18px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .tip-icon { flex-shrink: 0; color: var(--teal); margin-top: 1px; }
+
+    /* ── Lists ── */
+    ul, ol { padding-left: 0; margin: 12px 0; list-style: none; }
+
+    li {
+      padding: 3px 0 3px 20px;
+      position: relative;
+      font-size: 15px;
+    }
+
+    ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 13px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      opacity: 0.6;
+    }
+
+    ol { counter-reset: ol-counter; }
+    ol li { counter-increment: ol-counter; }
+    ol li::before {
+      content: counter(ol-counter);
+      position: absolute;
+      left: 0;
+      top: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary-soft);
+      background: rgba(124,58,237,0.15);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding-left: 0;
+    }
+
+    /* ── Inline code / pool names ── */
+    code {
+      background: rgba(167,139,250,0.1);
+      border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 0.85em;
+      color: var(--primary-soft);
+    }
+
+    /* ── Paragraphs ── */
+    p { margin: 10px 0; font-size: 15px; }
+    p + p { margin-top: 8px; }
+
+    /* ── HR ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border-soft);
+      margin: 48px 0;
+    }
+
+    /* ── Info grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 16px;
+      transition: border-color var(--duration) var(--ease-out);
+    }
+
+    .info-card:hover { border-color: var(--border); }
+
+    .info-card-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary-soft);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .info-card-text { font-size: 13.5px; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Rod grid ── */
+    .rod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .rod-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 13.5px;
+      transition: border-color var(--duration) var(--ease-out),
+                  background var(--duration) var(--ease-out);
+      cursor: default;
+    }
+
+    .rod-item:hover {
+      background: var(--bg-raised);
+      border-color: var(--border);
+    }
+
+    .rod-item-name {
+      font-weight: 600;
+      color: var(--teal);
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .rod-item-desc { color: var(--text-muted); font-size: 12.5px; line-height: 1.45; }
+
+    /* ── Hunt table ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-soft);
+      margin: 16px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead { background: var(--bg-raised); }
+
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 16px;
+      border-top: 1px solid var(--border-soft);
+      vertical-align: middle;
+    }
+
+    tr:hover td { background: var(--bg-raised); }
+
+    td:first-child code { color: var(--gold); border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.08); }
+
+    td:last-child { color: var(--text-muted); font-size: 13px; }
+
+    /* ── Cleanup list ── */
+    .cleanup-list {
+      list-style: none;
+      padding: 0;
+      counter-reset: cleanup;
+      margin: 16px 0;
+    }
+
+    .cleanup-list li {
+      counter-increment: cleanup;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 15px;
+    }
+
+    .cleanup-list li::before {
+      content: counter(cleanup);
+      background: linear-gradient(135deg, var(--primary), var(--primary-soft));
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      min-width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0;
+      padding-left: 0;
+      top: auto;
+      position: static;
+    }
+
+    .cleanup-list li:last-child { border-bottom: none; }
+
+    /* ── Tribute rod cards ── */
+    .tribute {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      margin: 20px 0;
+      transition: border-color var(--duration) var(--ease-out),
+                  box-shadow var(--duration) var(--ease-out);
+    }
+
+    .tribute:hover {
+      border-color: rgba(245,158,11,0.3);
+      box-shadow: 0 0 20px rgba(245,158,11,0.07);
+    }
+
+    .tribute-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 3px;
+    }
+
+    .tribute-attr {
+      font-size: 12px;
+      color: var(--text-subtle);
+      font-style: italic;
+      margin-bottom: 14px;
+    }
+
+    .tribute-needs {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.15);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; padding: 0; margin: 10px 0; }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+    .checklist li::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid var(--primary);
+      flex-shrink: 0;
+      margin-top: 3px;
+      background: transparent;
+      position: static;
+      display: block;
+    }
+
+    /* ── Back to top ── */
+    #back-top {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 42px;
+      height: 42px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity var(--duration) var(--ease-out),
+                  transform var(--duration) var(--ease-out),
+                  background var(--duration);
+      pointer-events: none;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+    }
+
+    #back-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    #back-top:hover { background: var(--primary-mid); }
+    #back-top:focus-visible { outline: 2px solid var(--primary-soft); outline-offset: 3px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .wrapper { grid-template-columns: 1fr; }
+      nav {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-soft);
+      }
+      main { padding: 32px 24px 64px; }
+      h2 { margin-top: 40px; }
+    }
+
+    @media (max-width: 480px) {
+      main { padding: 24px 16px 56px; }
+      .stage { padding: 20px 18px; }
+      .info-grid { grid-template-columns: 1fr 1fr; }
+      .rod-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Skip link -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Reading progress bar -->
+<div id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Reading progress"></div>
+
+<div class="wrapper">
+
+  <!-- ── Sidebar ── -->
+  <nav aria-label="Guide navigation">
+    <div class="nav-logo">
+      <div class="nav-logo-icon" aria-hidden="true">🎣</div>
+      <div>
+        <div class="nav-logo-text">Fisching Overhaul</div>
+        <div class="nav-logo-sub">Progression Guide</div>
+      </div>
+    </div>
+
+    <div class="nav-search">
+      <svg class="nav-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="nav-search-input" placeholder="Filter sections…" aria-label="Filter navigation sections" />
+    </div>
+
+    <ul id="nav-list">
+      <li><span class="nav-section-label">Overview</span></li>
+      <li><a href="#intro"><span class="nav-dot" aria-hidden="true"></span>Introduction</a></li>
+      <li><a href="#what-100"><span class="nav-dot" aria-hidden="true"></span>What is 100%</a></li>
+      <li><a href="#rhythm"><span class="nav-dot" aria-hidden="true"></span>The Four-Part Rhythm</a></li>
+      <li><a href="#drivers"><span class="nav-dot" aria-hidden="true"></span>What Drives Progression</a></li>
+      <li><a href="#principles"><span class="nav-dot" aria-hidden="true"></span>General Principles</a></li>
+
+      <li><span class="nav-section-label">Stages</span></li>
+      <li><a href="#stage1"><span class="nav-dot" aria-hidden="true"></span>Stage 1 — Settle In</a></li>
+      <li><a href="#stage2"><span class="nav-dot" aria-hidden="true"></span>Stage 2 — River &amp; Swamp</a></li>
+      <li><a href="#stage3"><span class="nav-dot" aria-hidden="true"></span>Stage 3 — Reef &amp; Garden</a></li>
+      <li><a href="#stage4"><span class="nav-dot" aria-hidden="true"></span>Stage 4 — Desert &amp; Sun-Coast</a></li>
+      <li><a href="#stage5"><span class="nav-dot" aria-hidden="true"></span>Stage 5 — Vertigo &amp; Deep Reef</a></li>
+      <li><a href="#stage6"><span class="nav-dot" aria-hidden="true"></span>Stage 6 — Caves &amp; Sky</a></li>
+      <li><a href="#stage7"><span class="nav-dot" aria-hidden="true"></span>Stage 7 — Mariana Staircase</a></li>
+      <li><a href="#stage8"><span class="nav-dot" aria-hidden="true"></span>Stage 8 — Endgame Closure</a></li>
+      <li><a href="#stage9"><span class="nav-dot" aria-hidden="true"></span>Stage 9 — Final Completion</a></li>
+
+      <li><span class="nav-section-label">Reference</span></li>
+      <li><a href="#cleanup"><span class="nav-dot" aria-hidden="true"></span>Cleanup Order</a></li>
+      <li><a href="#rods"><span class="nav-dot" aria-hidden="true"></span>Rods Worth Planning</a></li>
+      <li><a href="#mutations"><span class="nav-dot" aria-hidden="true"></span>Mutations &amp; Upgrades</a></li>
+      <li><a href="#hunts"><span class="nav-dot" aria-hidden="true"></span>Hunts &amp; Events</a></li>
+      <li><a href="#cafeteria"><span class="nav-dot" aria-hidden="true"></span>Cafeteria</a></li>
+      <li><a href="#tribute"><span class="nav-dot" aria-hidden="true"></span>Tribute Rods</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main id="main-content">
+
+    <!-- Hero -->
+    <section class="hero" id="intro" aria-labelledby="hero-title">
+      <div class="hero-eyebrow" aria-label="Guide type">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        Full-Completion Guide
+      </div>
+      <h1 id="hero-title">
+        Fisching Overhaul<br>
+        <span class="gradient">Progression Guide: First Run to 100%</span>
+      </h1>
+      <p class="hero-desc">
+        This guide is meant to feel like a real playthrough — not a speedrun route, not a low-spoiler
+        mystery route, not a spreadsheet. The goal is to help you move from the opening pools to the
+        endgame while quietly setting up a full-completion file instead of reaching the final stretch
+        with half the game still unfinished.
+      </p>
+      <p class="hero-desc" style="margin-top:10px">
+        It is written to stay spoiler-light on hidden content and late secrets, but practical about what
+        actually blocks progress. When a mission wall has a specific requirement, this guide names it and
+        tells you where to find it — only at the moment it becomes relevant, not front-loaded.
+      </p>
+      <div class="hero-meta" role="list" aria-label="Guide statistics">
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-val">25</span>
+          <span class="hero-stat-label">Main Pools</span>
+        </div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-val">34</span>
+          <span class="hero-stat-label">Missions</span>
+        </div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-val">17</span>
+          <span class="hero-stat-label">Crafting Recipes</span>
+        </div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-val">9</span>
+          <span class="hero-stat-label">Stages Covered</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to use -->
+    <h2>How to Use This Guide</h2>
+    <ul>
+      <li>Treat each stage like a phase of the run, not a rigid checklist.</li>
+      <li>Push forward when your current pool is still giving XP, money, and bestiary progress at the same time.</li>
+      <li>Rotate away when a branch starts asking for one very specific thing and everything else has slowed down.</li>
+      <li>Finish pools that are already close to 100% instead of carrying lots of nearly-finished work into the postgame.</li>
+      <li>Keep at least one copy of unusual fish whenever possible until you are sure they are not tied to missions, hunts, crafting, or appraise targets.</li>
+      <li>When you see a <strong>Key Bottlenecks</strong> block in a stage, read it when you hit a wall — not necessarily before.</li>
+    </ul>
+
+    <!-- What is 100% -->
+    <h2 id="what-100">What "100%" Means Here</h2>
+    <ul>
+      <li>All <strong>25 main bestiary pools</strong> at 100%</li>
+      <li>All <strong>34 missions</strong> completed</li>
+      <li>All <strong>hunts</strong> cleared at least once</li>
+      <li>All <strong>17 crafting recipes</strong> completed</li>
+      <li>All <strong>rods that count toward rod completion</strong> collected</li>
+      <li>Global fish, rod, and pool bestiary rewards claimed</li>
+    </ul>
+    <p>
+      The repo has 27 pools total, but 2 hidden pools are excluded from main bestiary completion.
+      Some tribute or secret rods are also excluded from rod bestiary completion.
+      This guide treats hidden late-game content as bonus completion after the core route is already in good shape.
+    </p>
+
+    <!-- Rhythm -->
+    <h2 id="rhythm">The Four-Part Rhythm of a Healthy Run</h2>
+    <div class="info-grid" role="list" aria-label="Four core rhythms">
+      <div class="info-card" role="listitem">
+        <div class="info-card-num">1</div>
+        <div class="info-card-text">Mission progress that unlocks a new pool, rod, or branch.</div>
+      </div>
+      <div class="info-card" role="listitem">
+        <div class="info-card-num">2</div>
+        <div class="info-card-text">Bestiary progress in pools that are currently relevant.</div>
+      </div>
+      <div class="info-card" role="listitem">
+        <div class="info-card-num">3</div>
+        <div class="info-card-text">Side power from rods, crafting, upgrades, appraise, or mutation projects.</div>
+      </div>
+      <div class="info-card" role="listitem">
+        <div class="info-card-num">4</div>
+        <div class="info-card-text">Cleanup in older zones that are already almost solved.</div>
+      </div>
+    </div>
+    <p>
+      If you keep those four moving together, the game feels broad and rewarding. Think of the four rhythms
+      as a pulse — each session, at least two should move. Three is better. All four at once means you are
+      playing very efficiently.
+    </p>
+
+    <!-- Drivers -->
+    <h2 id="drivers">What Actually Drives Progression</h2>
+    <p>Progression is not only about levels.</p>
+    <ul>
+      <li><strong>Levels</strong> — gate several major missions, including some that cannot be rushed regardless of how much money you have.</li>
+      <li><strong>Bestiary percent</strong> — many pools open from discovery, not money alone.</li>
+      <li><strong>Mutations</strong> — some branches ask for them directly, and the rarest ones require intentional setup, not just luck.</li>
+      <li><strong>Rod comfort</strong> — the minigame becomes a real skill check in midgame and beyond. A rod you trust beats a rod with better stats that you fumble.</li>
+      <li><strong>Crafting</strong> — some rods are solutions to later problems, and some of the best cannot be bought at all.</li>
+      <li><strong>Money</strong> — matters more than it looks early on. Several pool unlocks have costs that are easy to overlook.</li>
+    </ul>
+
+    <!-- Principles -->
+    <h2 id="principles">General Principles That Save Time</h2>
+
+    <h3>Value control early</h3>
+    <p>
+      In the early and midgame, <code>control</code> often matters more than headline luck. A rod that feels stable
+      produces better XP, cleaner catches, and less frustration. Upgrading control on a rod you already trust
+      is often a better investment than chasing a new one.
+    </p>
+
+    <h3>Do not appraise random filler</h3>
+    <p>Appraise matters most when the fish already has a reason to matter:</p>
+    <ul>
+      <li>it is part of a mission wall</li>
+      <li>it is a useful mutation target</li>
+      <li>it is tied to a craft</li>
+      <li>it is a valuable rare catch worth refining</li>
+    </ul>
+
+    <h3>Upgrade rods you actually use</h3>
+    <ul>
+      <li>upgrade <code>control</code> when catches are getting tense</li>
+      <li>upgrade <code>luck</code> when a rod is carrying a wide slice of progression</li>
+      <li>upgrade <code>kg_max</code> when you are losing fish that would otherwise matter</li>
+    </ul>
+
+    <h3>Do not sell everything</h3>
+    <p>
+      Missions, crafting, hunts, and upgrades all reward the player who keeps inventory depth.
+      Get into the habit of holding one extra copy of anything rare or unusual.
+    </p>
+
+    <h3>Watch your money alongside your level</h3>
+    <p>
+      <code>Grande Recife</code>, <code>Geleira Snowcap</code>, <code>Baia do Sol</code>, and the Marianas Prologue
+      all require spending real money in addition to meeting level or bestiary thresholds.
+    </p>
+
+    <h3>Bestiary cleanup is strongest done in waves</h3>
+    <p>A pool at 92% is worth much more attention than a pool at 18%. Finish clusters of nearly-complete pools along the way, not at the very end.</p>
+
+    <hr>
+
+    <!-- ── STAGES ── -->
+
+    <div class="stage" id="stage1">
+      <div class="stage-header">
+        <span class="stage-num">Stage 1</span>
+        <span class="stage-title">Settle In</span>
+      </div>
+      <div class="stage-band">Roughly levels 1–4</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Finish <code>Primeira Pesca</code>.</li>
+        <li>Finish <code>Vendedor Iniciante</code>.</li>
+        <li>Reach 60% of <code>Lagoa Tranquila</code>.</li>
+        <li>Start building a small money cushion.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        Spend enough time in <code>Lagoa Tranquila</code> to become comfortable with the minigame.
+        The best early habit is not "catch fast," but "catch clean."
+      </p>
+      <p>
+        <code>Mar Aberto</code> is already available — do not treat it as later content. It is your first
+        natural money break and your first reminder that rotating pools is healthy.
+      </p>
+      <p>
+        <code>Primeira Pesca</code> only needs 3 catches. Complete it immediately. It unlocks
+        <code>Vendedor Iniciante</code>, which only needs 3 sold fish. Complete that too, right away —
+        it is what actually starts the path toward <code>Pantano Mushgrove</code>, <code>Baia do Sol</code>,
+        and the <code>Vara Brilhante</code> unlock.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 1">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Olho no Bestiário:</strong> 60% of <code>Lagoa Tranquila</code>. No specific fish — just discovery.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Vendedor Iniciante:</strong> Sell 3 fish. This triggers the <code>Pantano Mushgrove</code> and <code>Baia do Sol</code> chains — do not delay it.</span>
+        </div>
+      </div>
+
+      <h3>Suggestions</h3>
+      <ul>
+        <li>If the early rods all feel weak, <code>Vara de Carbono</code> is the safest all-around pickup.</li>
+        <li>Start keeping <code>Sardinha</code> from <code>Mar Aberto</code> — you will deliver 50 of them after unlocking <code>Geleira Snowcap</code>.</li>
+        <li>If <code>Lagoa Tranquila</code> stalls on one late fish, move on and come back later.</li>
+      </ul>
+    </div>
+
+    <div class="stage" id="stage2">
+      <div class="stage-header">
+        <span class="stage-num">Stage 2</span>
+        <span class="stage-title">River, Swamp, and First Branching</span>
+      </div>
+      <div class="stage-band">Roughly levels 4–7</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Unlock <code>Rio Correnteza</code> and push it to 80%.</li>
+        <li>Unlock <code>Pantano Mushgrove</code>.</li>
+        <li>Reach level 5 and spend 400 for <code>Grande Recife</code>.</li>
+        <li>Reach level 5 and spend 1200 for <code>Geleira Snowcap</code>.</li>
+        <li>Reach level 7 and spend 1500 for <code>Baia do Sol</code>.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        <code>Rio Correnteza</code> is your first real lesson in bestiary-based progression.
+        You want 80% there before <code>Pantano Mushgrove</code> opens.
+      </p>
+      <p>
+        Do not read the unlock costs as "pick one." Open all three when possible, then rotate.
+        <code>Geleira Snowcap</code> unlocks the penguin side missions and the <code>Celestia</code>
+        unlock chain, so it is not just a detour.
+        <code>Baia do Sol</code> also later launches the <code>Fossa das Marianas</code> chain.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 2">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Pantano Mushgrove:</strong> 80% of <code>Rio Correnteza</code>.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Grande Recife:</strong> Level 5 and 400 money.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Geleira Snowcap:</strong> Level 5 and 1200 money. Also starts the <code>Celestia</code> and penguin mission chains.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Baia do Sol:</strong> Level 7 and 1500 money.</span>
+        </div>
+      </div>
+
+      <div class="tip">
+        <svg class="tip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        If you have <code>Sardinha</code> stocked up, the first penguin mission becomes available after Snowcap is unlocked. Delivering 50 is a low-effort early reward.
+      </div>
+    </div>
+
+    <div class="stage" id="stage3">
+      <div class="stage-header">
+        <span class="stage-num">Stage 3</span>
+        <span class="stage-title">Reef Progress and the Garden Pivot</span>
+      </div>
+      <div class="stage-band">Roughly levels 5–9</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Build serious progress in <code>Grande Recife</code>.</li>
+        <li>Push <code>Pantano Mushgrove</code> to 50%.</li>
+        <li>Unlock <code>O Jardim</code>.</li>
+        <li>Start the <code>Densa Mata</code> chain.</li>
+        <li>Begin treating crafting as part of progression, not optional extra content.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        <code>Grande Recife</code> is one of the most important midgame pools — 80% plus one key catch opens
+        <code>Profundezas Desoladas</code>. Open <code>O Jardim</code> as soon as you can (50% of
+        <code>Pantano Mushgrove</code> and 1000 money), then split sessions between:
+      </p>
+      <ul>
+        <li><code>Grande Recife</code> for main-route momentum</li>
+        <li><code>Pantano Mushgrove</code> for swamp progression</li>
+        <li><code>O Jardim</code> for long-term side progression and crafts</li>
+      </ul>
+      <p>
+        When both <code>Pantano Mushgrove</code> and <code>O Jardim</code> reach 50%,
+        <code>Densa Mata: Prologo</code> opens. Start watching for <code>Envenenado</code>
+        catches in the swamp now — easier to accumulate passively than to farm in one go.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 3">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock O Jardim:</strong> 50% of <code>Pantano Mushgrove</code> and 1000 money.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Densa Mata: Prologo:</strong> 50% of <code>Pantano Mushgrove</code> and 50% of <code>O Jardim</code>. Both need to move together.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Densa Mata Part 1 (preview):</strong> 4 fish with <code>Envenenado</code> and 1 <code>Vieira-Lama</code> carrying <code>Envenenado</code> — both from <code>Pantano Mushgrove</code>.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Profundezas Desoladas (preview):</strong> 80% of <code>Grande Recife</code> plus 1 <code>Imperador do Coral</code>. Hold every copy you catch.</span>
+        </div>
+      </div>
+
+      <h3>Rod and craft suggestions</h3>
+      <p>Start building materials for <code>Trinity</code>, <code>Perforatio</code>, <code>Frenesis</code>, <code>Midas</code>, and <code>Magnasas</code> — but do not let crafting become your only goal.</p>
+    </div>
+
+    <div class="stage" id="stage4">
+      <div class="stage-header">
+        <span class="stage-num">Stage 4</span>
+        <span class="stage-title">Desert and Sun-Coast Setup</span>
+      </div>
+      <div class="stage-band">Roughly levels 9–12</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Reach level 9 and unlock <code>Deserto Taara</code>.</li>
+        <li>Open <code>A Fonte</code>.</li>
+        <li>Push <code>Baia do Sol</code> toward <code>Vulcao do Sol</code>.</li>
+        <li>Keep <code>Pantano Mushgrove</code> and <code>O Jardim</code> active enough that <code>Densa Mata</code> does not fall behind.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        <code>Deserto Taara</code> opens at level 9, but only after delivering 1 fish carrying the
+        <code>Arenoso</code> mutation. Pay attention to any <code>Arenoso</code> catches before you hit
+        level 9.
+      </p>
+      <p>
+        The full chain toward <code>Vulcao do Sol</code> and then <code>Fossa das Marianas</code> is longer
+        than it looks — the prologue requires a fish that <em>only</em> exists in <code>Vulcao do Sol</code>.
+        Do not let the sun-coast branch sit at "I will do Vulcao do Sol later."
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 4">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Deserto Taara:</strong> Level 9 and 1 fish with <code>Arenoso</code> mutation delivered.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock A Fonte:</strong> 70% of <code>Deserto Taara</code> and 2 delivered <code>Arenoso</code> fish.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Calor que Forja (Ouro Fervente rod):</strong> 1 <code>Xeique de Taara</code>, 1 <code>Serpente Dunária</code> with <code>Incinerado</code>, and 5000 money earned total.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Vulcao do Sol:</strong> 75% of <code>Baia do Sol</code>, level 12, and 5 fish carrying the <code>Coral</code> mutation.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Fossa das Marianas Prologue (critical dependency):</strong> 2000 money and 1 <code>Banshee Ígnea</code> — a Legendary from <code>Vulcao do Sol</code>. You cannot begin the Marianas chain until you have caught one.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage5">
+      <div class="stage-header">
+        <span class="stage-num">Stage 5</span>
+        <span class="stage-title">Vertigo, Deep Reef, and the Midgame Wall</span>
+      </div>
+      <div class="stage-band">Roughly levels 10–15</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Push <code>Mar Aberto</code> to 80% and level 10 to unlock <code>Vertigo</code>.</li>
+        <li>Push <code>Grande Recife</code> to 80% and catch <code>Imperador do Coral</code> to unlock <code>Profundezas Desoladas</code>.</li>
+        <li>Pick up <code>Vertigem</code> if it matches your playstyle.</li>
+        <li>Use hunts and side routes to break up the grind.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        You are advancing two major routes in parallel. <code>Profundezas Desoladas</code> fans out into multiple unlocks:
+      </p>
+      <ul>
+        <li>60% opens <code>Piscina de Salmoura</code></li>
+        <li>70% plus a bright river fish opens <code>Caverna Luminosa</code></li>
+        <li>A separate mission chain unlocks <code>Tridente</code></li>
+      </ul>
+      <p>
+        <code>As profundezas</code> requires level 18, 2 <code>Barracunfunda</code> with <code>Brilhante</code>,
+        and 1 <code>Artefato-Espiral</code> — all from <code>Vertigo</code>. Start banking now.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 5">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Vertigo:</strong> 80% of <code>Mar Aberto</code> and level 10.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Vertigem rod:</strong> 2 <code>Polvo Luminoso</code> and 1 <code>Pato-Borracha</code> (all from <code>Vertigo</code>).</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Profundezas Desoladas:</strong> 80% of <code>Grande Recife</code> and 1 <code>Imperador do Coral</code>.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Caverna Luminosa:</strong> 70% of <code>Profundezas Desoladas</code> and 1 <code>Surubim</code> with <code>Brilhante</code> (from <code>Rio Correnteza</code>).</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Tridente rod:</strong> 1 <code>Madeira Lunar</code> (Geleira Snowcap), 2 <code>Fantasma de Salmoura</code> (Piscina de Salmoura), and 1 fish with <code>Elétrico</code> mutation.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>As profundezas (bank now):</strong> Level 18, 2 <code>Barracunfunda</code> with <code>Brilhante</code>, 1 <code>Artefato-Espiral</code>. All from <code>Vertigo</code>. Needs <code>Vara Brilhante</code> equipped.</span>
+        </div>
+      </div>
+
+      <div class="tip">
+        <svg class="tip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Buy <code>Vara Brilhante</code> before a bright-fish requirement becomes urgent — it is available in the market once unlocked via <code>Vendedor Iniciante</code>.
+      </div>
+    </div>
+
+    <div class="stage" id="stage6">
+      <div class="stage-header">
+        <span class="stage-num">Stage 6</span>
+        <span class="stage-title">Caves, Sky, and Late-Midgame Breadth</span>
+      </div>
+      <div class="stage-band">Roughly levels 14–18</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Push <code>Profundezas Desoladas</code> to 70%.</li>
+        <li>Unlock <code>Piscina de Salmoura</code> and <code>Caverna Luminosa</code>.</li>
+        <li>Unlock <code>Caverna Carmesim</code>.</li>
+        <li>Reach level 15 and unlock <code>Celestia</code>.</li>
+        <li>Reach level 18 and unlock <code>As profundezas</code>.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        This is the broadest stage in the game. Stop trying to finish one route before touching the others.
+        <code>Caverna Carmesim</code> requires a specific hunt catch with a specific mutation — the hunt runs
+        in <code>Caverna Luminosa</code>, so you need to be there when it fires.
+      </p>
+      <p>
+        <code>Celestia</code> opens at level 15 with fish that come from <code>Caverna Luminosa</code> — bank
+        them before level 15 arrives so the unlock is seamless.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 6">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Caverna Luminosa:</strong> 70% of <code>Profundezas Desoladas</code> and 1 <code>Surubim</code> carrying <code>Brilhante</code>.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Caverna Carmesim:</strong> 70% of <code>Caverna Luminosa</code> and 1 <code>Dragão Azul</code> with <code>Carmesim</code>. The <code>Dragão Azul</code> is the boss of the <code>O Chamado Azul</code> hunt — do not sell it.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Celestia:</strong> Level 15, 2 <code>Carpa Eterea</code>, and 2 <code>Peixe Farol</code> (both from <code>Caverna Luminosa</code>).</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock As profundezas:</strong> Level 18, 2 <code>Barracunfunda</code> with <code>Brilhante</code>, and 1 <code>Artefato-Espiral</code> (all from <code>Vertigo</code>).</span>
+        </div>
+      </div>
+
+      <div class="tip">
+        <svg class="tip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        Buy <code>Promessa Luminescente</code> when <code>Caverna Luminosa</code> opens if you plan to stay on the cave path — it makes the <code>Prometido</code> mutation much easier to produce.
+      </div>
+    </div>
+
+    <div class="stage" id="stage7">
+      <div class="stage-header">
+        <span class="stage-num">Stage 7</span>
+        <span class="stage-title">Mariana Staircase</span>
+      </div>
+      <div class="stage-band">Late game into early endgame</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Open <code>Rachadura Vulcanica</code> through the Marianas prologue.</li>
+        <li>Advance through <code>Zona Glacial</code>, <code>Zenite Abissal</code>, and <code>Aguas Calmas</code>.</li>
+        <li>Complete the sub-zone 100% requirements that unlock <code>Ponto Zero</code>.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        The Marianas route is a staircase — each step requires fish from the pool you just finished.
+        <strong>This branch contains mandatory 100% progression.</strong>
+        <code>Fossa das Marianas: O Fundo</code> requires 100% of <code>Rachadura Vulcanica</code>,
+        <code>Zona Glacial</code>, <code>Zenite Abissal</code>, and <code>Aguas Calmas</code>, plus
+        12000 money spent. Finish these sub-zones while they are tied to forward motion — not as postgame cleanup.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 7">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Marianas Prologue:</strong> 2000 money and 1 <code>Banshee Ígnea</code> (Legendary from <code>Vulcao do Sol</code>).</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Parte 1 — Unlock Zona Glacial:</strong> 1 <code>Couro-de-Magma</code> and 1 <code>Blenio das Bolhas</code> (both from <code>Rachadura Vulcanica</code>).</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Parte 2 — Unlock Zenite Abissal:</strong> 1 <code>Peixe-Vidro</code>, 1 <code>Predador do Artico</code>, and 1 fish with <code>Criogenico</code> mutation. <code>Criogenia</code> rod boosts the rate significantly.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Parte 3 — Unlock Imminens Virga:</strong> 1 <code>Diabo-Marinho Ancestral</code> (Zenite Abissal) and 10 fish with <code>Envenenado</code> delivered.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Parte 4 — Unlock Aguas Calmas:</strong> 1 <code>Leviata de Magma</code>, 1 <code>Leviata Congelado</code>, and 1 <code>Anguila Coroada</code>. Keep every copy you find.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Parte 5 — O Fundo (unlock Ponto Zero):</strong> 100% of all four sub-zones plus 12000 money spent. Do not arrive at this step broke.</span>
+        </div>
+      </div>
+
+      <h3>Rod suggestions</h3>
+      <ul>
+        <li><code>Ignis</code> — makes the hot branch cleaner.</li>
+        <li><code>Criogenia</code> — worth crafting before the cold branch drags; directly helps the <code>Criogenico</code> delivery.</li>
+        <li><code>Zenite</code> — strong stable late-game rod across the whole staircase.</li>
+      </ul>
+    </div>
+
+    <div class="stage" id="stage8">
+      <div class="stage-header">
+        <span class="stage-num">Stage 8</span>
+        <span class="stage-title">Endgame Branch Closure</span>
+      </div>
+      <div class="stage-band">Endgame cleanup and consolidation</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Unlock <code>Ponto Zero</code>.</li>
+        <li>Finish <code>Pantano Mushgrove</code> and <code>O Jardim</code> to 100%.</li>
+        <li>Finish the <code>Densa Mata</code> branch.</li>
+        <li>Unlock <code>Templo de Micelio</code>.</li>
+        <li>Close missing crafts, hunts, and mutation projects.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>The Densa Mata branch structure:</p>
+      <ul>
+        <li>50% in both pools starts the line (Prologo)</li>
+        <li>Prologo leads to a poison delivery step</li>
+        <li>Next mission asks for 45 minutes of play time, then checks for 100% in both pools</li>
+        <li>After both pools hit 100%, delivering 3 fish with <code>Arcana</code> unlocks <code>Templo de Micelio</code></li>
+      </ul>
+      <p>
+        The <code>Arcana</code> mutation is not common. Plan for it as a targeted project rather than a lucky accident.
+      </p>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 8">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Densa Mata Parte 1:</strong> 4 fish with <code>Envenenado</code> and 1 <code>Vieira-Lama</code> carrying <code>Envenenado</code> (both from <code>Pantano Mushgrove</code>).</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Densa Mata Parte 2:</strong> 45 minutes of play time and 100% of both <code>Pantano Mushgrove</code> and <code>O Jardim</code>. The timer runs from when the mission is available, not from session start.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Densa Mata Parte 3 — Unlock Templo de Micelio:</strong> 3 fish with the <code>Arcana</code> mutation. Identify which rod produces it and use it intentionally.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage9">
+      <div class="stage-header">
+        <span class="stage-num">Stage 9</span>
+        <span class="stage-title">Final Core Completion</span>
+      </div>
+      <div class="stage-band">Late endgame and prestige cleanup</div>
+
+      <h3>Main goals</h3>
+      <ul>
+        <li>Finish <code>Ponto Zero</code>.</li>
+        <li>Reach level 20 and unlock <code>Angra Cristal</code>.</li>
+        <li>Complete the remaining main-pool bestiaries.</li>
+        <li>Claim global bestiary rewards.</li>
+        <li>Decide whether to stop at core 100% or continue into hidden content.</li>
+      </ul>
+
+      <h3>What to do</h3>
+      <p>
+        <code>Angra Cristal</code> unlock: level 20, 50% of <code>As profundezas</code>,
+        5 <code>Salmajoia</code>, and 5 <code>Peixe Tres-Olhos</code>. Both named fish are found in
+        <code>As profundezas</code>. Start banking them the moment you first reach that pool — do not wait until level 20 is close.
+      </p>
+      <p>Best cleanup order at this stage:</p>
+      <ol>
+        <li>Any pool one or two fish away from 100%.</li>
+        <li>Any mission chain blocked by one delivery or one mutation.</li>
+        <li>Any hunt you postponed.</li>
+        <li>Any craft tied to a rod or branch you still care about.</li>
+        <li>The last major pools that still need a full push.</li>
+      </ol>
+
+      <div class="bottleneck" role="note" aria-label="Key bottlenecks for Stage 9">
+        <div class="bottleneck-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Key Bottlenecks
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Unlock Angra Cristal:</strong> Level 20, 5 <code>Salmajoia</code>, 5 <code>Peixe Tres-Olhos</code>, and 50% of <code>As profundezas</code>.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Escuridao Total... (hunt):</strong> Runs in <code>As profundezas</code>. Clear it while working the pool.</span>
+        </div>
+        <div class="bottleneck-item">
+          <span class="bottleneck-item-dot" aria-hidden="true"></span>
+          <span><strong>Encontro com o Maior (hunt):</strong> Runs in <code>Ponto Zero</code>. Clear it as part of your Ponto Zero work.</span>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Cleanup order -->
+    <h2 id="cleanup">Suggested Cleanup Order for a Full File</h2>
+    <ol class="cleanup-list" aria-label="Recommended cleanup priority order">
+      <li>Main-route pools already above 90%.</li>
+      <li>Mariana sub-zones needed for <code>Ponto Zero</code>.</li>
+      <li><code>Pantano Mushgrove</code> and <code>O Jardim</code> if <code>Densa Mata</code> still needs them.</li>
+      <li>Cave and sky branches that are already in strong progress.</li>
+      <li>Leftover hunts.</li>
+      <li>Leftover crafts and rod projects.</li>
+      <li><code>Angra Cristal</code>.</li>
+      <li><code>Cafeteria</code> and tribute rod content after core completion is secure.</li>
+    </ol>
+
+    <!-- Rods -->
+    <h2 id="rods">Rods Worth Planning Around</h2>
+    <div class="rod-grid" role="list" aria-label="Recommended rods">
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vara de Carbono</span><span class="rod-item-desc">Dependable early anchor.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vara de Coral</span><span class="rod-item-desc">Once the coastal branch becomes a real priority.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vara Brilhante</span><span class="rod-item-desc">Get this early — Brilhante needs time to accumulate.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vertigem</span><span class="rod-item-desc">Comfortable midgame pickup from Vertigo deliveries.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vara Acida</span><span class="rod-item-desc">If investing hard into the poison route.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Promessa Luminescente</span><span class="rod-item-desc">Once Caverna Luminosa opens.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Ruina Prometida</span><span class="rod-item-desc">Cave branch payoff.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vara das Nuvens</span><span class="rod-item-desc">If spending serious time in Celestia.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Ignis</span><span class="rod-item-desc">Hot branch / Mariana staircase.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Criogenia</span><span class="rod-item-desc">Cold branch / Mariana staircase.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Zenite</span><span class="rod-item-desc">Strong stable late-game rod.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Tridente</span><span class="rod-item-desc">Once you have Snowcap and Brinepool materials.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Imminens Virga</span><span class="rod-item-desc">Marianas Parte 3 reward — strong late rod.</span></div>
+      <div class="rod-item" role="listitem"><span class="rod-item-name">Vara das Profundezas</span><span class="rod-item-desc">If deep-ocean progress is already healthy.</span></div>
+    </div>
+
+    <div class="tip" style="margin-top:16px">
+      <svg class="tip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      The best rod is not always the one with the scariest numbers. A rod that matches your rhythm and lets you handle difficult fish cleanly is often worth more than a flashier one you do not trust.
+    </div>
+
+    <!-- Mutations & Upgrades -->
+    <h2 id="mutations">Appraise, Mutations, and Upgrades</h2>
+
+    <h3>Appraise</h3>
+    <p>Use on fish that already matter: mission fish at a bottleneck, rare catches, mutation targets, crafting fish. Do not burn money appraising random inventory.</p>
+
+    <h3>Mutations — three categories</h3>
+    <ul>
+      <li><strong>Passive value bonuses</strong> — keep and sell. Do not overthink these.</li>
+      <li><strong>Targeted unlock requirements</strong> — identify the rod that produces the mutation and use it in the right pool.</li>
+      <li><strong>Rod-exclusive projects</strong> — <code>Sereno</code>, <code>Prometido</code>, <code>Solar</code>, <code>Arcana</code>, <code>Criogenico</code>. Each requires the right rod equipped — not just luck. The game gets easier once you stop expecting every important mutation to happen by accident.</li>
+    </ul>
+
+    <h3>Upgrades</h3>
+    <ul>
+      <li><code>control</code> — best panic button when catches are becoming too tense.</li>
+      <li><code>luck</code> — best broad push when a rod is your main progression tool.</li>
+      <li><code>kg_max</code> — matters when heavy fish are slipping through an otherwise-right rod.</li>
+    </ul>
+
+    <!-- Hunts -->
+    <h2 id="hunts">Hunts, Events, and Side Goals</h2>
+    <p>Do not leave all hunts for the postgame. Clear a hunt while you are already fishing in that pool.</p>
+
+    <div class="table-wrap">
+      <table aria-label="Hunt locations and notes">
+        <thead>
+          <tr>
+            <th scope="col">Hunt</th>
+            <th scope="col">Pool</th>
+            <th scope="col">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>Ataque a Lula!</code></td><td>Mar Aberto</td><td></td></tr>
+          <tr><td><code>Coroa de Espinhos</code></td><td>Grande Recife</td><td></td></tr>
+          <tr><td><code>Eletricidade Desolada</code></td><td>Profundezas Desoladas</td><td><code>Agua-Viva Imperatriz</code> is a crafting material for a late tribute rod.</td></tr>
+          <tr><td><code>O Chamado Azul</code></td><td>Caverna Luminosa</td><td><code>Dragão Azul</code> is needed to unlock <code>Caverna Carmesim</code>.</td></tr>
+          <tr><td><code>A Chama Carmesim</code></td><td>Caverna Carmesim</td><td></td></tr>
+          <tr><td><code>O Ultimo Mito</code></td><td>Caverna Carmesim</td><td>Rare, long cooldown, Mythic-only rewards.</td></tr>
+          <tr><td><code>Escuridao Total...</code></td><td>As profundezas</td><td></td></tr>
+          <tr><td><code>Encontro com o Maior</code></td><td>Ponto Zero</td><td></td></tr>
+          <tr><td><code>O Guardiao</code></td><td>Templo de Micelio</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Cafeteria -->
+    <h2 id="cafeteria">Cafeteria</h2>
+    <p>
+      <code>Cafeteria</code> is not part of the core 25-pool route. The spoiler-light route to find it:
+    </p>
+    <ol>
+      <li>Finish <code>Angra Cristal</code> to 100%.</li>
+      <li>Claim the bestiary reward.</li>
+      <li>Pay attention to the special fish that reward gives you.</li>
+      <li>Use the code tied to that fish in pool selection.</li>
+    </ol>
+    <p style="margin-top:12px">
+      It is excluded from main pool bestiary completion, its fish are excluded from main bestiary completion,
+      and the tribute rods tied to it are excluded from rod bestiary completion. Treat it as bonus completion
+      and curiosity — do not postpone core cleanup because of it.
+    </p>
+    <div class="tip">
+      <svg class="tip-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      The <code>Cafe</code> fish from this pool is a crafting ingredient for <code>Retribuição</code>. If you are chasing the tribute rods, hold at least one.
+    </div>
+
+    <!-- Tribute Rods -->
+    <h2 id="tribute">Tribute and Cafeteria Rods</h2>
+    <p>
+      These five rods are excluded from rod bestiary completion. They are the game's answer to
+      "what is left when the run is over?" — recipes that require specific hunts, rare mutations, and
+      in some cases materials only found after reaching the Cafeteria. All five become available only
+      after the Cafeteria is unlocked.
+    </p>
+
+    <div class="tribute">
+      <div class="tribute-title">Azul Lâmina</div>
+      <div class="tribute-attr">For GotinhaAzul.</div>
+      <div class="tribute-needs"><strong>Needs:</strong> 2 <code>Dragão Azul</code> with <code>Prometido</code>, 2 <code>Dragão Azul</code> with <code>Solar</code>, and 15000 money.</div>
+      <p>
+        <code>Dragão Azul</code> is the boss of <code>O Chamado Azul</code> hunt in <code>Caverna Luminosa</code> — you need four copies across multiple runs.
+        <code>Solar</code> has a base rate under 0.2%, but the <code>Azul Lâmina</code> itself raises the rate to 3% — a bootstrapping situation that rewards getting one copy first.
+      </p>
+    </div>
+
+    <div class="tribute">
+      <div class="tribute-title">Serenidade</div>
+      <div class="tribute-attr">For the Fisch devs.</div>
+      <div class="tribute-needs"><strong>Needs:</strong> 2 <code>Peixe-Corda</code> with <code>Sereno</code> (Profundezas Desoladas), 1 <code>Disco de Diamante</code> with <code>Sereno</code> (Aguas Calmas), and 1 <code>Leviata Congelado</code> with <code>Congelado</code> (Zona Glacial).</div>
+      <p>
+        <code>Sereno</code> only appears with <code>Hollow Dusk</code> or <code>Serenidade</code> equipped. Use <code>Hollow Dusk</code> in <code>Profundezas Desoladas</code> and <code>Aguas Calmas</code> and let it accumulate over time.
+        <code>Congelado</code> is more accessible and appears naturally in cold-zone pools.
+      </p>
+    </div>
+
+    <div class="tribute">
+      <div class="tribute-title">Retribuição</div>
+      <div class="tribute-attr">As Quatro Formas — the four forms.</div>
+      <div class="tribute-needs"><strong>Needs:</strong> 1 <code>Gladio Escaldante</code> with <code>Carmesim</code> (Rachadura Vulcanica), 1 <code>Peixe Tres-Olhos</code> with <code>Espiral</code> (As profundezas), 1 <code>Lagosta Cristal</code> with <code>Cristalizado</code> (Angra Cristal), 1 <code>Enguia Ancia</code> with <code>Profundo</code> (As profundezas), and 1 <code>Cafe</code> (Cafeteria).</div>
+      <p>The most geographically demanding recipe — each component comes from a different late zone with a different mutation requirement. The <code>Cafe</code> from the Cafeteria is required.</p>
+    </div>
+
+    <div class="tribute">
+      <div class="tribute-title">Sniper</div>
+      <div class="tribute-attr">A joke rod. The description acknowledges this.</div>
+      <div class="tribute-needs"><strong>Needs:</strong> 1 <code>Agua-Viva Imperatriz</code>, 20 <code>Pedra</code> with <code>Brilhante</code>, and 10000 money.</div>
+      <p>
+        <code>Agua-Viva Imperatriz</code> is the boss of <code>Eletricidade Desolada</code> hunt in <code>Profundezas Desoladas</code>.
+        Equip <code>Vara Brilhante</code> in <code>Grande Recife</code> to farm the 20 <code>Pedra</code> — it is a deliberate session, not a lucky accident.
+      </p>
+    </div>
+
+    <div class="tribute">
+      <div class="tribute-title">Mãos</div>
+      <div class="tribute-attr">The simplest tribute recipe.</div>
+      <div class="tribute-needs"><strong>Needs:</strong> 3 <code>Peixe-Mão</code> from <code>Pantano Mushgrove</code>.</div>
+      <p>If you finished the swamp for <code>Densa Mata</code>, you likely already have these. The easiest postgame craft by a significant margin.</p>
+    </div>
+
+    <hr>
+
+    <!-- Final summary -->
+    <h2>Final Summary</h2>
+    <p>
+      The best full-completion route in Fisching Overhaul is not the one that rushes the newest unlock.
+      It is the one that keeps the whole file balanced. Push the next branch, keep bestiary progress alive,
+      respect mutation and rod gates, and close pools when they are already nearly done.
+    </p>
+    <p>
+      When you hit a wall, check the Key Bottlenecks block for that stage. The answer is usually a specific
+      fish in a pool you have already visited, or a mutation from a rod you already own.
+    </p>
+    <p>
+      If you do that, the run carries you naturally from the opening lagoon to the tribute rods at the end —
+      without collapsing into pure cleanup.
+    </p>
+
+  </main>
+</div>
+
+<!-- Back to top -->
+<button id="back-top" aria-label="Back to top" title="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+</button>
+
+<script>
+  /* ── Reading progress bar ── */
+  const bar = document.getElementById('progress-bar');
+  function updateProgress() {
+    const scroll = window.scrollY;
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = total > 0 ? Math.min(100, (scroll / total) * 100) : 0;
+    bar.style.width = pct + '%';
+    bar.setAttribute('aria-valuenow', Math.round(pct));
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+
+  /* ── Back to top ── */
+  const backTop = document.getElementById('back-top');
+  function updateBackTop() {
+    backTop.classList.toggle('visible', window.scrollY > 400);
+  }
+  window.addEventListener('scroll', updateBackTop, { passive: true });
+  backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  /* ── Active nav highlighting ── */
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('nav a[href^="#"]');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '0px 0px -65% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+
+  /* ── Sidebar search filter ── */
+  const searchInput = document.getElementById('nav-search-input');
+  const navItems = document.querySelectorAll('#nav-list li');
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    navItems.forEach(li => {
+      const link = li.querySelector('a');
+      if (!link) { li.style.display = q ? 'none' : ''; return; }
+      li.style.display = (!q || link.textContent.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Lírio Vivente",
+  "rarity": "Epico",
+  "description": "O Lirio Vivente e quase indistinguivel das flores do jardim subaquatico. Suas barbatanas se abrem em petalas brancas e violeta ao redor do corpo, e ele permanece imóvel por horas esperando presas passarem. E um predador de emboscada refinado que domina a arte do disfarce. Quando fisgado, libera um odor adocicado e parte em fuga inesperadamente violenta.",
+  "kg_min": 4.0,
+  "kg_max": 10.0,
+  "base_value": 72,
+  "sequence_len": 7,
+  "reaction_time_s": 1.4
+}
