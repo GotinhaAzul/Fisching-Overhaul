@@ -1,5 +1,6 @@
 {
   "name": "Templo de Micelio",
+  "major_area": "Aguas Pantanosas",
   "description": "Um templo afundado repousa sob uma mata submersa espessa. Raizes antigas, runas cobertas de limo e correntes silenciosas escondem criaturas valiosas e hostis.",
   "unlocked_default": false,
   "hidden_from_bestiary_until_unlocked": true,

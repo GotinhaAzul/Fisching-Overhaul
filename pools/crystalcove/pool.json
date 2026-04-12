@@ -1,7 +1,8 @@
 {
   "name": "Angra Cristal",
+  "major_area": "Redemoinho",
   "description": "Os cristais sao lindos... a sua luz reflete no teto, formando uma bela visao espelhada. A agua parece toxica... mas a pequena queda de agua esta cheia de vida.",
- "unlocked_default": false,
+  "unlocked_default": false,
   "rarity_chances": {
     "Comum": 38,
     "Incomum": 36,

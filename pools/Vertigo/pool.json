@@ -1,7 +1,8 @@
 {
   "name": "Vertigo",
+  "major_area": "Redemoinho",
   "description": "Apenas olhar para baixo te deixa com nauseas.",
- "unlocked_default": false,
+  "unlocked_default": false,
   "rarity_chances": {
     "Comum": 42,
     "Incomum": 40,

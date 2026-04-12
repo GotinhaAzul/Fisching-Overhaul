@@ -40,8 +40,17 @@ def _rod(name: str, *, price: float = 0.0, unlocked_default: bool = False) -> Ro
     )
 
 
-def _pool(name: str) -> SimpleNamespace:
-    return SimpleNamespace(name=name)
+def _pool(name: str, *, major_area: str | None = None) -> SimpleNamespace:
+    return SimpleNamespace(name=name, major_area=major_area or name)
+
+
+def test_restore_helpers_ignore_major_area_and_remain_name_based() -> None:
+    fallback_pool = _pool("Lagoa Tranquila", major_area="Costa Norte")
+    pools = [fallback_pool, _pool("Rio Correnteza", major_area="Costa Sul")]
+
+    restored_pool = restore_selected_pool("Lagoa Tranquila", pools, fallback_pool)
+    assert restored_pool is fallback_pool
+    assert restored_pool.major_area == "Costa Norte"
 
 
 def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:

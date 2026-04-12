@@ -1,5 +1,6 @@
 {
   "name": "Aguas Calmas",
+  "major_area": "Fossa das Marianas",
   "description": "Uma calmaria mineral e cristalina encobre criaturas raras que se movem como joias vivas.",
   "unlocked_default": false,
   "rarity_chances": {

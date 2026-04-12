@@ -1,5 +1,6 @@
 {
   "name": "Deserto Taara",
+  "major_area": "Terras Aridas",
   "description": "Um leito de mar antigo que secou há milênios. A areia guarda criaturas que se recusam a desaparecer.",
   "unlocked_default": false,
   "rarity_chances": {

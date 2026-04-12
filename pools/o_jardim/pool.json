@@ -1,5 +1,6 @@
 {
   "name": "O Jardim",
+  "major_area": "Aguas Pantanosas",
   "description": "Um jardim submerso de beleza surreal, onde plantas aquaticas gigantes formam tuneis e arcos naturais. A agua cristalina reflete tons de verde e dourado, e peixes coloridos se escondem entre raizes e flores.",
   "unlocked_default": false,
   "rarity_chances": {

@@ -1,3 +1,9 @@
+---
+tags:
+ - project/fisching-overhaul
+ - type/documentation
+---
+
 # Rod Upgrade Stat-Scaling Design
 
 ## Problem
@@ -87,3 +93,4 @@ Functions that gain new parameters:
 ### Save compatibility
 
 No save format changes. `RodUpgradeState` serialization is unaffected — only the generation and calculation logic changes.
+

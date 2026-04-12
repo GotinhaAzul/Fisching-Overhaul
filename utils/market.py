@@ -31,7 +31,11 @@ from utils.levels import apply_xp_gain
 from utils.shiny import ShinyConfig, roll_shiny_on_appraise
 from utils.menu_input import read_menu_choice
 from utils.modern_ui import MenuOption, get_ui_symbol, print_menu_panel
-from utils.mutations import Mutation, choose_mutation, filter_mutations_for_rod
+from utils.mutations import (
+    Mutation,
+    choose_mutation,
+    filter_mutations_for_appraisal,
+)
 from utils.pagination import PAGE_NEXT_KEY, PAGE_PREV_KEY, apply_page_hotkey, get_page_slice
 from utils.rods import Rod
 from utils.rod_upgrades import (
@@ -182,6 +186,15 @@ def format_rod_entry(index: int, rod: Rod) -> str:
     )
 
 
+def _calculate_market_entry_value(
+    entry: InventoryEntry,
+    *,
+    shiny_config: Optional[ShinyConfig] = None,
+) -> float:
+    shiny_multiplier = shiny_config.value_multiplier if shiny_config else 1.55
+    return calculate_entry_value(entry, shiny_multiplier=shiny_multiplier)
+
+
 def _craft_requirements_progress(
     definition: CraftingDefinition,
     crafting_progress: CraftingProgress,
@@ -227,6 +240,7 @@ def _show_crafting_recipe_detail(
     crafting_progress: CraftingProgress,
     on_money_spent,
     on_inventory_changed: Optional[Callable[[], None]] = None,
+    shiny_config: Optional[ShinyConfig] = None,
 ) -> float:
     while True:
         clear_screen()
@@ -312,7 +326,7 @@ def _show_crafting_recipe_detail(
                 mutation_label = f" * {entry.mutation_name}" if entry.mutation_name else ""
                 print(
                     f"{index}. {entry.name} ({entry.kg:0.2f}kg){mutation_label} "
-                    f"- {format_currency(_calc_value(entry))}"
+                    f"- {format_currency(_calculate_market_entry_value(entry, shiny_config=shiny_config))}"
                 )
 
             print(f"\n[T] Entregar todos ({len(deliverable_indexes)} peixe(s))")
@@ -429,6 +443,7 @@ def _show_crafting_menu(
     on_money_spent,
     refresh_unlocks: Callable[[], None],
     on_inventory_changed: Optional[Callable[[], None]] = None,
+    shiny_config: Optional[ShinyConfig] = None,
 ) -> float:
     crafting_by_id = {definition.craft_id: definition for definition in crafting_definitions}
 
@@ -499,6 +514,7 @@ def _show_crafting_menu(
             crafting_progress,
             on_money_spent,
             on_inventory_changed,
+            shiny_config,
         )
 
 
@@ -561,10 +577,8 @@ def show_market(
     inventory_fish_counts_cache: Dict[str, int] = {}
     inventory_mutation_counts_cache: Dict[str, int] = {}
     inventory_fish_counts_dirty = True
-    _shiny_mult = shiny_config.value_multiplier if shiny_config else 1.55
-
     def _calc_value(entry: InventoryEntry) -> float:
-        return calculate_entry_value(entry, shiny_multiplier=_shiny_mult)
+        return _calculate_market_entry_value(entry, shiny_config=shiny_config)
 
     def _appraise_cost(entry: InventoryEntry) -> float:
         return max(1.0, _calc_value(entry) * 0.35)
@@ -1461,11 +1475,7 @@ def show_market(
                 on_money_spent(cost)
 
             entry.kg = random.uniform(profile.kg_min, profile.kg_max)
-            appraise_mutations = (
-                filter_mutations_for_rod(available_mutations, equipped_rod.name)
-                if equipped_rod is not None
-                else list(available_mutations)
-            )
+            appraise_mutations = filter_mutations_for_appraisal(available_mutations)
             mutation = choose_mutation(appraise_mutations)
             entry.mutation_name = mutation.name if mutation else None
             entry.mutation_xp_multiplier = mutation.xp_multiplier if mutation else 1.0
@@ -1518,6 +1528,7 @@ def show_market(
             on_money_spent,
             _refresh_crafting_unlocks,
             _mark_inventory_fish_counts_dirty,
+            shiny_config=shiny_config,
         )
 
     def _handle_upgrade_rod_action(

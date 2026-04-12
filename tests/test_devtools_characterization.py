@@ -23,6 +23,7 @@ def _make_rod(name: str) -> Rod:
 def _make_pool(fish: FishProfile) -> FishingPool:
     return FishingPool(
         name="Lagoa Tranquila",
+        major_area="Lagoa Tranquila",
         fish_profiles=[fish],
         folder=Path("lagoa_tranquila"),
         description="",

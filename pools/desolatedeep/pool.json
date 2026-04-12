@@ -1,7 +1,8 @@
 {
   "name": "Profundezas Desoladas",
+  "major_area": "Fundo do Mar",
   "description": "Uma bolha de ar no fundo do oceano esquecida pelo tempo, esta repleta de ruinas...",
- "unlocked_default": false,
+  "unlocked_default": false,
   "rarity_chances": {
     "Comum": 40,
     "Incomum": 40,

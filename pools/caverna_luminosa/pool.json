@@ -1,5 +1,6 @@
 {
   "name": "Caverna Luminosa",
+  "major_area": "Fundo do Mar",
   "description": "No fundo das ruinas desoladas existe uma fenda. Por ela, um brilho suave pulsa como um coracao antigo. Quem entra raramente quer sair.",
   "unlocked_default": false,
   "rarity_chances": {

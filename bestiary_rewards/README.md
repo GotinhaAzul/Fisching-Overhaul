@@ -1,3 +1,9 @@
+---
+tags:
+ - project/fisching-overhaul
+ - type/documentation
+---
+
 # Bestiary Rewards
 
 Each JSON file defines one claimable bestiary reward.
@@ -37,3 +43,4 @@ Each pool reward includes:
 - one pool-themed `ui_color`
 - one pool-themed `ui_icon`
 - `money`, `xp`, and `bait` tuned by pool difficulty
+

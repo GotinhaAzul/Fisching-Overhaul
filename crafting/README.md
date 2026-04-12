@@ -1,3 +1,9 @@
+---
+tags:
+ - project/fisching-overhaul
+ - type/documentation
+---
+
 # Crafting de Varas (modular)
 
 Cada receita de crafting fica em uma pasta com um arquivo JSON proprio:
@@ -81,3 +87,4 @@ O save guarda:
 - `rod_name` precisa existir em `rods/*.json`, senao a receita e ignorada.
 - IDs devem ser curtos e estaveis para manter compatibilidade com saves.
 - Campos opcionais como `fish_name` e `mutation_name` funcionam como filtro: ausente = aceita qualquer um naquele tipo.
+

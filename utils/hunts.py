@@ -32,6 +32,7 @@ class ActiveHunt:
     definition: HuntDefinition
     started_at: float
     ends_at: float
+    remaining_fish_names: List[str]
 
     def time_left(self) -> float:
         return max(0.0, self.ends_at - time.monotonic())
@@ -105,11 +106,7 @@ class HuntManager:
                 return None
 
             replaced = self._active_by_pool.get(selected.pool_name)
-            self._active_by_pool[selected.pool_name] = ActiveHunt(
-                definition=selected,
-                started_at=now,
-                ends_at=now + selected.duration_s,
-            )
+            self._active_by_pool[selected.pool_name] = self._build_active_hunt(selected, now)
             progress = self._progress_by_hunt.get(selected.hunt_id)
             if progress:
                 progress.disturbance = 0.0
@@ -135,6 +132,47 @@ class HuntManager:
                     continue
                 updated = progress.disturbance + max(0.0, definition.disturbance_per_catch)
                 progress.disturbance = self._clamp_disturbance(definition, updated)
+
+    def get_available_fish_for_pool(self, pool_name: str) -> List["FishProfile"]:
+        with self._lock:
+            active = self._active_by_pool.get(pool_name)
+            if not active:
+                return []
+            return list(self._resolve_remaining_fish(active))
+
+    def consume_hunt_fish(
+        self,
+        pool_name: str,
+        fish_name: str,
+        *,
+        catchable_fish_names: set[str],
+    ) -> bool:
+        del catchable_fish_names
+
+        notification: Optional[str] = None
+        with self._lock:
+            active = self._active_by_pool.get(pool_name)
+            if not active:
+                return False
+
+            remaining_fish_names = [
+                name for name in active.remaining_fish_names if name != fish_name
+            ]
+            if len(remaining_fish_names) == len(active.remaining_fish_names):
+                return False
+
+            active.remaining_fish_names = remaining_fish_names
+            if active.remaining_fish_names:
+                return False
+
+            notification = self._end_active_hunt_locked(
+                pool_name,
+                ended_at=time.monotonic(),
+            )
+
+        if notification:
+            self._emit_notification(notification)
+        return bool(notification)
 
     def serialize_state(self) -> Dict[str, object]:
         now = time.monotonic()
@@ -162,6 +200,7 @@ class HuntManager:
                 active_data[pool_name] = {
                     "hunt_id": active.definition.hunt_id,
                     "remaining_s": remaining_s,
+                    "remaining_fish_names": list(active.remaining_fish_names),
                 }
 
         return {
@@ -226,10 +265,17 @@ class HuntManager:
                 remaining_s = max(0.0, self._safe_float(raw_entry.get("remaining_s")))
                 if remaining_s <= 0:
                     continue
+                remaining_fish_names = self._restore_remaining_fish_names(
+                    definition,
+                    raw_entry.get("remaining_fish_names"),
+                )
+                if not remaining_fish_names:
+                    continue
                 self._active_by_pool[pool_name] = ActiveHunt(
                     definition=definition,
                     started_at=now,
                     ends_at=now + remaining_s,
+                    remaining_fish_names=remaining_fish_names,
                 )
 
     def _emit_notification(self, message: str) -> None:
@@ -244,14 +290,9 @@ class HuntManager:
                 for pool_name, active in list(self._active_by_pool.items()):
                     if now < active.ends_at:
                         continue
-                    self._active_by_pool.pop(pool_name, None)
-                    progress = self._progress_by_hunt.get(active.definition.hunt_id)
-                    if progress:
-                        progress.cooldown_ends_at = max(
-                            progress.cooldown_ends_at,
-                            now + max(0.0, active.definition.cooldown_s),
-                        )
-                    notifications.append(f"A hunt '{active.definition.name}' terminou.")
+                    notification = self._end_active_hunt_locked(pool_name, ended_at=now)
+                    if notification:
+                        notifications.append(notification)
 
                 for definition in self._hunts:
                     progress = self._progress_by_hunt.get(definition.hunt_id)
@@ -284,10 +325,9 @@ class HuntManager:
                     if not should_spawn:
                         continue
 
-                    self._active_by_pool[definition.pool_name] = ActiveHunt(
-                        definition=definition,
-                        started_at=now,
-                        ends_at=now + definition.duration_s,
+                    self._active_by_pool[definition.pool_name] = self._build_active_hunt(
+                        definition,
+                        now,
                     )
                     progress.disturbance = 0.0
                     notifications.append(
@@ -305,6 +345,70 @@ class HuntManager:
             return float(value)
         except (TypeError, ValueError):
             return 0.0
+
+    @staticmethod
+    def _build_active_hunt(definition: HuntDefinition, now: float) -> ActiveHunt:
+        return ActiveHunt(
+            definition=definition,
+            started_at=now,
+            ends_at=now + definition.duration_s,
+            remaining_fish_names=[fish.name for fish in definition.fish_profiles],
+        )
+
+    @staticmethod
+    def _restore_remaining_fish_names(
+        definition: HuntDefinition,
+        raw_remaining_fish_names: object,
+    ) -> List[str]:
+        if not isinstance(raw_remaining_fish_names, list):
+            return [fish.name for fish in definition.fish_profiles]
+
+        fish_counts: Dict[str, int] = {}
+        for fish in definition.fish_profiles:
+            fish_counts[fish.name] = fish_counts.get(fish.name, 0) + 1
+
+        restored: List[str] = []
+        for raw_name in raw_remaining_fish_names:
+            if not isinstance(raw_name, str):
+                continue
+            remaining_count = fish_counts.get(raw_name, 0)
+            if remaining_count <= 0:
+                continue
+            restored.append(raw_name)
+            fish_counts[raw_name] = remaining_count - 1
+        return restored
+
+    @staticmethod
+    def _resolve_remaining_fish(active: ActiveHunt) -> List["FishProfile"]:
+        fish_by_name: Dict[str, List["FishProfile"]] = {}
+        for fish in active.definition.fish_profiles:
+            fish_by_name.setdefault(fish.name, []).append(fish)
+
+        resolved: List["FishProfile"] = []
+        for fish_name in active.remaining_fish_names:
+            matches = fish_by_name.get(fish_name)
+            if not matches:
+                continue
+            resolved.append(matches.pop(0))
+        return resolved
+
+    def _end_active_hunt_locked(
+        self,
+        pool_name: str,
+        *,
+        ended_at: float,
+    ) -> Optional[str]:
+        active = self._active_by_pool.pop(pool_name, None)
+        if not active:
+            return None
+
+        progress = self._progress_by_hunt.get(active.definition.hunt_id)
+        if progress:
+            progress.cooldown_ends_at = max(
+                progress.cooldown_ends_at,
+                ended_at + max(0.0, active.definition.cooldown_s),
+            )
+        return f"A hunt '{active.definition.name}' terminou."
 
     @staticmethod
     def _clamp_disturbance(definition: HuntDefinition, value: float) -> float:

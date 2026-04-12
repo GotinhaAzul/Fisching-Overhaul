@@ -1,3 +1,9 @@
+---
+tags:
+ - project/fisching-overhaul
+ - type/documentation
+---
+
 # Rod Upgrade Stat-Scaling Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -334,3 +340,4 @@ Expected: ALL PASS
 git add utils/market.py tests/test_rod_upgrades_characterization.py
 git commit -m "market: pass all_rods to upgrade functions, update test mocks"
 ```
+

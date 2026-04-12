@@ -125,6 +125,13 @@ def load_mutations_optional(base_dir: Path) -> List[Mutation]:
         require_non_empty=False,
     )
 
+
+def filter_mutations_for_appraisal(
+    mutations: Sequence[Mutation],
+) -> List[Mutation]:
+    return [mutation for mutation in mutations if not mutation.required_rods]
+
+
 def filter_mutations_for_rod(
     mutations: Sequence[Mutation],
     rod_name: str,

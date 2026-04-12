@@ -1,3 +1,9 @@
+---
+tags:
+  - project/fisching
+  - type/documentation
+---
+
 # Fisching-Overhaul
 
 Simple Fisching text game overhaul.

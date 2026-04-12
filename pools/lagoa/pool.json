@@ -1,5 +1,6 @@
 {
   "name": "Lagoa Tranquila",
+  "major_area": "Ilha Moosewood",
   "description": "Uma lagoa calma com peixes de água doce.",
   "unlocked_default": true,
   "rarity_chances": {

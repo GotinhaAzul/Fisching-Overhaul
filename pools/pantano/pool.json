@@ -1,5 +1,6 @@
 {
   "name": "Pantano Mushgrove",
+  "major_area": "Aguas Pantanosas",
   "description": "Uma grande terra pantanosa a deriva no oceano, cogumelos crescem como arvores.",
   "rarity_chances": {
     "Comum": 60,

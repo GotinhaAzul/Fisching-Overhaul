@@ -1,3 +1,9 @@
+---
+tags:
+ - project/fisching-overhaul
+ - type/documentation
+---
+
 # Content Roadmap Design — Updates 1.8, 1.9, 2.0
 
 **Date:** 2026-04-04  
@@ -111,3 +117,4 @@ Each pool:
 - **Rachadura Vulcânica expansion:** new sub-pool deeper in the rift, magma/armor fish, fire boss. Shelved.
 - **Ancient ruins area:** archaeological theme (inspired by Ancient Isle / Statue of Sovereignty / Keepers Altar in Fisch). Not yet scheduled.
 - **Forsaken Shore:** abandoned coastline, storm-weathered fish, wrecks. Not yet scheduled.
+

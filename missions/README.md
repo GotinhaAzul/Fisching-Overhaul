@@ -1,3 +1,9 @@
+---
+tags:
+  - project/fisching
+  - type/mission-documentation
+---
+
 # Missões (modulares)
 
 Cada missão fica em uma pasta com um `mission.json`. Isso facilita adicionar, remover ou ajustar requisitos/recompensas sem mexer no código.

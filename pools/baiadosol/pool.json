@@ -1,5 +1,6 @@
 {
   "name": "Baia do Sol",
+  "major_area": "Arquipelago Solar",
   "description": "Uma baía radiante onde o sol reflete intensamente nas águas cristalinas, abrigando uma fauna tropical vibrante e diversificada.",
   "unlocked_default": false,
   "rarity_chances": {

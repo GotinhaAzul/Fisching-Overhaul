@@ -1,7 +1,8 @@
 {
   "name": "As profundezas",
+  "major_area": "Redemoinho",
   "description": "Abrir a passagem o fez perder algo de si. A escuridao te cerca.",
- "unlocked_default": false,
+  "unlocked_default": false,
   "rarity_chances": {
     "Comum": 39,
     "Incomum": 36,

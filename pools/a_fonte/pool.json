@@ -1,5 +1,6 @@
 {
   "name": "A Fonte",
+  "major_area": "Terras Aridas",
   "description": "Escondida sob o Deserto Taara, uma nascente subterrânea preserva um ecossistema que o mundo acima desconhece.",
   "unlocked_default": false,
   "rarity_chances": {

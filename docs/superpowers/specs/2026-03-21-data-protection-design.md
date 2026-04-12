@@ -1,3 +1,9 @@
+---
+tags:
+ - project/fisching-overhaul
+ - type/documentation
+---
+
 # Game Data Protection System
 
 ## Problem
@@ -153,3 +159,4 @@ Fisching-Overhaul/
 - The goal is to make it impractical for the average player, not impossible for a skilled attacker.
 - Save files tied to per-install random salt prevent simple file-sharing of cheated saves.
 - Two separate keys are used: a per-install derived key for saves, and a fixed key for content. This separation ensures `content.dat` works on all machines while saves remain install-specific.
+

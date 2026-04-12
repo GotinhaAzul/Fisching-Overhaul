@@ -213,6 +213,15 @@ def _try_parse_bool(value: object) -> Optional[bool]:
     return None
 
 
+def _normalize_major_area(raw_value: object, pool_name: str) -> Optional[str]:
+    del pool_name
+    if isinstance(raw_value, str):
+        normalized = raw_value.strip()
+        if normalized:
+            return normalized
+    return None
+
+
 @dataclass(frozen=True)
 class FishingAttempt:
     """Descreve uma tentativa de pesca (o 'quick time event')."""
@@ -288,6 +297,7 @@ class FishProfile:
 @dataclass
 class FishingPool:
     name: str
+    major_area: Optional[str]
     fish_profiles: List[FishProfile]
     folder: Path
     description: str
@@ -676,9 +686,18 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
         if hidden_from_pool_selection and not secret_entry_code:
             secret_entry_code = pool_dir.name.strip().casefold()
 
+        raw_name = data.get("name", pool_dir.name)
+        if isinstance(raw_name, str):
+            pool_name = raw_name.strip()
+            if not pool_name:
+                pool_name = pool_dir.name
+        else:
+            pool_name = pool_dir.name
+
         pools.append(
             FishingPool(
-                name=data.get("name", pool_dir.name),
+                name=pool_name,
+                major_area=_normalize_major_area(data.get("major_area"), pool_name),
                 fish_profiles=fish_profiles,
                 folder=pool_dir,
                 description=data.get("description", ""),
@@ -698,67 +717,242 @@ def load_pools(base_dir: Path) -> List[FishingPool]:
     return pools
 
 
-def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPool:
-    available_pools = [
-        pool
-        for pool in pools
-        if pool.name in unlocked_pools and not pool.hidden_from_pool_selection
+@dataclass(frozen=True)
+class PoolSelectionEntry:
+    label: str
+    pools: List[FishingPool]
+    is_direct_pool: bool = False
+
+
+def _build_visible_pool_entries(
+    pools: List[FishingPool],
+    unlocked_pools: set[str],
+) -> List[PoolSelectionEntry]:
+    grouped: Dict[str, List[FishingPool]] = {}
+    display_labels: Dict[str, str] = {}
+    standalone_pools: List[FishingPool] = []
+    for pool in pools:
+        if pool.name not in unlocked_pools or pool.hidden_from_pool_selection:
+            continue
+        if pool.major_area is None:
+            standalone_pools.append(pool)
+            continue
+        normalized_area = pool.major_area.casefold()
+        grouped.setdefault(normalized_area, []).append(pool)
+
+        candidate_label = pool.major_area.strip()
+        current_label = display_labels.get(normalized_area)
+        if current_label is None or (
+            candidate_label.casefold(),
+            candidate_label,
+        ) < (
+            current_label.casefold(),
+            current_label,
+        ):
+            display_labels[normalized_area] = candidate_label
+
+    entries = [
+        PoolSelectionEntry(
+            label=display_labels[normalized_area],
+            pools=sorted(area_pools, key=lambda pool: pool.name.casefold()),
+        )
+        for normalized_area, area_pools in sorted(grouped.items(), key=lambda item: item[0])
     ]
-    secret_pools_by_code = {
-        pool.secret_entry_code: pool
-        for pool in pools
-        if pool.secret_entry_code
-    }
+    entries.extend(
+        PoolSelectionEntry(
+            label=pool.name,
+            pools=[pool],
+            is_direct_pool=True,
+        )
+        for pool in sorted(standalone_pools, key=lambda pool: pool.name.casefold())
+    )
+    return sorted(entries, key=lambda entry: entry.label.casefold())
+
+
+def _build_secret_pool_lookup(pools: List[FishingPool]) -> Dict[str, FishingPool]:
+    secret_pools: Dict[str, FishingPool] = {}
+    for pool in pools:
+        if pool.secret_entry_code:
+            secret_pools[pool.secret_entry_code.casefold()] = pool
+    return secret_pools
+
+
+def select_pool(
+    pools: List[FishingPool],
+    unlocked_pools: set[str],
+) -> FishingPool:
+    visible_entries = _build_visible_pool_entries(pools, unlocked_pools)
+    secret_pools_by_code = _build_secret_pool_lookup(pools)
     page_size = 12
-    page = 0
+    area_page = 0
 
-    if use_modern_ui():
-        if not available_pools and not secret_pools_by_code:
-            raise RuntimeError("Nenhuma pool desbloqueada.")
+    if not visible_entries and not secret_pools_by_code:
+        raise RuntimeError("Nenhuma pool desbloqueada.")
 
-        while True:
+    while True:
+        if use_modern_ui():
             clear_screen()
-            page_slice = get_page_slice(len(available_pools), page, page_size)
-            page = page_slice.page
-            available_on_page = available_pools[page_slice.start:page_slice.end]
-            header_lines = [f"Disponiveis: {len(available_pools)}"]
-            if page_slice.total_pages > 1:
+        area_slice = get_page_slice(len(visible_entries), area_page, page_size)
+        area_page = area_slice.page
+        entries_on_page = visible_entries[area_slice.start:area_slice.end]
+        area_prompt = "Digite o numero da area ou pool:"
+
+        if use_modern_ui():
+            header_lines = [f"Destinos desbloqueados: {len(visible_entries)}"]
+            if area_slice.total_pages > 1:
                 header_lines.append(
-                    f"Pagina {page + 1}/{page_slice.total_pages} ({page_slice.start + 1}-{page_slice.end})"
+                    f"Pagina {area_page + 1}/{area_slice.total_pages} ({area_slice.start + 1}-{area_slice.end})"
                 )
             options = [
-                MenuOption(str(idx), pool.name, "Desbloqueada")
-                for idx, pool in enumerate(available_on_page, start=1)
+                MenuOption(
+                    str(idx),
+                    entry.label,
+                    "Pool desbloqueada" if entry.is_direct_pool else f"{len(entry.pools)} pool(s)",
+                )
+                for idx, entry in enumerate(entries_on_page, start=1)
             ]
-            if page_slice.total_pages > 1:
+            if area_slice.total_pages > 1:
                 options.extend(
                     [
                         MenuOption(
                             PAGE_NEXT_KEY.upper(),
                             "Proxima pagina",
-                            f"Pools {page + 1}/{page_slice.total_pages}",
-                            enabled=page < page_slice.total_pages - 1,
+                            f"Areas {area_page + 1}/{area_slice.total_pages}",
+                            enabled=area_page < area_slice.total_pages - 1,
                         ),
                         MenuOption(
                             PAGE_PREV_KEY.upper(),
                             "Pagina anterior",
-                            f"Pools {page + 1}/{page_slice.total_pages}",
-                            enabled=page > 0,
+                            f"Areas {area_page + 1}/{area_slice.total_pages}",
+                            enabled=area_page > 0,
                         ),
                     ]
                 )
             print_menu_panel(
-                "POOLS",
+                "AREAS",
                 subtitle="Escolha onde pescar",
                 header_lines=header_lines,
                 options=options,
-                prompt="Digite o numero da pool:",
+                prompt=area_prompt,
                 show_badge=False,
             )
+        else:
+            print("=== AREAS ===")
+            if entries_on_page:
+                for idx, entry in enumerate(entries_on_page, start=1):
+                    if entry.is_direct_pool:
+                        print(f"{idx}. {entry.label}")
+                    else:
+                        print(f"{idx}. {entry.label} ({len(entry.pools)} pool(s))")
+            else:
+                print("Nenhuma area desbloqueada.")
+            if area_slice.total_pages > 1:
+                print(
+                    f"{PAGE_NEXT_KEY.upper()}. Proxima pagina ({area_page + 1}/{area_slice.total_pages})"
+                )
+                print(
+                    f"{PAGE_PREV_KEY.upper()}. Pagina anterior ({area_page + 1}/{area_slice.total_pages})"
+                )
+
+        choice = read_menu_choice(
+            "> ",
+            instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
+            if area_slice.total_pages > 1
+            else set(),
+        ).lower()
+        if not choice:
+            print("Entrada invalida. Digite apenas o numero da area ou pool.")
+            continue
+
+        secret_pool = secret_pools_by_code.get(choice.casefold())
+        if secret_pool:
+            unlocked_pools.add(secret_pool.name)
+            return secret_pool
+
+        if choice == "0":
+            print("Entrada invalida. Digite apenas o numero da area ou pool.")
+            continue
+
+        area_page, moved = apply_page_hotkey(choice, area_page, area_slice.total_pages)
+        if moved:
+            continue
+
+        if not choice.isdigit():
+            print("Entrada invalida. Digite apenas o numero da area ou pool.")
+            continue
+
+        idx = int(choice)
+        if not (1 <= idx <= len(entries_on_page)):
+            print("Numero fora do intervalo. Tente novamente.")
+            continue
+
+        selected_entry = entries_on_page[idx - 1]
+        if selected_entry.is_direct_pool:
+            return selected_entry.pools[0]
+
+        area_pools = selected_entry.pools
+        pool_page = 0
+        while True:
+            if use_modern_ui():
+                clear_screen()
+            pool_slice = get_page_slice(len(area_pools), pool_page, page_size)
+            pool_page = pool_slice.page
+            pools_on_page = area_pools[pool_slice.start:pool_slice.end]
+
+            if use_modern_ui():
+                pool_header_lines = [f"Pools desbloqueadas: {len(area_pools)}"]
+                if pool_slice.total_pages > 1:
+                    pool_header_lines.append(
+                        f"Pagina {pool_page + 1}/{pool_slice.total_pages} ({pool_slice.start + 1}-{pool_slice.end})"
+                    )
+                pool_options = [
+                    MenuOption(str(pool_idx), pool.name, "Desbloqueada")
+                    for pool_idx, pool in enumerate(pools_on_page, start=1)
+                ]
+                if pool_slice.total_pages > 1:
+                    pool_options.extend(
+                        [
+                            MenuOption(
+                                PAGE_NEXT_KEY.upper(),
+                                "Proxima pagina",
+                                f"Pools {pool_page + 1}/{pool_slice.total_pages}",
+                                enabled=pool_page < pool_slice.total_pages - 1,
+                            ),
+                            MenuOption(
+                                PAGE_PREV_KEY.upper(),
+                                "Pagina anterior",
+                                f"Pools {pool_page + 1}/{pool_slice.total_pages}",
+                                enabled=pool_page > 0,
+                            ),
+                        ]
+                    )
+                pool_options.append(MenuOption("0", "Voltar"))
+                print_menu_panel(
+                    "POOLS",
+                    subtitle=f"Area: {selected_entry.label}",
+                    header_lines=pool_header_lines,
+                    options=pool_options,
+                    prompt="Digite o numero da pool:",
+                    show_badge=False,
+                )
+            else:
+                print("=== POOLS ===")
+                print(f"Area: {selected_entry.label}")
+                for pool_idx, pool in enumerate(pools_on_page, start=1):
+                    print(f"{pool_idx}. {pool.name}")
+                if pool_slice.total_pages > 1:
+                    print(
+                        f"{PAGE_NEXT_KEY.upper()}. Proxima pagina ({pool_page + 1}/{pool_slice.total_pages})"
+                    )
+                    print(
+                        f"{PAGE_PREV_KEY.upper()}. Pagina anterior ({pool_page + 1}/{pool_slice.total_pages})"
+                    )
+                print("0. Voltar")
+
             choice = read_menu_choice(
                 "> ",
                 instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
-                if page_slice.total_pages > 1
+                if pool_slice.total_pages > 1
                 else set(),
             ).lower()
             if not choice:
@@ -770,7 +964,10 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
                 unlocked_pools.add(secret_pool.name)
                 return secret_pool
 
-            page, moved = apply_page_hotkey(choice, page, page_slice.total_pages)
+            if choice == "0":
+                break
+
+            pool_page, moved = apply_page_hotkey(choice, pool_page, pool_slice.total_pages)
             if moved:
                 continue
 
@@ -778,55 +975,11 @@ def select_pool(pools: List[FishingPool], unlocked_pools: set[str]) -> FishingPo
                 print("Entrada invalida. Digite apenas o numero da pool.")
                 continue
 
-            idx = int(choice)
-            if 1 <= idx <= len(available_on_page):
-                return available_on_page[idx - 1]
+            pool_idx = int(choice)
+            if 1 <= pool_idx <= len(pools_on_page):
+                return pools_on_page[pool_idx - 1]
 
             print("Numero fora do intervalo. Tente novamente.")
-
-    if not available_pools and not secret_pools_by_code:
-        raise RuntimeError("Nenhuma pool desbloqueada.")
-
-    while True:
-        clear_screen()
-        page_slice = get_page_slice(len(available_pools), page, page_size)
-        page = page_slice.page
-        available_on_page = available_pools[page_slice.start:page_slice.end]
-        print("Escolha uma pool para pescar:")
-        for idx, pool in enumerate(available_on_page, start=1):
-            print(f"{idx}. {pool.name}")
-        if page_slice.total_pages > 1:
-            print(f"{PAGE_NEXT_KEY.upper()}. Proxima pagina ({page + 1}/{page_slice.total_pages})")
-            print(f"{PAGE_PREV_KEY.upper()}. Pagina anterior ({page + 1}/{page_slice.total_pages})")
-
-        choice = read_menu_choice(
-            "Digite o numero da pool: ",
-            instant_keys={PAGE_PREV_KEY, PAGE_NEXT_KEY}
-            if page_slice.total_pages > 1
-            else set(),
-        ).lower()
-        if not choice:
-            print("Entrada invalida. Digite apenas o numero da pool.")
-            continue
-
-        secret_pool = secret_pools_by_code.get(choice.casefold())
-        if secret_pool:
-            unlocked_pools.add(secret_pool.name)
-            return secret_pool
-
-        page, moved = apply_page_hotkey(choice, page, page_slice.total_pages)
-        if moved:
-            continue
-
-        if not choice.isdigit():
-            print("Entrada invalida. Digite apenas o numero da pool.")
-            continue
-
-        idx = int(choice)
-        if 1 <= idx <= len(available_on_page):
-            return available_on_page[idx - 1]
-
-        print("Numero fora do intervalo. Tente novamente.")
 
 
 # -----------------------------
@@ -2902,8 +3055,13 @@ def run_fishing_round(
             else None
         )
         hunt_def = active_hunt.definition if active_hunt else None
-        hunt_fish = hunt_def.fish_profiles if hunt_def else []
-        combined_fish = combine_fish_profiles(selected_pool, event_def, hunt_def)
+        hunt_fish = (
+            hunt_manager.get_available_fish_for_pool(selected_pool.name)
+            if hunt_manager
+            else []
+        )
+        hunt_fish_names = {fish.name for fish in hunt_fish}
+        combined_fish = combine_fish_profiles(selected_pool, event_def, hunt_fish)
         eligible_fish = filter_eligible_fish(combined_fish, kg_max=effective_kg_max)
         if not eligible_fish:
             ks.stop()
@@ -2947,7 +3105,7 @@ def run_fishing_round(
             )
             if matching_fish is not None:
                 fish = matching_fish
-                is_hunt_fish = pending_reengage_hunt_flag
+                is_hunt_fish = pending_reengage_hunt_flag and fish.name in hunt_fish_names
                 reused_fish_attempt = True
             else:
                 pending_reengage_fish_name = None
@@ -2957,14 +3115,14 @@ def run_fishing_round(
                     rod_luck,
                     rarity_weights_override=combined_weights,
                 )
-                is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
+                is_hunt_fish = fish.name in hunt_fish_names
         else:
             fish = selected_pool.choose_fish(
                 eligible_fish,
                 rod_luck,
                 rarity_weights_override=combined_weights,
             )
-            is_hunt_fish = any(fish is hunt_candidate for hunt_candidate in hunt_fish)
+            is_hunt_fish = fish.name in hunt_fish_names
 
         perfect_catch_cfg = fish.perfect_catch or selected_pool.perfect_catch
         pending_reengage_fish_name = None
@@ -3143,6 +3301,12 @@ def run_fishing_round(
                 on_fish_caught(fish, mutation, is_shiny)
             if hunt_manager:
                 hunt_manager.record_catch(selected_pool.name)
+                if is_hunt_fish:
+                    hunt_manager.consume_hunt_fish(
+                        selected_pool.name,
+                        fish.name,
+                        catchable_fish_names={candidate.name for candidate in eligible_fish},
+                    )
             discovered_fish.add(fish.name)
             base_xp = xp_for_rarity(fish.rarity)
             event_xp_multiplier = event_def.xp_multiplier if event_def else 1.0

@@ -1,7 +1,8 @@
 {
   "name": "Piscina de Salmoura",
+  "major_area": "Fundo do Mar",
   "description": "O cheiro daqui dentro é podre, cuidado ao fisgar os peixes.",
- "unlocked_default": false,
+  "unlocked_default": false,
   "rarity_chances": {
     "Comum": 40,
     "Incomum": 38,
