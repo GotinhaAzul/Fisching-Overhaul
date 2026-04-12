@@ -1,0 +1,10 @@
+{
+  "name": "Goraz Flamejante",
+  "rarity": "Raro",
+  "description": "O Goraz Flamejante apresenta escamas nas tonalidades do fogo — vermelho intenso, laranja e dourado — que brilham sob a luz que penetra o recife. E um peixe territorial que defende ativamente sua area de alimentacao. Sua carne e valorizada por pescadores experientes que conhecem seus pontos de emboscada nos corredores de coral. A luta que oferece e vigorosa e tecnica.",
+  "kg_min": 3.0,
+  "kg_max": 8.0,
+  "base_value": 62,
+  "sequence_len": 6,
+  "reaction_time_s": 1.9
+}

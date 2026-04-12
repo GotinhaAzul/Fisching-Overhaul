@@ -1,0 +1,10 @@
+{
+  "name": "Fragmento do Tempo",
+  "rarity": "Raro",
+  "description": "O Fragmento do Tempo nao parece existir de forma continua — aparece em pontos diferentes sem ter se deslocado, como se pulasse entre momentos. Seu corpo e denso e escuro, com veios luminosos que pulsam em intervalos irregulares. Estudiosos de Ponto Zero acreditam que e um residuo organico de um evento que ainda nao aconteceu. Fisgado, resiste de forma intermitente e imprevisivel.",
+  "kg_min": 15.0,
+  "kg_max": 30.0,
+  "base_value": 88,
+  "sequence_len": 8,
+  "reaction_time_s": 1.9
+}

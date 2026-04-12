@@ -1,0 +1,10 @@
+{
+  "name": "Tontolume",
+  "rarity": "Epico",
+  "description": "O Tontolume emite pulsos de luz ritmica enquanto gira em espirais lentas pelas correntes mais profundas de Vertigo. A luz nao tem funcao de caca — parece ser um subproduto do enjoo cronico que a especie desenvolveu ao longo de geracoes nesse ambiente. Pescadores que olham para ele por tempo demais relatam leve desorientacao. A captura exige ignorar o padrao luminoso e focar na linha.",
+  "kg_min": 4.0,
+  "kg_max": 10.0,
+  "base_value": 88,
+  "sequence_len": 7,
+  "reaction_time_s": 2.0
+}

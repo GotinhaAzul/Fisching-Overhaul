@@ -323,6 +323,7 @@ def update_mission_completions(
     level: int,
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> Set[str]:
     _sync_unlock_baselines(state)
     _retroactively_unlock_missions_from_claimed_rewards(
@@ -347,6 +348,7 @@ def update_mission_completions(
             level=level,
             pools=pools,
             discovered_fish=discovered_fish,
+            regionless_fish_profiles=regionless_fish_profiles,
         ):
             state.completed.add(mission.mission_id)
             newly_completed.add(mission.mission_id)
@@ -363,6 +365,7 @@ def is_mission_complete(
     level: int,
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> bool:
     for requirement in mission.requirements:
         if not _check_requirement(
@@ -375,6 +378,7 @@ def is_mission_complete(
             level=level,
             pools=pools,
             discovered_fish=discovered_fish,
+            regionless_fish_profiles=regionless_fish_profiles,
         ):
             return False
     return True
@@ -395,6 +399,7 @@ def show_missions_menu(
     unlocked_rods: Set[str],
     available_rods: Sequence[object],
     fish_by_name: Dict[str, "FishProfile"],
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> Tuple[int, int, float]:
     _sync_unlock_baselines(state)
     mission_by_id = {mission.mission_id: mission for mission in missions}
@@ -444,6 +449,7 @@ def show_missions_menu(
                 level=level,
                 pools=pools,
                 discovered_fish=discovered_fish,
+                regionless_fish_profiles=regionless_fish_profiles,
             )
             baseline_progress = _mission_baseline_progress(state, mission.mission_id)
             completed_baseline = state.unlocked_completed_counts.get(mission.mission_id, 0)
@@ -460,6 +466,7 @@ def show_missions_menu(
                     level=level,
                     pools=pools,
                     discovered_fish=discovered_fish,
+                    regionless_fish_profiles=regionless_fish_profiles,
                 )
                 requirement_lines.append(
                     _format_requirement_line(
@@ -519,6 +526,7 @@ def show_missions_menu(
                     level=level,
                     pools=pools,
                     discovered_fish=discovered_fish,
+                    regionless_fish_profiles=regionless_fish_profiles,
                 )
                 can_claim_reward = (
                     mission.mission_id in state.completed
@@ -581,6 +589,7 @@ def show_missions_menu(
             )
             if action == "deliver_fish":
                 total_remaining = 0
+                remaining_requirement_counts: List[int] = []
                 for req in deliver_requirements:
                     _, current, target, done = _format_requirement(
                         req,
@@ -592,14 +601,18 @@ def show_missions_menu(
                         level=level,
                         pools=pools,
                         discovered_fish=discovered_fish,
+                        regionless_fish_profiles=regionless_fish_profiles,
                     )
+                    remaining = max(0, target - current)
+                    remaining_requirement_counts.append(remaining)
                     if not done:
-                        total_remaining += max(0, target - current)
+                        total_remaining += remaining
                 delivered_count = _deliver_fish_for_mission(
                     deliver_requirements,
                     inventory,
                     progress,
                     max_deliveries=total_remaining,
+                    remaining_requirement_counts=remaining_requirement_counts,
                 )
                 if delivered_count == 1:
                     print("Peixe entregue para a missão!")
@@ -653,6 +666,7 @@ def show_missions_menu(
             level=level,
             pools=pools,
             discovered_fish=discovered_fish,
+            regionless_fish_profiles=regionless_fish_profiles,
         )
         active_missions = sorted(
             (
@@ -912,6 +926,7 @@ def _build_mission_actions(
     level: int,
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> Dict[str, List[Dict[str, object]]]:
     actions: Dict[str, List[Dict[str, object]]] = {}
     for requirement in mission.requirements:
@@ -934,6 +949,7 @@ def _build_mission_actions(
             level=level,
             pools=pools,
             discovered_fish=discovered_fish,
+            regionless_fish_profiles=regionless_fish_profiles,
         )
         if current >= target:
             continue
@@ -948,6 +964,7 @@ def _deliver_fish_for_mission(
     progress: MissionProgress,
     *,
     max_deliveries: Optional[int] = None,
+    remaining_requirement_counts: Optional[List[int]] = None,
 ) -> int:
     valid_indexes: List[int] = []
     for idx, entry in enumerate(inventory, start=1):
@@ -965,20 +982,21 @@ def _deliver_fish_for_mission(
         mutation_label = f" ✨ {entry.mutation_name}" if entry.mutation_name else ""
         print(f"{idx}. {entry.name} ({entry.kg:0.2f}kg){shiny_label}{mutation_label}")
 
-    deliver_cap = (
-        min(len(valid_indexes), max_deliveries)
-        if max_deliveries is not None
-        else len(valid_indexes)
+    bulk_delivery_indexes = _plan_bulk_mission_deliveries(
+        requirements,
+        inventory,
+        remaining_requirement_counts=remaining_requirement_counts,
+        max_deliveries=max_deliveries,
     )
+    deliver_cap = len(bulk_delivery_indexes)
     if deliver_cap > 0:
         print(f"\n[T] Entregar todos ({deliver_cap} peixe(s))")
 
     selection = input("Digite o número do peixe para entregar (ou T para todos): ").strip()
 
     if selection.lower() == "t":
-        to_deliver = valid_indexes[:deliver_cap]
         delivered_count = 0
-        for idx in sorted(to_deliver, reverse=True):
+        for idx in sorted(bulk_delivery_indexes, reverse=True):
             delivered = inventory.pop(idx - 1)
             progress.record_fish_delivered(
                 delivered.name,
@@ -1004,6 +1022,44 @@ def _deliver_fish_for_mission(
         delivered.is_shiny,
     )
     return 1
+
+
+def _plan_bulk_mission_deliveries(
+    requirements: List[Dict[str, object]],
+    inventory: List[InventoryEntry],
+    *,
+    remaining_requirement_counts: Optional[List[int]] = None,
+    max_deliveries: Optional[int] = None,
+) -> List[int]:
+    if not requirements:
+        return []
+
+    pending_counts = list(remaining_requirement_counts or [])
+    if len(pending_counts) < len(requirements):
+        pending_counts.extend([1] * (len(requirements) - len(pending_counts)))
+    pending_counts = [max(0, _safe_int(count)) for count in pending_counts[: len(requirements)]]
+
+    planned_indexes: List[int] = []
+    for idx, entry in enumerate(inventory, start=1):
+        matched_requirement_indexes = [
+            req_idx
+            for req_idx, requirement in enumerate(requirements)
+            if pending_counts[req_idx] > 0
+            and _entry_matches_delivery_requirements(entry, [requirement])
+        ]
+        if not matched_requirement_indexes:
+            continue
+
+        planned_indexes.append(idx)
+        for req_idx in matched_requirement_indexes:
+            pending_counts[req_idx] -= 1
+
+        if max_deliveries is not None and len(planned_indexes) >= max_deliveries:
+            break
+        if not any(pending_counts):
+            break
+
+    return planned_indexes
 
 
 def _entry_matches_delivery_requirements(
@@ -1473,8 +1529,19 @@ def _format_requirement(
     level: int,
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> Tuple[str, int, int, bool]:
     requirement_type = requirement.get("type")
+    if requirement_type == "bestiary_percent":
+        target = _safe_int(requirement.get("percent"))
+        current = int(
+            _calculate_bestiary_percent(
+                pools,
+                discovered_fish,
+                regionless_fish_profiles=regionless_fish_profiles,
+            )
+        )
+        return "Compleção do bestiário", current, target, current >= target
     formatter = _REQUIREMENT_FORMATTERS.get(requirement_type)
     if formatter is None:
         return "Requisito desconhecido", 0, 0, False
@@ -1501,6 +1568,7 @@ def _check_requirement(
     level: int,
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> bool:
     _, current, target, done = _format_requirement(
         requirement,
@@ -1512,6 +1580,7 @@ def _check_requirement(
         level=level,
         pools=pools,
         discovered_fish=discovered_fish,
+        regionless_fish_profiles=regionless_fish_profiles,
     )
     return done
 
@@ -1530,8 +1599,15 @@ def _mission_baseline_progress(state: MissionState, mission_id: str) -> MissionP
 def _calculate_bestiary_percent(
     pools: Sequence["FishingPool"],
     discovered_fish: Set[str],
+    *,
+    regionless_fish_profiles: Optional[Sequence["FishProfile"]] = None,
 ) -> float:
     all_fish = collect_countable_fish_names(pools)
+    all_fish.update(
+        fish.name
+        for fish in regionless_fish_profiles or []
+        if getattr(fish, "name", "")
+    )
     return completion_percent(all_fish, discovered_fish)
 
 

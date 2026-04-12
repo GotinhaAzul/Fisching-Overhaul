@@ -10,6 +10,7 @@ from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.mutations import Mutation
 from utils.pagination import PAGE_NEXT_KEY
 from utils.rods import Rod
+from utils.shiny import ShinyConfig, ShinyDisplayConfig
 
 
 @dataclass
@@ -149,6 +150,68 @@ def test_show_market_sell_individual_flow_characterization(monkeypatch) -> None:
     assert money_earned == [expected_value]
     assert sold_names == [fish.name]
     assert delivered_names == [fish.name]
+
+
+def test_show_market_rod_shop_keeps_abilities_only_in_comparison(monkeypatch) -> None:
+    starter = Rod(
+        name="Vara Bambu",
+        luck=0.0,
+        kg_max=100.0,
+        control=0.0,
+        description="Starter",
+        price=0.0,
+        unlocked_default=True,
+    )
+    premium = Rod(
+        name="Perforatio",
+        luck=0.1,
+        kg_max=150.0,
+        control=0.2,
+        description="Premium",
+        price=50.0,
+        can_pierce=True,
+        pierce_chance=0.3,
+    )
+    selected_pool, _ = _make_pool_and_fish()
+    captured_panels: list[dict[str, object]] = []
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market, "print_spaced_lines", lambda _lines: None)
+    monkeypatch.setattr(
+        market,
+        "print_menu_panel",
+        lambda title, **kwargs: captured_panels.append({"title": title, **kwargs}),
+    )
+    monkeypatch.setattr(
+        "builtins.input",
+        _InputFeeder(["2", "1", "n", "", "0"]),
+    )
+
+    market.show_market(
+        inventory=[],
+        balance=100.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={},
+        available_mutations=[],
+        equipped_rod=starter,
+    )
+
+    shop_panel = next(panel for panel in captured_panels if panel["title"] == "Varas da Loja")
+    comparison_panel = next(
+        panel for panel in captured_panels if panel["title"] == "Inspecao de Vara"
+    )
+
+    shop_options = shop_panel["options"]
+    shop_hints = "\n".join(getattr(option, "hint", "") for option in shop_options)
+    assert "Habilidades:" not in shop_hints
+
+    comparison_lines = comparison_panel["header_lines"]
+    assert isinstance(comparison_lines, list)
+    assert any("Habilidades:" in str(line) for line in comparison_lines)
 
 
 def test_show_market_sell_individual_blocks_unsellable_characterization(monkeypatch) -> None:
@@ -549,6 +612,95 @@ def test_show_market_appraise_quick_repeat_same_fish_characterization(monkeypatc
     assert entry.mutation_name is None
     assert entry.mutation_xp_multiplier == 1.0
     assert entry.mutation_gold_multiplier == 1.0
+
+
+def test_show_market_appraise_keeps_existing_shiny_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    entry = InventoryEntry(
+        name=fish.name,
+        rarity=fish.rarity,
+        kg=2.0,
+        base_value=fish.base_value,
+        is_shiny=True,
+    )
+    inventory = [entry]
+    shiny_config = ShinyConfig(
+        catch_chance_percent=1.0,
+        appraise_chance_percent=0.0,
+        value_multiplier=1.55,
+        display=ShinyDisplayConfig(
+            label="Shiny",
+            color="#FFD700",
+            catch_message="Shiny!",
+        ),
+    )
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.random, "uniform", lambda _a, _b: 2.5)
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "t", "0", "0"]))
+
+    balance, level, xp = market.show_market(
+        inventory=inventory,
+        balance=100.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        equipped_rod=starter,
+        shiny_config=shiny_config,
+    )
+
+    assert level == 1
+    assert xp == 0
+    assert balance < 100.0
+    assert entry.kg == 2.5
+    assert entry.is_shiny is True
+
+
+def test_show_market_appraise_reports_new_shiny_characterization(monkeypatch, capsys) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    entry = InventoryEntry(
+        name=fish.name,
+        rarity=fish.rarity,
+        kg=2.0,
+        base_value=fish.base_value,
+    )
+    inventory = [entry]
+    shiny_config = ShinyConfig(
+        catch_chance_percent=1.0,
+        appraise_chance_percent=100.0,
+        value_multiplier=1.55,
+        display=ShinyDisplayConfig(
+            label="✦ Shiny",
+            color="#FFD700",
+            catch_message="Shiny!",
+        ),
+    )
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(market.random, "uniform", lambda _a, _b: 2.5)
+    monkeypatch.setattr("builtins.input", _InputFeeder(["4", "1", "t", "0", "0"]))
+
+    market.show_market(
+        inventory=inventory,
+        balance=100.0,
+        selected_pool=selected_pool,
+        level=1,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        equipped_rod=starter,
+        shiny_config=shiny_config,
+    )
+
+    assert "Tilapia ficou ✦ Shiny!" in capsys.readouterr().out
 
 
 def test_show_market_appraise_mutation_confirmation_cancel_characterization(monkeypatch) -> None:

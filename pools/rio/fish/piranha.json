@@ -1,0 +1,10 @@
+{
+  "name": "Piranha",
+  "rarity": "Incomum",
+  "description": "A Piranha e pequena mas sua fama a precede. Dentes triangulares afiados como navalhas e mandibula forte o suficiente para atravessar couro e osso. Em cardumes, e capaz de devorar presas muito maiores em segundos. Sozinha, e mais cautelosa. No Rio Correnteza, aparece nas margens com vegetacao densa. Fisgada, morde a linha com frequencia — o pescador precisa estar atento.",
+  "kg_min": 0.5,
+  "kg_max": 2.5,
+  "base_value": 18,
+  "sequence_len": 5,
+  "reaction_time_s": 1.5
+}

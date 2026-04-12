@@ -1,0 +1,10 @@
+{
+  "name": "Xerelete",
+  "rarity": "Comum",
+  "description": "O Xerelete e um peixe plateado e fusiforme que forma grandes cardumes no mar aberto. Nada em sincronismo perfeito com os outros membros do grupo, o que torna os cardumes impressionantes de observar. E preza comum de atuns e marlins, e tambem alvo frequente de pescadores que buscam iscas vivas. Captura-se facilmente mas some rapido.",
+  "kg_min": 0.3,
+  "kg_max": 1.5,
+  "base_value": 8,
+  "sequence_len": 3,
+  "reaction_time_s": 2.6
+}

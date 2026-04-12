@@ -1,0 +1,10 @@
+{
+  "name": "Âmbar Vivente",
+  "rarity": "Incomum",
+  "description": "O Ambar Vivente e um pequeno crustaceo de casca translucida com tonalidade laranja-dourada que reflete a luz dos cristais da caverna. Seu interior e visivel — orgaos, fluxo de fluidos, tudo exposto. Move-se com delicadeza entre as formacoes cristalines, se alimentando de microorganismos que crescem nas superficies. Sua beleza e fragil: fora da agua, a casca perde o brilho rapidamente.",
+  "kg_min": 0.5,
+  "kg_max": 1.5,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 1.6
+}

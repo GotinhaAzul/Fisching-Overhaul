@@ -1,0 +1,10 @@
+{
+  "name": "Espectra",
+  "rarity": "Incomum",
+  "description": "A Espectra e quase completamente transparente, com apenas os orgaos internos visiveis como sombras dentro do corpo. Desliza pelas ruinas sem fazer som ou disturbar a agua ao redor. Nao e claro se e um peixe, uma forma de vida alternativa ou um artefato das ruinas que ganhou movimento. Pescadores relatam senti-la na linha antes de ve-la.",
+  "kg_min": 1.5,
+  "kg_max": 4.0,
+  "base_value": 20,
+  "sequence_len": 5,
+  "reaction_time_s": 1.6
+}

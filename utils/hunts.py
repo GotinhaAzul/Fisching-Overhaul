@@ -88,6 +88,18 @@ class HuntManager:
         with self._lock:
             return list(self._hunts)
 
+    def get_available_fish_for_pool(self, pool_name: str) -> List["FishProfile"]:
+        with self._lock:
+            active = self._active_by_pool.get(pool_name)
+            if not active:
+                return []
+            remaining_names = set(active.remaining_fish_names)
+            return [
+                fish
+                for fish in active.definition.fish_profiles
+                if fish.name in remaining_names
+            ]
+
     def force_hunt(self, hunt_id: str) -> Optional[HuntDefinition]:
         if not self._dev_tools_enabled:
             return None

@@ -1,0 +1,10 @@
+{
+  "name": "Batata do Mar",
+  "rarity": "Comum",
+  "description": "A Batata do Mar e uma holoturia de corpo cilindrico e coloracao marrom-avermelhada que repousa imóvel sobre o substrato coralino. Quando perturbada, expele orgaos internos como mecanismo de defesa e os regenera depois. Sua presenca indica recife saudavel. Pescar uma Batata do Mar e sempre uma surpresa — ninguem mira nela de proposito.",
+  "kg_min": 0.5,
+  "kg_max": 2.5,
+  "base_value": 3,
+  "sequence_len": 4,
+  "reaction_time_s": 3.0
+}

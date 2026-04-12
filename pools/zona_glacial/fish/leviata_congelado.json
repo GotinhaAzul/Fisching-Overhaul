@@ -2,9 +2,9 @@
   "name": "Leviata Congelado",
   "rarity": "Mitico",
   "description": "O Leviata Congelado e descrito como um terror adormecido sob calotas antigas, despertado apenas por frio absoluto. Sua pele mineralizada conserva camadas de gelo mesmo em movimento continuo.",
-  "kg_min": 160.0,
+  "kg_min": 210.0,
   "kg_max": 560.0,
   "base_value": 1920,
   "sequence_len": 22,
-  "reaction_time_s": 7.0
+  "reaction_time_s": 6.5
 }

@@ -1,0 +1,10 @@
+{
+  "name": "Lamparina",
+  "rarity": "Incomum",
+  "description": "A Lamparina emite um brilho amarelado constante atraves de orgaos fotogenos distribuidos ao longo do dorso. Nas profundezas absolutas, sua luz funciona como isca natural para presas menores. Nada em circulos lentos perto de estruturas verticais, como colunas de rocha e cascos afundados. Quando fisgada, a luz pulsa com intensidade crescente.",
+  "kg_min": 1.0,
+  "kg_max": 3.5,
+  "base_value": 22,
+  "sequence_len": 5,
+  "reaction_time_s": 1.8
+}

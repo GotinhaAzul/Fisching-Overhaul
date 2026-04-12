@@ -1,0 +1,10 @@
+{
+  "name": "Labro Pintado",
+  "rarity": "Incomum",
+  "description": "O Labro Pintado exibe um padrao de manchas azuis e laranjas vibrantes que variam entre individuos, tornando cada exemplar visualmente unico. E um peixe de recife extremamente ativo, sempre em movimento entre as cavidades do coral. Alimenta-se de invertebrados de casca dura que tritura com os dentes robustos. Oferece reacao rapida e constante quando fisgado.",
+  "kg_min": 1.0,
+  "kg_max": 2.5,
+  "base_value": 19,
+  "sequence_len": 5,
+  "reaction_time_s": 2.0
+}

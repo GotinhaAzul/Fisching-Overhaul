@@ -1,0 +1,10 @@
+{
+  "name": "Golem das Ruínas",
+  "rarity": "Raro",
+  "description": "O Golem das Ruinas e um peixe de corpo largo e baixo recoberto por camadas de sedimento, concreto e fragmentos de estruturas antigas. Com o tempo, o material aderiu permanentemente as suas escamas, formando uma armadura natural. Move-se devagar pelas ruinas como se fosse parte delas. Quando perturbado, bate a cauda com forca suficiente para levantar nuvens de detritos.",
+  "kg_min": 8.0,
+  "kg_max": 22.0,
+  "base_value": 72,
+  "sequence_len": 7,
+  "reaction_time_s": 1.8
+}

@@ -52,18 +52,32 @@ def _safe_int(raw_value: object, default: int = 0) -> int:
         return default
 
 
+def _safe_nonempty_string(raw_value: object) -> Optional[str]:
+    if not isinstance(raw_value, str):
+        return None
+    normalized = raw_value.strip()
+    return normalized or None
+
+
 def _safe_bool(raw_value: object, default: bool = False) -> bool:
     if isinstance(raw_value, bool):
         return raw_value
+    if isinstance(raw_value, (int, float)):
+        if raw_value == 1:
+            return True
+        if raw_value == 0:
+            return False
+        return default
     if isinstance(raw_value, str):
         normalized = raw_value.strip().lower()
         if normalized in {"1", "true", "yes", "on"}:
             return True
         if normalized in {"0", "false", "no", "off"}:
             return False
+        return default
     if raw_value is None:
         return default
-    return bool(raw_value)
+    return default
 
 
 @dataclass(frozen=True)
@@ -80,6 +94,9 @@ class Rod:
     can_slam: bool = False
     slam_chance: float = 0.0
     slam_time_bonus: float = 0.0
+    can_curse: bool = False
+    curse_chance: float = 0.0
+    curse_time_penalty: float = 0.0
     can_recover: bool = False
     recover_chance: float = 0.0
     can_pierce: bool = False
@@ -97,6 +114,10 @@ class Rod:
     unlocks_with_pool: str = ""
     counts_for_bestiary_completion: bool = True
     shiny_override: Optional[float] = None
+    vfxseq: Optional[str] = None
+    vfxseqcount: int = 1
+    vfxability: Optional[str] = None
+    vfxabilitycount: int = 1
 
 
 def load_rods(base_dir: Path) -> List[Rod]:
@@ -137,6 +158,8 @@ def load_rods(base_dir: Path) -> List[Rod]:
             if raw_shiny_override is not None
             else None
         )
+        vfxseqcount = max(1, _safe_int(data.get("vfxseqcount", 1), 1))
+        vfxabilitycount = max(1, _safe_int(data.get("vfxabilitycount", 1), 1))
 
         rods.append(
             Rod(
@@ -152,6 +175,9 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 can_slam=_safe_bool(data.get("can_slam", False)),
                 slam_chance=_normalize_probability(data.get("slam_chance", 0.0)),
                 slam_time_bonus=max(0.0, _safe_float(data.get("slam_time_bonus", 0.0))),
+                can_curse=_safe_bool(data.get("can_curse", False)),
+                curse_chance=_normalize_probability(data.get("curse_chance", 0.0)),
+                curse_time_penalty=max(0.0, _safe_float(data.get("curse_time_penalty", 0.0))),
                 can_recover=_safe_bool(data.get("can_recover", False)),
                 recover_chance=_normalize_probability(data.get("recover_chance", 0.0)),
                 can_pierce=_safe_bool(data.get("can_pierce", False)),
@@ -169,6 +195,10 @@ def load_rods(base_dir: Path) -> List[Rod]:
                 unlocks_with_pool=unlocks_with_pool,
                 counts_for_bestiary_completion=counts_for_bestiary_completion,
                 shiny_override=shiny_override,
+                vfxseq=_safe_nonempty_string(data.get("vfxseq")),
+                vfxseqcount=vfxseqcount,
+                vfxability=_safe_nonempty_string(data.get("vfxability")),
+                vfxabilitycount=vfxabilitycount,
             )
         )
 

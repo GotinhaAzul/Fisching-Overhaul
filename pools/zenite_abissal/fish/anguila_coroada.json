@@ -2,7 +2,7 @@
   "name": "Anguila Coroada",
   "rarity": "Mitico",
   "description": "Majestosa e letal, a Anguila Coroada usa uma estrutura luminosa sobre a cabeca para hipnotizar presas em curta distancia. Ela ataca apenas quando a linha visual esta totalmente favoravel, o que torna seus encontros raros. Seu brilho ritmico cria zonas de silencio no entorno, onde poucos animais ousam se aproximar.",
-  "kg_min": 180.0,
+  "kg_min": 210.0,
   "kg_max": 620.0,
   "base_value": 2100,
   "sequence_len": 20,

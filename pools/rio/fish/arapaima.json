@@ -1,0 +1,10 @@
+{
+  "name": "Arapaima",
+  "rarity": "Epico",
+  "description": "O Arapaima e o maior peixe de agua doce das Americas. Respira o ar diretamente, emergindo a superficie em intervalos regulares com um som grave caracteristico. Suas escamas sao comparadas a ceramica blindada — resistentes o suficiente para deter dentes de piranha. Uma vez fisgado, e uma batalha de forca pura. Pescadores experientes dizem que capturar um e algo que nao se esquece.",
+  "kg_min": 20.0,
+  "kg_max": 60.0,
+  "base_value": 95,
+  "sequence_len": 9,
+  "reaction_time_s": 1.8
+}

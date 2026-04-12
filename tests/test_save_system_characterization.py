@@ -7,6 +7,7 @@ from utils.baits import BaitDefinition
 from utils.inventory import InventoryEntry
 from utils.rods import Rod
 from utils.rod_upgrades import restore_rod_upgrade_state
+from utils.rod_upgrades import _UPGRADE_RECIPE_BALANCE_VERSION
 from utils.save_system import (
     SAVE_VERSION,
     load_game,
@@ -125,7 +126,16 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
         mission_state={"completed": ["m1"]},
         mission_progress={"fish_caught": 10},
         pool_market_orders={"Lagoa Tranquila": {"dummy": True}},
-        hunt_state={"hunts": {"h1": {}}, "active_by_pool": {"Lagoa Tranquila": "h1"}},
+        hunt_state={
+            "hunts": {"h1": {}},
+            "active_by_pool": {
+                "Lagoa Tranquila": {
+                    "hunt_id": "h1",
+                    "remaining_s": 45.0,
+                    "remaining_fish_names": ["Tilapia Ancestral"],
+                }
+            },
+        },
         crafting_state={"crafted": ["r1"]},
         crafting_progress={"find_fish_counts_by_name": {"Tilapia": 2}},
         bait_inventory={"cheap/minhoca": 3, "invalid": 2, "zero": 0},
@@ -150,9 +160,12 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
         "bonuses": {"Vara Carbono": {"luck": 0.12, "kg_max": 0.08}},
         "recipes": {
             "Vara Carbono": {
-                "luck": [
-                    {"fish_name": "Tilapia", "rarity": "Comum", "count": 3},
-                ]
+                "luck": {
+                    "version": _UPGRADE_RECIPE_BALANCE_VERSION,
+                    "requirements": [
+                        {"fish_name": "Tilapia", "rarity": "Comum", "count": 3},
+                    ],
+                }
             }
         },
     }
@@ -200,6 +213,7 @@ def test_save_load_roundtrip_with_restore_helpers(tmp_path: Path) -> None:
     restored_recipe = restored_rod_upgrades.get_recipe("Vara Carbono", "luck")
     assert restored_recipe is not None
     assert restored_recipe.stat == "luck"
+    assert restored_recipe.balance_version == _UPGRADE_RECIPE_BALANCE_VERSION
     assert restored_recipe.fish_requirements == [UpgradeRequirement("Tilapia", "Comum", 3)]
 
 
@@ -228,6 +242,24 @@ def test_restore_helpers_legacy_and_invalid_payloads() -> None:
     restored_hunt = restore_hunt_state({"hunts": [], "active_by_pool": "x"})
     assert restored_hunt == {"hunts": {}, "active_by_pool": {}}
 
+    restored_hunt_with_remaining = restore_hunt_state(
+        {
+            "hunts": {"h1": {"disturbance": 2.0}},
+            "active_by_pool": {
+                "Rio Correnteza": {
+                    "hunt_id": "h1",
+                    "remaining_s": 12.0,
+                    "remaining_fish_names": ["Lula Gigante"],
+                }
+            },
+        }
+    )
+    assert restored_hunt_with_remaining["active_by_pool"]["Rio Correnteza"] == {
+        "hunt_id": "h1",
+        "remaining_s": 12.0,
+        "remaining_fish_names": ["Lula Gigante"],
+    }
+
     restored_legacy_rod_upgrades = restore_rod_upgrade_state(
         {"Vara Bambu": {"luck": 0.12}}
     )
@@ -247,6 +279,7 @@ def test_restore_helpers_legacy_and_invalid_payloads() -> None:
     legacy_recipe = restored_legacy_recipe_upgrades.get_recipe("Vara Carbono", "luck")
     assert legacy_recipe is not None
     assert legacy_recipe.stat == ""
+    assert legacy_recipe.balance_version == 1
     assert legacy_recipe.fish_requirements == [UpgradeRequirement("Tilapia", "Comum", 2)]
 
 
