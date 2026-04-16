@@ -227,6 +227,50 @@ def _normalize_major_area(raw_value: object, pool_name: str) -> Optional[str]:
     return None
 
 
+def _normalize_vfx_color(raw_value: object) -> Optional[str]:
+    if not isinstance(raw_value, str):
+        return None
+    normalized = raw_value.strip()
+    return normalized or None
+
+
+def _normalize_positive_count(raw_value: object, default: int = 1) -> int:
+    try:
+        normalized = int(raw_value)
+    except (TypeError, ValueError):
+        return default
+    return max(1, normalized)
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text)
+
+
+def _render_colored_segment(
+    prefix: str,
+    content: str,
+    *,
+    color: str = "",
+    suffix: str = "",
+) -> str:
+    if not color.strip() or not content:
+        return f"{prefix}{content}{suffix}"
+
+    styled_text = Text()
+    if prefix:
+        styled_text.append(prefix)
+    styled_text.append(content, style=color.strip())
+    if suffix:
+        styled_text.append(suffix)
+
+    try:
+        with console.capture() as capture:
+            console.print(styled_text, end="")
+        return capture.get().rstrip("\n")
+    except Exception:
+        return f"{prefix}{content}{suffix}"
+
+
 @dataclass(frozen=True)
 class FishingAttempt:
     """Descreve uma tentativa de pesca (o 'quick time event')."""
@@ -1286,6 +1330,34 @@ class FishingMiniGame:
         if elapsed > self.total_time_limit() and not self.is_done():
             return FishingResult(False, "Tempo esgotado", self.typed[:], elapsed)
         return None
+
+
+def _build_fishing_minigame(
+    attempt: FishingAttempt,
+    rod: Rod,
+    *,
+    include_rod_abilities: bool = True,
+) -> FishingMiniGame:
+    return FishingMiniGame(
+        attempt,
+        can_slash=include_rod_abilities and rod.can_slash,
+        slash_chance=rod.slash_chance if include_rod_abilities else 0.0,
+        slash_power=rod.slash_power,
+        can_slam=include_rod_abilities and rod.can_slam,
+        slam_chance=rod.slam_chance if include_rod_abilities else 0.0,
+        slam_time_bonus=rod.slam_time_bonus if include_rod_abilities else 0.0,
+        can_curse=include_rod_abilities and rod.can_curse,
+        curse_chance=rod.curse_chance if include_rod_abilities else 0.0,
+        curse_time_penalty=rod.curse_time_penalty if include_rod_abilities else 0.0,
+        can_pierce=include_rod_abilities and rod.can_pierce,
+        pierce_chance=rod.pierce_chance if include_rod_abilities else 0.0,
+        can_greed=include_rod_abilities and rod.can_greed,
+        greed_chance=rod.greed_chance if include_rod_abilities else 0.0,
+        vfx_seq_color=rod.vfxseq,
+        vfx_seq_count=rod.vfxseqcount,
+        vfx_ability_color=rod.vfxability,
+        vfx_ability_count=rod.vfxabilitycount,
+    )
 
 
 # -----------------------------

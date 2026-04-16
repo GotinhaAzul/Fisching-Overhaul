@@ -196,15 +196,6 @@ def format_rod_entry(index: int, rod: Rod) -> str:
     )
 
 
-def _calculate_market_entry_value(
-    entry: InventoryEntry,
-    *,
-    shiny_config: Optional[ShinyConfig] = None,
-) -> float:
-    shiny_multiplier = shiny_config.value_multiplier if shiny_config else 1.55
-    return calculate_entry_value(entry, shiny_multiplier=shiny_multiplier)
-
-
 def _craft_requirements_progress(
     definition: CraftingDefinition,
     crafting_progress: CraftingProgress,
@@ -251,7 +242,6 @@ def _show_crafting_recipe_detail(
     on_money_spent,
     shiny_config: Optional[ShinyConfig] = None,
     on_inventory_changed: Optional[Callable[[], None]] = None,
-    shiny_config: Optional[ShinyConfig] = None,
 ) -> float:
     while True:
         clear_screen()
@@ -455,7 +445,6 @@ def _show_crafting_menu(
     refresh_unlocks: Callable[[], None],
     shiny_config: Optional[ShinyConfig] = None,
     on_inventory_changed: Optional[Callable[[], None]] = None,
-    shiny_config: Optional[ShinyConfig] = None,
 ) -> float:
     crafting_by_id = {definition.craft_id: definition for definition in crafting_definitions}
 
@@ -527,7 +516,6 @@ def _show_crafting_menu(
             on_money_spent,
             shiny_config,
             on_inventory_changed,
-            shiny_config,
         )
 
 
@@ -1544,9 +1532,8 @@ def show_market(
             crafting_progress,
             on_money_spent,
             _refresh_crafting_unlocks,
-            shiny_config,
-            _mark_inventory_fish_counts_dirty,
             shiny_config=shiny_config,
+            on_inventory_changed=_mark_inventory_fish_counts_dirty,
         )
 
     def _handle_upgrade_rod_action(

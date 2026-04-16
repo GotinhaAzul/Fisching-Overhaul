@@ -6,6 +6,7 @@ from typing import Iterator
 
 import utils.market as market
 from utils.baits import BaitDefinition
+from utils.crafting import CraftingDefinition, CraftingProgress, CraftingState
 from utils.inventory import InventoryEntry, calculate_entry_value
 from utils.mutations import Mutation
 from utils.pagination import PAGE_NEXT_KEY
@@ -212,6 +213,50 @@ def test_show_market_rod_shop_keeps_abilities_only_in_comparison(monkeypatch) ->
     comparison_lines = comparison_panel["header_lines"]
     assert isinstance(comparison_lines, list)
     assert any("Habilidades:" in str(line) for line in comparison_lines)
+
+
+def test_show_market_crafting_menu_flow_characterization(monkeypatch) -> None:
+    starter, premium = _make_rods()
+    selected_pool, fish = _make_pool_and_fish()
+    crafting_definition = CraftingDefinition(
+        craft_id="starter-craft",
+        rod_name=premium.name,
+        name="Receita da Vara Carbono",
+        description="Craft de teste.",
+        unlock_mode="all",
+        unlock_requirements=[],
+        craft_requirements=[],
+        starts_visible=True,
+    )
+
+    monkeypatch.setattr(market, "clear_screen", lambda: None)
+    monkeypatch.setattr(
+        "builtins.input",
+        _InputFeeder(["7", "0", "0"]),
+    )
+
+    balance, level, xp = market.show_market(
+        inventory=[],
+        balance=125.0,
+        selected_pool=selected_pool,
+        level=8,
+        xp=0,
+        available_rods=[starter, premium],
+        owned_rods=[starter],
+        fish_by_name={fish.name: fish},
+        available_mutations=[],
+        pools=[selected_pool],
+        discovered_fish={fish.name},
+        unlocked_pools={selected_pool.name},
+        unlocked_rods={starter.name},
+        crafting_definitions=[crafting_definition],
+        crafting_state=CraftingState(unlocked={crafting_definition.craft_id}),
+        crafting_progress=CraftingProgress(),
+    )
+
+    assert balance == 125.0
+    assert level == 8
+    assert xp == 0
 
 
 def test_show_market_sell_individual_blocks_unsellable_characterization(monkeypatch) -> None:

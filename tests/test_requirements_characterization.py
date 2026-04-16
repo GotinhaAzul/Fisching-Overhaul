@@ -590,6 +590,20 @@ def test_crafting_recipe_detail_lists_shiny_delivery_value_characterization(
     assert "R$ 20.40" in capsys.readouterr().out
 
 
+def test_market_shiny_helpers_expose_single_shiny_config_parameter_characterization() -> None:
+    import inspect
+
+    import utils.market as market
+
+    recipe_detail_signature = inspect.signature(market._show_crafting_recipe_detail)
+    recipe_helper_signature = inspect.signature(market._show_crafting_menu)
+    value_helper_signature = inspect.signature(market._calculate_market_entry_value)
+
+    assert list(recipe_detail_signature.parameters).count("shiny_config") == 1
+    assert list(recipe_helper_signature.parameters).count("shiny_config") == 1
+    assert list(value_helper_signature.parameters).count("shiny_config") == 1
+
+
 def test_has_any_pool_bestiary_full_completion_characterization() -> None:
     pools = [
         _DummyPool(

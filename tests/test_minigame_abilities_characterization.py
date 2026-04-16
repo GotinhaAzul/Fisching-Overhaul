@@ -269,6 +269,27 @@ def test_render_colored_segment_falls_back_to_plain_text_when_color_is_invalid_c
     assert rendered == "Seq: A B"
 
 
+def test_minigame_normalizes_vfx_values_characterization() -> None:
+    attempt = FishingAttempt(
+        sequence=["a"],
+        time_limit_s=30.0,
+        allowed_keys=list("abcdefghijklmnopqrstuvwxyz"),
+    )
+
+    game = FishingMiniGame(
+        attempt,
+        vfx_seq_color="  bright_cyan  ",
+        vfx_seq_count=0,
+        vfx_ability_color="   ",
+        vfx_ability_count="abc",
+    )
+
+    assert game.vfx_seq_color == "bright_cyan"
+    assert game.vfx_seq_count == 1
+    assert game.vfx_ability_color is None
+    assert game.vfx_ability_count == 1
+
+
 def test_build_fishing_minigame_keeps_vfx_config_for_frenzy_characterization() -> None:
     rod = Rod(
         name="Rod VFX",
@@ -302,3 +323,48 @@ def test_build_fishing_minigame_keeps_vfx_config_for_frenzy_characterization() -
     assert frenzy_game.vfx_seq_count == 2
     assert frenzy_game.vfx_ability_color == "red"
     assert frenzy_game.vfx_ability_count == 3
+
+
+def test_build_fishing_minigame_includes_rod_abilities_by_default_characterization() -> None:
+    rod = Rod(
+        name="Rod Abilities",
+        luck=0.0,
+        kg_max=10.0,
+        control=0.0,
+        description="",
+        price=0.0,
+        can_slash=True,
+        slash_chance=0.25,
+        slash_power=2,
+        can_slam=True,
+        slam_chance=0.5,
+        slam_time_bonus=0.75,
+        can_curse=True,
+        curse_chance=0.4,
+        curse_time_penalty=0.35,
+        can_pierce=True,
+        pierce_chance=0.6,
+        can_greed=True,
+        greed_chance=0.2,
+    )
+    attempt = FishingAttempt(
+        sequence=["a", "b"],
+        time_limit_s=30.0,
+        allowed_keys=list("abcdefghijklmnopqrstuvwxyz"),
+    )
+
+    game = _build_fishing_minigame(attempt, rod)
+
+    assert game.can_slash is True
+    assert game.slash_chance == 0.25
+    assert game.slash_power == 2
+    assert game.can_slam is True
+    assert game.slam_chance == 0.5
+    assert game.slam_time_bonus == 0.75
+    assert game.can_curse is True
+    assert game.curse_chance == 0.4
+    assert game.curse_time_penalty == 0.35
+    assert game.can_pierce is True
+    assert game.pierce_chance == 0.6
+    assert game.can_greed is True
+    assert game.greed_chance == 0.2
