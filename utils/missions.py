@@ -194,10 +194,11 @@ def restore_mission_state(raw_state: object, missions: Sequence[MissionDefinitio
         for mission in missions
         if mission.starts_unlocked
     }
-    if state.unlocked:
-        state.unlocked.update(default_unlocked)
-    else:
-        state.unlocked = default_unlocked
+    recovered_unlocked = set(state.unlocked)
+    recovered_unlocked.update(state.completed)
+    recovered_unlocked.update(state.claimed)
+    recovered_unlocked.update(default_unlocked)
+    state.unlocked = recovered_unlocked
     for mission_id in state.unlocked:
         state.unlocked_progress_baselines.setdefault(mission_id, {})
         state.unlocked_completed_counts.setdefault(mission_id, 0)
@@ -439,7 +440,7 @@ def show_missions_menu(
             return "[!] Equipamento Novo"
         return None
 
-    def _show_mission_detail(mission: MissionDefinition, *, history_mode: bool) -> None:
+    def _show_mission_detail(mission: MissionDefinition, *, history_mode: bool) -> bool:
         nonlocal level, xp, balance
         while True:
             update_mission_completions(
@@ -570,7 +571,7 @@ def show_missions_menu(
 
             choice = input("> ").strip().lower()
             if choice == "0":
-                return
+                return False
             if history_mode:
                 print("Opcao invalida.")
                 input("\nEnter para voltar.")
@@ -636,7 +637,7 @@ def show_missions_menu(
                 continue
 
             if action == "claim_reward":
-                balance, level, xp, notes = apply_mission_rewards(
+                balance, level, xp, applied, notes = claim_mission_rewards(
                     mission,
                     progress,
                     state,
@@ -647,16 +648,21 @@ def show_missions_menu(
                     unlocked_pools=unlocked_pools,
                     unlocked_rods=unlocked_rods,
                     available_rods=available_rods,
+                    available_pool_names={pool.name for pool in pools},
+                    available_mission_ids=set(mission_by_id),
                     fish_by_name=fish_by_name,
                     discovered_fish=discovered_fish,
                 )
-                state.claimed.add(mission.mission_id)
                 if notes:
                     print("\n".join(notes))
-                else:
+                elif applied:
                     print("Recompensa resgatada!")
+                else:
+                    print("Nao foi possivel resgatar a recompensa.")
                 input("\nEnter para voltar.")
-                return
+                if applied:
+                    return True
+                continue
 
     while True:
         update_mission_completions(
@@ -759,10 +765,50 @@ def show_missions_menu(
             continue
 
         selected_mission = paged_missions[idx - 1]
-        _show_mission_detail(
+        claimed_reward = _show_mission_detail(
             selected_mission,
             history_mode=current_tab == "history",
         )
+        if claimed_reward:
+            return level, xp, balance
+
+
+def claim_mission_rewards(
+    mission: MissionDefinition,
+    progress: MissionProgress,
+    state: MissionState,
+    *,
+    balance: float,
+    level: int,
+    xp: int,
+    inventory: List[InventoryEntry],
+    unlocked_pools: Set[str],
+    unlocked_rods: Set[str],
+    available_rods: Sequence[object],
+    available_pool_names: Set[str],
+    available_mission_ids: Set[str],
+    fish_by_name: Dict[str, "FishProfile"],
+    discovered_fish: Set[str],
+) -> Tuple[float, int, int, bool, List[str]]:
+    balance, level, xp, applied, notes = apply_mission_rewards(
+        mission,
+        progress,
+        state,
+        balance=balance,
+        level=level,
+        xp=xp,
+        inventory=inventory,
+        unlocked_pools=unlocked_pools,
+        unlocked_rods=unlocked_rods,
+        available_rods=available_rods,
+        available_pool_names=available_pool_names,
+        available_mission_ids=available_mission_ids,
+        fish_by_name=fish_by_name,
+        discovered_fish=discovered_fish,
+    )
+    if applied:
+        state.claimed.add(mission.mission_id)
+    return balance, level, xp, applied, notes
 
 
 def apply_mission_rewards(
@@ -777,11 +823,24 @@ def apply_mission_rewards(
     unlocked_pools: Set[str],
     unlocked_rods: Set[str],
     available_rods: Sequence[object],
+    available_pool_names: Set[str],
+    available_mission_ids: Set[str],
     fish_by_name: Dict[str, "FishProfile"],
     discovered_fish: Set[str],
-) -> Tuple[float, int, int, List[str]]:
+) -> Tuple[float, int, int, bool, List[str]]:
     notes: List[str] = []
     rods_by_name = {getattr(rod, "name", ""): rod for rod in available_rods}
+    validation_errors = _validate_mission_rewards(
+        mission,
+        fish_by_name=fish_by_name,
+        rods_by_name=rods_by_name,
+        available_pool_names=available_pool_names,
+        available_mission_ids=available_mission_ids,
+    )
+    if validation_errors:
+        return balance, level, xp, False, validation_errors
+
+    pending_mission_unlocks: List[str] = []
 
     for reward in mission.rewards:
         reward_type = reward.get("type")
@@ -823,27 +882,28 @@ def apply_mission_rewards(
         elif reward_type == "unlock_rods":
             rod_names = _extract_string_list(reward.get("rod_names"))
             for rod_name in rod_names:
-                if rod_name in rods_by_name:
-                    unlocked_rods.add(rod_name)
-                    notes.append(f"🪝 Vara desbloqueada: {rod_name}")
+                unlocked_rods.add(rod_name)
+                notes.append(f"🪝 Vara desbloqueada: {rod_name}")
         elif reward_type == "unlock_pools":
             pool_names = _extract_string_list(reward.get("pool_names"))
             for pool_name in pool_names:
                 unlocked_pools.add(pool_name)
                 notes.append(f"🌊 Pool desbloqueada: {pool_name}")
         elif reward_type == "unlock_missions":
-            mission_ids = _extract_string_list(reward.get("mission_ids"))
-            for mission_id in mission_ids:
-                unlocked = _unlock_mission(
-                    mission_id,
-                    state,
-                    progress,
-                )
-                if not unlocked:
-                    continue
-                notes.append("📜 Nova missão desbloqueada!")
+            pending_mission_unlocks.extend(_extract_string_list(reward.get("mission_ids")))
 
-    return balance, level, xp, notes
+    for mission_id in pending_mission_unlocks:
+        unlocked = _unlock_mission(
+            mission_id,
+            state,
+            progress,
+            available_mission_ids=available_mission_ids,
+        )
+        if not unlocked:
+            continue
+        notes.append("Nova missao desbloqueada!")
+
+    return balance, level, xp, True, notes
 
 
 def _retroactively_unlock_missions_from_claimed_rewards(
@@ -861,7 +921,12 @@ def _retroactively_unlock_missions_from_claimed_rewards(
             if reward.get("type") != "unlock_missions":
                 continue
             for unlocked_mission_id in _extract_string_list(reward.get("mission_ids")):
-                if not _unlock_mission(unlocked_mission_id, state, progress):
+                if not _unlock_mission(
+                    unlocked_mission_id,
+                    state,
+                    progress,
+                    available_mission_ids=set(mission_by_id),
+                ):
                     continue
                 newly_unlocked.add(unlocked_mission_id)
     return newly_unlocked
@@ -871,7 +936,11 @@ def _unlock_mission(
     mission_id: str,
     state: MissionState,
     progress: MissionProgress,
+    *,
+    available_mission_ids: Optional[Set[str]] = None,
 ) -> bool:
+    if available_mission_ids is not None and mission_id not in available_mission_ids:
+        return False
     if mission_id in state.unlocked:
         return False
     state.unlocked.add(mission_id)
@@ -880,6 +949,38 @@ def _unlock_mission(
         {mid for mid in state.completed if mid != mission_id}
     )
     return True
+
+
+def _validate_mission_rewards(
+    mission: MissionDefinition,
+    *,
+    fish_by_name: Dict[str, "FishProfile"],
+    rods_by_name: Dict[str, object],
+    available_pool_names: Set[str],
+    available_mission_ids: Set[str],
+) -> List[str]:
+    errors: List[str] = []
+    for reward in mission.rewards:
+        reward_type = reward.get("type")
+        if reward_type == "fish":
+            fish_name = reward.get("fish_name")
+            if not isinstance(fish_name, str):
+                errors.append("Recompensa invalida: fish_name ausente.")
+            elif fish_name not in fish_by_name:
+                errors.append(f"Recompensa invalida: peixe '{fish_name}' nao existe.")
+        elif reward_type == "unlock_rods":
+            for rod_name in _extract_string_list(reward.get("rod_names")):
+                if rod_name not in rods_by_name:
+                    errors.append(f"Recompensa invalida: vara '{rod_name}' nao existe.")
+        elif reward_type == "unlock_pools":
+            for pool_name in _extract_string_list(reward.get("pool_names")):
+                if pool_name not in available_pool_names:
+                    errors.append(f"Recompensa invalida: pool '{pool_name}' nao existe.")
+        elif reward_type == "unlock_missions":
+            for mission_id in _extract_string_list(reward.get("mission_ids")):
+                if mission_id not in available_mission_ids:
+                    errors.append(f"Recompensa invalida: missao '{mission_id}' nao existe.")
+    return errors
 
 
 def _format_reward(reward: Dict[str, object]) -> str:

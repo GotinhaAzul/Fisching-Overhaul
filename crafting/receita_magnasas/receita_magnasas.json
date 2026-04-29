@@ -16,7 +16,7 @@
     "requirements": [
       {
         "type": "fish_with_mutation",
-        "fish_name": "Salmao de Obsidiana",
+        "fish_name": "Salmão de Obsidiana",
         "mutation_name": "Chamuscado",
         "count": 1
       },

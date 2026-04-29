@@ -79,7 +79,7 @@ from utils.missions import (
     MissionDefinition,
     MissionProgress,
     MissionState,
-    apply_mission_rewards,
+    claim_mission_rewards,
     load_missions,
     restore_mission_progress,
     restore_mission_state,
@@ -216,6 +216,22 @@ def _try_parse_bool(value: object) -> Optional[bool]:
         if normalized in {"false", "0", "no", "nao", "não"}:
             return False
     return None
+
+
+def _finalize_market_appraise(
+    entry: InventoryEntry,
+    crafting_progress: CraftingProgress,
+    refresh_crafting_unlocks: Callable[[], List[str]],
+    *,
+    discovered_shiny_fish: Optional[set[str]] = None,
+    mark_inventory_counts_dirty: Optional[Callable[[], None]] = None,
+) -> List[str]:
+    if entry.is_shiny and discovered_shiny_fish is not None:
+        discovered_shiny_fish.add(entry.name)
+    crafting_progress.record_find(entry.name, entry.mutation_name)
+    if mark_inventory_counts_dirty is not None:
+        mark_inventory_counts_dirty()
+    return refresh_crafting_unlocks()
 
 
 def _normalize_major_area(raw_value: object, pool_name: str) -> Optional[str]:
@@ -1903,7 +1919,7 @@ def show_dev_save_editor(
                         mission_state.completed.add(mission.mission_id)
                         completed_count += 1
 
-                    balance, level, xp, _ = apply_mission_rewards(
+                    balance, level, xp, applied, notes = claim_mission_rewards(
                         mission,
                         mission_progress,
                         mission_state,
@@ -1914,10 +1930,15 @@ def show_dev_save_editor(
                         unlocked_pools=unlocked_pools,
                         unlocked_rods=unlocked_rods,
                         available_rods=available_rods,
+                        available_pool_names={pool.name for pool in pools},
+                        available_mission_ids={item.mission_id for item in missions},
                         fish_by_name=fish_by_name,
                         discovered_fish=discovered_fish,
                     )
-                    mission_state.claimed.add(mission.mission_id)
+                    if not applied:
+                        for note in notes:
+                            print(note)
+                        continue
                     claimed_count += 1
 
             if claimed_count == 0:

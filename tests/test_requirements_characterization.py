@@ -21,12 +21,16 @@ from utils.missions import (
     MissionDefinition,
     MissionProgress,
     MissionState,
+    apply_mission_rewards,
+    claim_mission_rewards,
+    show_missions_menu,
     _deliver_fish_for_mission,
     _entry_matches_delivery_requirements,
     load_missions,
     _build_mission_actions,
     _check_requirement,
     _format_requirement,
+    restore_mission_state,
     restore_mission_progress,
     update_mission_completions,
 )
@@ -44,6 +48,19 @@ class _DummyPool:
     fish_profiles: list[_DummyFish]
     folder: Path
     counts_for_bestiary_completion: bool = True
+
+
+@dataclass
+class _DummyRewardFish:
+    name: str
+    rarity: str = "Comum"
+    base_value: float = 10.0
+    unsellable: bool = False
+
+
+@dataclass
+class _DummyRod:
+    name: str
 
 
 def _mission_context() -> tuple[MissionProgress, MissionProgress, list[_DummyPool], set[str]]:
@@ -406,6 +423,249 @@ def test_claimed_unlock_rewards_retroactively_unlock_new_missions_characterizati
     assert state.unlocked_completed_counts["m_new"] == 1
 
 
+def test_apply_mission_rewards_rejects_invalid_content_without_side_effects() -> None:
+    mission = MissionDefinition(
+        mission_id="m_reward",
+        name="Recompensa Quebrada",
+        description="",
+        requirements=[],
+        rewards=[
+            {"type": "money", "amount": 75},
+            {"type": "unlock_pools", "pool_names": ["Pool Fantasma"]},
+        ],
+    )
+    state = MissionState(completed={"m_reward"})
+    progress = MissionProgress(total_money_earned=20.0)
+    inventory = [
+        InventoryEntry(
+            name="Tilapia",
+            rarity="Comum",
+            kg=1.5,
+            base_value=10.0,
+        )
+    ]
+    discovered_fish = {"Tilapia"}
+    unlocked_pools = {"Lagoa Tranquila"}
+    unlocked_rods = {"Vara Bambu"}
+
+    balance, level, xp, applied, notes = apply_mission_rewards(
+        mission,
+        progress,
+        state,
+        balance=100.0,
+        level=3,
+        xp=10,
+        inventory=inventory,
+        unlocked_pools=unlocked_pools,
+        unlocked_rods=unlocked_rods,
+        available_rods=[_DummyRod("Vara Bambu")],
+        available_pool_names={"Lagoa Tranquila"},
+        available_mission_ids={"m_reward"},
+        fish_by_name={"Tilapia": _DummyRewardFish("Tilapia")},
+        discovered_fish=discovered_fish,
+    )
+
+    assert applied is False
+    assert balance == 100.0
+    assert level == 3
+    assert xp == 10
+    assert progress.total_money_earned == 20.0
+    assert len(inventory) == 1
+    assert unlocked_pools == {"Lagoa Tranquila"}
+    assert unlocked_rods == {"Vara Bambu"}
+    assert state.unlocked == set()
+    assert any("Pool Fantasma" in note for note in notes)
+
+
+def test_claim_mission_rewards_keeps_mission_unclaimed_when_reward_application_fails() -> None:
+    mission = MissionDefinition(
+        mission_id="m_reward",
+        name="Recompensa Quebrada",
+        description="",
+        requirements=[],
+        rewards=[{"type": "unlock_missions", "mission_ids": ["m_missing"]}],
+    )
+    state = MissionState(completed={"m_reward"})
+
+    balance, level, xp, applied, notes = claim_mission_rewards(
+        mission,
+        MissionProgress(),
+        state,
+        balance=100.0,
+        level=1,
+        xp=0,
+        inventory=[],
+        unlocked_pools={"Lagoa Tranquila"},
+        unlocked_rods={"Vara Bambu"},
+        available_rods=[_DummyRod("Vara Bambu")],
+        available_pool_names={"Lagoa Tranquila"},
+        available_mission_ids={"m_reward"},
+        fish_by_name={"Tilapia": _DummyRewardFish("Tilapia")},
+        discovered_fish=set(),
+    )
+
+    assert applied is False
+    assert balance == 100.0
+    assert level == 1
+    assert xp == 0
+    assert "m_reward" not in state.claimed
+    assert any("m_missing" in note for note in notes)
+
+
+def test_apply_mission_rewards_unlocks_followup_against_post_reward_progress_regardless_of_order() -> None:
+    mission_unlock_first = MissionDefinition(
+        mission_id="m_unlock_first",
+        name="Ordem A",
+        description="",
+        requirements=[],
+        rewards=[
+            {"type": "unlock_missions", "mission_ids": ["m_followup"]},
+            {"type": "money", "amount": 50},
+        ],
+    )
+    mission_money_first = MissionDefinition(
+        mission_id="m_money_first",
+        name="Ordem B",
+        description="",
+        requirements=[],
+        rewards=[
+            {"type": "money", "amount": 50},
+            {"type": "unlock_missions", "mission_ids": ["m_followup"]},
+        ],
+    )
+
+    def _apply_and_capture_baseline(mission: MissionDefinition) -> float:
+        state = MissionState(completed={mission.mission_id})
+        progress = MissionProgress(total_money_earned=200.0)
+        balance, level, xp, applied, notes = apply_mission_rewards(
+            mission,
+            progress,
+            state,
+            balance=10.0,
+            level=1,
+            xp=0,
+            inventory=[],
+            unlocked_pools={"Lagoa Tranquila"},
+            unlocked_rods={"Vara Bambu"},
+            available_rods=[_DummyRod("Vara Bambu")],
+            available_pool_names={"Lagoa Tranquila"},
+            available_mission_ids={"m_unlock_first", "m_money_first", "m_followup"},
+            fish_by_name={"Tilapia": _DummyRewardFish("Tilapia")},
+            discovered_fish=set(),
+        )
+
+        assert applied is True
+        assert balance == 60.0
+        assert level == 1
+        assert xp == 0
+        assert any("Nova miss" in note for note in notes)
+        return restore_mission_progress(
+            state.unlocked_progress_baselines["m_followup"]
+        ).total_money_earned
+
+    unlock_first_baseline = _apply_and_capture_baseline(mission_unlock_first)
+    money_first_baseline = _apply_and_capture_baseline(mission_money_first)
+
+    assert unlock_first_baseline == 250.0
+    assert money_first_baseline == 250.0
+
+
+def test_show_missions_menu_returns_updated_reward_values_immediately_after_claim(
+    monkeypatch,
+) -> None:
+    mission = MissionDefinition(
+        mission_id="m_reward",
+        name="Reward Mission",
+        description="",
+        requirements=[],
+        rewards=[
+            {"type": "money", "amount": 50},
+            {"type": "xp", "amount": 125},
+        ],
+    )
+    state = MissionState(unlocked={"m_reward"}, completed={"m_reward"})
+    progress = MissionProgress()
+    menu_choices = iter(["1"])
+    detail_inputs = iter(["1", ""])
+
+    def fake_menu_choice(_prompt: str = "", *, instant_keys=()) -> str:
+        try:
+            return next(menu_choices)
+        except StopIteration as exc:
+            raise AssertionError("mission menu asked for input after claiming") from exc
+
+    def fake_input(_prompt: str = "") -> str:
+        try:
+            return next(detail_inputs)
+        except StopIteration as exc:
+            raise AssertionError("mission detail asked for input after claiming") from exc
+
+    monkeypatch.setattr("utils.missions.read_menu_choice", fake_menu_choice)
+    monkeypatch.setattr("builtins.input", fake_input)
+    monkeypatch.setattr("utils.missions.clear_screen", lambda: None)
+
+    level, xp, balance = show_missions_menu(
+        [mission],
+        state,
+        progress,
+        level=1,
+        xp=0,
+        balance=10.0,
+        inventory=[],
+        pools=[_DummyPool(name="Lagoa Tranquila", fish_profiles=[], folder=Path("lagoa"))],
+        discovered_fish=set(),
+        unlocked_pools={"Lagoa Tranquila"},
+        unlocked_rods={"Vara Bambu"},
+        available_rods=[_DummyRod("Vara Bambu")],
+        fish_by_name={},
+    )
+
+    assert balance == 60.0
+    assert level == 2
+    assert xp == 25
+    assert state.claimed == {"m_reward"}
+    assert progress.total_money_earned == 50.0
+
+
+def test_restore_mission_state_recovers_completed_and_claimed_unlocks_when_unlocked_missing() -> None:
+    missions = [
+        MissionDefinition(
+            mission_id="m_start",
+            name="Inicial",
+            description="",
+            requirements=[],
+            rewards=[],
+            starts_unlocked=True,
+        ),
+        MissionDefinition(
+            mission_id="m_completed",
+            name="Completa",
+            description="",
+            requirements=[],
+            rewards=[],
+        ),
+        MissionDefinition(
+            mission_id="m_claimed",
+            name="Resgatada",
+            description="",
+            requirements=[],
+            rewards=[],
+        ),
+    ]
+
+    restored = restore_mission_state(
+        {
+            "completed": ["m_completed", "m_claimed"],
+            "claimed": ["m_claimed"],
+        },
+        missions,
+    )
+
+    assert restored.unlocked == {"m_start", "m_completed", "m_claimed"}
+    assert restored.completed == {"m_completed", "m_claimed"}
+    assert restored.claimed == {"m_claimed"}
+
+
 def test_bestiary_percent_counts_regionless_event_fish_characterization() -> None:
     pools = [_DummyPool(name="Lagoa Tranquila", fish_profiles=[_DummyFish("Tilapia")], folder=Path("lagoa"))]
     missions = [
@@ -602,6 +862,38 @@ def test_market_shiny_helpers_expose_single_shiny_config_parameter_characterizat
     assert list(recipe_detail_signature.parameters).count("shiny_config") == 1
     assert list(recipe_helper_signature.parameters).count("shiny_config") == 1
     assert list(value_helper_signature.parameters).count("shiny_config") == 1
+
+
+def test_finalize_market_appraise_updates_crafting_and_shiny_progress_characterization() -> None:
+    from utils.crafting import CraftingProgress
+    from utils.inventory import InventoryEntry
+    from utils.pesca import _finalize_market_appraise
+
+    crafting_progress = CraftingProgress()
+    entry = InventoryEntry(
+        name="Tilapia",
+        rarity="Comum",
+        kg=2.0,
+        base_value=10.0,
+        is_shiny=True,
+        mutation_name="Albino",
+    )
+    discovered_shiny_fish: set[str] = set()
+    dirty_calls: list[str] = []
+
+    notes = _finalize_market_appraise(
+        entry,
+        crafting_progress,
+        lambda: ["Nova receita desbloqueada: Vara Carbono"],
+        discovered_shiny_fish=discovered_shiny_fish,
+        mark_inventory_counts_dirty=lambda: dirty_calls.append("dirty"),
+    )
+
+    assert notes == ["Nova receita desbloqueada: Vara Carbono"]
+    assert crafting_progress.find_fish_counts_by_name == {"Tilapia": 1}
+    assert crafting_progress.find_mutation_counts_by_name == {"Albino": 1}
+    assert discovered_shiny_fish == {"Tilapia"}
+    assert dirty_calls == ["dirty"]
 
 
 def test_has_any_pool_bestiary_full_completion_characterization() -> None:
